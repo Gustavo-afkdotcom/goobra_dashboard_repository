@@ -1,557 +1,601 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GO OBRA — Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>GO Obra — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-  :root {
-    --amarillo: #F5C800;
-    --negro: #0A0A0A;
-    --gris-oscuro: #141414;
-    --gris-medio: #1E1E1E;
-    --gris-borde: #2A2A2A;
-    --gris-texto: #888;
-    --blanco: #F0EDE8;
-    --rojo: #E03A3A;
-    --verde: #2ECC71;
-  }
+:root{
+  --black:#0a0a0a;--g9:#111;--g8:#1c1c1c;--g7:#2e2e2e;--g5:#6b6b6b;
+  --g3:#c4c4c4;--g1:#f2f1ef;--g0:#f8f7f5;--white:#fff;
+  --amber:#e8a020;--al:#fdf3dc;--ad:#c4821a;
+  --red:#c0392b;--rl:#fdf0ef;--green:#1a7a4a;--gl:#edf7f2;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--g0);color:var(--g9);font-size:14px;min-height:100vh;}
+a{text-decoration:none;color:inherit;}
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+/* HEADER */
+.header{background:var(--black);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--amber);letter-spacing:2px;}
+.logo span{color:#fff;}
+.header-right{display:flex;align-items:center;gap:1rem;}
+.proyecto-sel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:6px 12px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
+.live{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.5);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#2ecc71;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.refresh-btn{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:5px 10px;border-radius:4px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.refresh-btn:hover{border-color:var(--amber);color:var(--amber);}
 
-  body {
-    background: var(--negro);
-    color: var(--blanco);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    min-height: 100vh;
-  }
+/* TABS */
+.tabs{background:#fff;border-bottom:1px solid var(--g1);padding:0 2rem;display:flex;gap:0;position:sticky;top:56px;z-index:99;}
+.tab{padding:14px 20px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--g5);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:7px;}
+.tab:hover{color:var(--g9);}
+.tab.on{color:var(--g9);border-bottom-color:var(--amber);}
+.tab-ico{font-size:14px;}
 
-  /* HEADER */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
-    height: 56px;
-    border-bottom: 1px solid var(--gris-borde);
-    background: var(--negro);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
+/* MAIN */
+.main{padding:1.5rem 2rem;max-width:1400px;margin:0 auto;}
+.tab-panel{display:none;}
+.tab-panel.on{display:block;}
 
-  .logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 24px;
-    letter-spacing: 3px;
-    color: var(--amarillo);
-  }
+/* STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
+.stat{background:#fff;border:1px solid var(--g1);border-radius:10px;padding:1.25rem 1.5rem;position:relative;overflow:hidden;}
+.stat::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--amber);}
+.stat.red::before{background:var(--red);}
+.stat.green::before{background:var(--green);}
+.stat-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--g5);margin-bottom:.5rem;}
+.stat-value{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;line-height:1;color:var(--g9);}
+.stat-sub{font-size:11px;color:var(--g5);margin-top:4px;}
 
-  .logo span { color: var(--blanco); }
+/* PANEL GRID */
+.panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+.panel-grid.wide{grid-template-columns:1fr;}
+.card{background:#fff;border:1px solid var(--g1);border-radius:10px;overflow:hidden;}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--g1);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--g5);display:flex;justify-content:space-between;align-items:center;}
+.card-body{padding:1rem 1.25rem;}
 
-  .header-meta {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-  }
+/* ETAPAS */
+.etapa-row{display:grid;grid-template-columns:100px 1fr 80px 50px;align-items:center;gap:1rem;padding:8px 0;border-bottom:1px solid var(--g1);}
+.etapa-row:last-child{border-bottom:none;}
+.etapa-name{font-size:12px;font-weight:500;}
+.etapa-full{font-size:10px;color:var(--g5);}
+.bar-track{height:6px;background:var(--g1);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;background:var(--amber);transition:width .8s ease;}
+.bar-fill.done{background:var(--green);}
+.bar-fill.red{background:var(--red);}
+.etapa-pct{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;text-align:right;}
+.etapa-estado{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-align:center;}
+.badge-completada{background:var(--gl);color:var(--green);}
+.badge-en_curso{background:var(--al);color:var(--ad);}
+.badge-pendiente{background:var(--g1);color:var(--g5);}
 
-  .proyecto-selector {
-    background: var(--gris-medio);
-    border: 1px solid var(--gris-borde);
-    color: var(--blanco);
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    cursor: pointer;
-  }
+/* FEED */
+.feed-item{display:flex;gap:1rem;padding:10px 0;border-bottom:1px solid var(--g1);}
+.feed-item:last-child{border-bottom:none;}
+.feed-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:4px;}
+.feed-dot.desv{background:var(--red);}
+.feed-body{flex:1;}
+.feed-top{display:flex;justify-content:space-between;margin-bottom:2px;}
+.feed-mision{font-size:13px;font-weight:500;}
+.feed-time{font-size:11px;color:var(--g5);}
+.feed-meta{font-size:12px;color:var(--g5);}
+.feed-cant{display:inline-block;background:var(--al);color:var(--ad);font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;margin-top:3px;}
+.badge-desv{background:var(--rl);color:var(--red);font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;margin-left:6px;}
 
-  .live-dot {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--gris-texto);
-  }
+/* MISIONES */
+.mision-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--g1);}
+.mision-row:last-child{border-bottom:none;}
+.mision-info{flex:1;}
+.mision-name{font-size:13px;font-weight:500;margin-bottom:2px;}
+.mision-meta{font-size:11px;color:var(--g5);}
+.mision-progress{width:120px;}
+.mision-pct{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;min-width:42px;text-align:right;}
 
-  .dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--verde);
-    animation: pulse 2s infinite;
-  }
+/* ALERTAS */
+.alerta{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:8px;margin-bottom:10px;}
+.alerta:last-child{margin-bottom:0;}
+.alerta.roja{background:var(--rl);border:1px solid rgba(192,57,43,.2);}
+.alerta.amarilla{background:var(--al);border:1px solid rgba(232,160,32,.25);}
+.alerta.verde{background:var(--gl);border:1px solid rgba(26,122,74,.2);}
+.alerta-ico{font-size:16px;flex-shrink:0;margin-top:1px;}
+.alerta-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;}
+.alerta.roja .alerta-title{color:var(--red);}
+.alerta.amarilla .alerta-title{color:var(--ad);}
+.alerta.verde .alerta-title{color:var(--green);}
+.alerta-desc{font-size:12px;color:var(--g5);line-height:1.5;}
 
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
+/* EQUIPO */
+.worker-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--g1);}
+.worker-row:last-child{border-bottom:none;}
+.worker-rank{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:var(--g3);min-width:20px;}
+.worker-avatar{width:32px;height:32px;border-radius:50%;background:var(--al);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--ad);flex-shrink:0;}
+.worker-info{flex:1;}
+.worker-name{font-size:13px;font-weight:500;margin-bottom:1px;}
+.worker-meta{font-size:11px;color:var(--g5);}
+.worker-bar{flex:2;}
+.worker-score{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;min-width:36px;text-align:right;}
 
-  /* LAYOUT */
-  .main {
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
+/* EMPTY / LOADING */
+.empty{text-align:center;padding:3rem;color:var(--g5);font-size:13px;}
+.spinner{width:24px;height:24px;border:2px solid var(--g1);border-top-color:var(--amber);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1rem;}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-  .grid-top {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  /* STAT CARDS */
-  .stat-card {
-    background: var(--gris-medio);
-    border: 1px solid var(--gris-borde);
-    border-radius: 6px;
-    padding: 1.25rem 1.5rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 3px; height: 100%;
-    background: var(--amarillo);
-  }
-
-  .stat-card.alerta::before { background: var(--rojo); }
-  .stat-card.ok::before { background: var(--verde); }
-
-  .stat-label {
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--gris-texto);
-    margin-bottom: 0.5rem;
-  }
-
-  .stat-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px;
-    letter-spacing: 1px;
-    color: var(--blanco);
-    line-height: 1;
-  }
-
-  .stat-sub {
-    font-size: 11px;
-    color: var(--gris-texto);
-    margin-top: 4px;
-  }
-
-  /* ETAPAS */
-  .section-title {
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--gris-texto);
-    margin-bottom: 1rem;
-  }
-
-  .grid-bottom {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-
-  .panel {
-    background: var(--gris-medio);
-    border: 1px solid var(--gris-borde);
-    border-radius: 6px;
-    padding: 1.5rem;
-  }
-
-  /* ETAPAS PROGRESS */
-  .etapa-row {
-    display: grid;
-    grid-template-columns: 80px 1fr 60px;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .etapa-row:last-child { margin-bottom: 0; }
-
-  .etapa-nombre {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--blanco);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .etapa-full { font-size: 10px; color: var(--gris-texto); }
-
-  .progress-track {
-    height: 6px;
-    background: var(--gris-borde);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: var(--amarillo);
-    border-radius: 3px;
-    transition: width 0.8s ease;
-  }
-
-  .progress-fill.activa { background: var(--amarillo); }
-  .progress-fill.completada { background: var(--verde); }
-  .progress-fill.pendiente { background: var(--gris-borde); }
-
-  .etapa-pct {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
-    color: var(--blanco);
-    text-align: right;
-  }
-
-  /* FEED DE AVANCES */
-  .avance-item {
-    display: flex;
-    gap: 1rem;
-    padding: 0.875rem 0;
-    border-bottom: 1px solid var(--gris-borde);
-    animation: fadeIn 0.3s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .avance-item:last-child { border-bottom: none; }
-
-  .avance-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--amarillo);
-    flex-shrink: 0;
-    margin-top: 5px;
-  }
-
-  .avance-dot.desviacion { background: var(--rojo); }
-
-  .avance-body { flex: 1; }
-
-  .avance-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 3px;
-  }
-
-  .avance-mision {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--blanco);
-  }
-
-  .avance-time {
-    font-size: 11px;
-    color: var(--gris-texto);
-    white-space: nowrap;
-    margin-left: 1rem;
-  }
-
-  .avance-meta {
-    font-size: 12px;
-    color: var(--gris-texto);
-  }
-
-  .avance-cantidad {
-    display: inline-block;
-    background: rgba(245, 200, 0, 0.1);
-    color: var(--amarillo);
-    font-size: 11px;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 3px;
-    margin-top: 4px;
-  }
-
-  .badge-desviacion {
-    display: inline-block;
-    background: rgba(224, 58, 58, 0.15);
-    color: var(--rojo);
-    font-size: 10px;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 3px;
-    margin-left: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  /* LOADING */
-  .loading {
-    text-align: center;
-    padding: 3rem;
-    color: var(--gris-texto);
-    font-size: 13px;
-  }
-
-  .spinner {
-    width: 24px; height: 24px;
-    border: 2px solid var(--gris-borde);
-    border-top-color: var(--amarillo);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 1rem;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* EMPTY STATE */
-  .empty {
-    text-align: center;
-    padding: 2rem;
-    color: var(--gris-texto);
-    font-size: 13px;
-  }
-
-  /* RESPONSIVE */
-  @media (max-width: 900px) {
-    .grid-top { grid-template-columns: repeat(2, 1fr); }
-    .grid-bottom { grid-template-columns: 1fr; }
-    .main { padding: 1rem; }
-  }
-
-  .refresh-btn {
-    background: none;
-    border: 1px solid var(--gris-borde);
-    color: var(--gris-texto);
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-  }
-
-  .refresh-btn:hover { border-color: var(--amarillo); color: var(--amarillo); }
+@media(max-width:900px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .panel-grid{grid-template-columns:1fr;}
+  .tabs{overflow-x:auto;}
+  .main{padding:1rem;}
+}
 </style>
 </head>
 <body>
 
 <header class="header">
   <div class="logo">GO<span> OBRA</span></div>
-  <div class="header-meta">
-    <select class="proyecto-selector" id="proyectoSelect" onchange="cargarDatos()">
-      <option value="">Cargando proyectos...</option>
+  <div class="header-right">
+    <select class="proyecto-sel" id="proyectoSelect" onchange="cargarTodo()">
+      <option>Cargando...</option>
     </select>
-    <button class="refresh-btn" onclick="cargarDatos()">↻ Actualizar</button>
-    <div class="live-dot"><div class="dot"></div> En vivo</div>
+    <button class="refresh-btn" onclick="cargarTodo()">↻</button>
+    <div class="live"><div class="live-dot"></div>En vivo</div>
   </div>
 </header>
 
-<main class="main">
-  <div class="grid-top">
-    <div class="stat-card" id="card-avances">
-      <div class="stat-label">Avances hoy</div>
-      <div class="stat-value" id="stat-avances-hoy">—</div>
-      <div class="stat-sub" id="stat-avances-sub">cargando...</div>
+<nav class="tabs">
+  <div class="tab on" onclick="switchTab('dashboard',this)"><span class="tab-ico">📊</span>Dashboard</div>
+  <div class="tab" onclick="switchTab('alertas',this)"><span class="tab-ico">🔔</span>Alertas</div>
+  <div class="tab" onclick="switchTab('misiones',this)"><span class="tab-ico">✅</span>Misiones</div>
+  <div class="tab" onclick="switchTab('materiales',this)"><span class="tab-ico">📦</span>Materiales</div>
+  <div class="tab" onclick="switchTab('equipo',this)"><span class="tab-ico">👷</span>Equipo</div>
+</nav>
+
+<div class="main">
+
+  <!-- ── DASHBOARD ── -->
+  <div class="tab-panel on" id="tp-dashboard">
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-label">Avances hoy</div><div class="stat-value" id="s-hoy">—</div><div class="stat-sub" id="s-hoy-sub">cargando</div></div>
+      <div class="stat"><div class="stat-label">Workers activos</div><div class="stat-value" id="s-workers">—</div><div class="stat-sub">reportaron hoy</div></div>
+      <div class="stat red"><div class="stat-label">Desviaciones</div><div class="stat-value" id="s-desv">—</div><div class="stat-sub">requieren atención</div></div>
+      <div class="stat green"><div class="stat-label">Confianza promedio</div><div class="stat-value" id="s-conf">—</div><div class="stat-sub">de los reportes</div></div>
     </div>
-    <div class="stat-card" id="card-workers">
-      <div class="stat-label">Workers activos</div>
-      <div class="stat-value" id="stat-workers">—</div>
-      <div class="stat-sub">reportaron hoy</div>
-    </div>
-    <div class="stat-card alerta" id="card-desviaciones">
-      <div class="stat-label">Desviaciones</div>
-      <div class="stat-value" id="stat-desviaciones">—</div>
-      <div class="stat-sub">requieren atención</div>
-    </div>
-    <div class="stat-card ok" id="card-confianza">
-      <div class="stat-label">Confianza promedio</div>
-      <div class="stat-value" id="stat-confianza">—</div>
-      <div class="stat-sub">de los reportes</div>
+    <div class="panel-grid">
+      <div class="card">
+        <div class="card-head">Progreso por etapa</div>
+        <div class="card-body" id="etapas-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
+      </div>
+      <div class="card">
+        <div class="card-head">Últimos avances</div>
+        <div class="card-body" id="feed-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
+      </div>
     </div>
   </div>
 
-  <div class="grid-bottom">
-    <div class="panel">
-      <div class="section-title">Progreso por etapa</div>
-      <div id="etapas-container"><div class="loading"><div class="spinner"></div>Cargando etapas...</div></div>
-    </div>
-    <div class="panel">
-      <div class="section-title">Últimos avances</div>
-      <div id="feed-container"><div class="loading"><div class="spinner"></div>Cargando avances...</div></div>
+  <!-- ── ALERTAS ── -->
+  <div class="tab-panel" id="tp-alertas">
+    <div class="panel-grid wide">
+      <div class="card">
+        <div class="card-head">Alertas activas <span id="alerta-count"></span></div>
+        <div class="card-body" id="alertas-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
+      </div>
     </div>
   </div>
-</main>
+
+  <!-- ── MISIONES ── -->
+  <div class="tab-panel" id="tp-misiones">
+    <div class="stats-grid">
+      <div class="stat green"><div class="stat-label">Completadas</div><div class="stat-value" id="m-completadas">—</div></div>
+      <div class="stat"><div class="stat-label">En curso</div><div class="stat-value" id="m-encurso">—</div></div>
+      <div class="stat"><div class="stat-label">Pendientes</div><div class="stat-value" id="m-pendientes">—</div></div>
+      <div class="stat"><div class="stat-label">Avance global</div><div class="stat-value" id="m-global">—</div></div>
+    </div>
+    <div class="panel-grid wide">
+      <div class="card">
+        <div class="card-head">
+          Misiones activas
+          <select id="filtro-etapa" onchange="renderMisiones()" style="background:var(--g0);border:1px solid var(--g1);padding:4px 8px;border-radius:4px;font-size:11px;color:var(--g7);font-family:'DM Sans',sans-serif;">
+            <option value="">Todas las etapas</option>
+          </select>
+        </div>
+        <div class="card-body" id="misiones-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MATERIALES ── -->
+  <div class="tab-panel" id="tp-materiales">
+    <div class="panel-grid wide">
+      <div class="card">
+        <div class="card-head">Resumen de cantidades ejecutadas por misión</div>
+        <div class="card-body" id="materiales-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EQUIPO ── -->
+  <div class="tab-panel" id="tp-equipo">
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-label">Workers totales</div><div class="stat-value" id="e-total">—</div></div>
+      <div class="stat green"><div class="stat-label">Activos hoy</div><div class="stat-value" id="e-activos">—</div></div>
+      <div class="stat"><div class="stat-label">Avances esta semana</div><div class="stat-value" id="e-semana">—</div></div>
+      <div class="stat"><div class="stat-label">Top worker</div><div class="stat-value" id="e-top" style="font-size:18px;">—</div></div>
+    </div>
+    <div class="panel-grid wide">
+      <div class="card">
+        <div class="card-head">Ranking por avances registrados</div>
+        <div class="card-body" id="equipo-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
 
 <script>
-const SUPABASE_URL = 'https://muyezsssnzlxavchabum.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
-
+const SB_URL = 'https://muyezsssnzlxavchabum.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
 const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+const db = createClient(SB_URL, SB_KEY);
 
-const ETAPAS = [
-  { id: 'prel',  nombre: 'PREL',  full: 'Preliminares' },
-  { id: 'mvt',   nombre: 'MVT',   full: 'Movimiento de tierras' },
-  { id: 'cim',   nombre: 'CIM',   full: 'Cimentación' },
-  { id: 'estr',  nombre: 'ESTR',  full: 'Estructura' },
-  { id: 'mamp',  nombre: 'MAMP',  full: 'Mampostería' },
-  { id: 'redes', nombre: 'REDES', full: 'Redes' },
-  { id: 'acab',  nombre: 'ACAB',  full: 'Acabados' },
-  { id: 'urb',   nombre: 'URB',   full: 'Urbanismo' },
-  { id: 'entr',  nombre: 'ENTR',  full: 'Entrega' },
-];
+const ETAPA_NOMBRES = {
+  prel:'Preliminares', mvt:'Mov. tierras', cim:'Cimentación',
+  estr:'Estructura', mamp:'Mampostería', redes:'Redes',
+  acab:'Acabados', urb:'Urbanismo', entr:'Entrega'
+};
+const ETAPA_ORDER = ['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
 
-let proyectoActual = null;
+let proyectoId = null;
+let allMisiones = [];
+let allWorkers = {};
 
+// ── TAB SWITCH ──
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('tp-' + name).classList.add('on');
+}
+
+// ── LOAD PROJECTS ──
 async function cargarProyectos() {
-  const { data } = await db.from('proyectos').select('id, nombre').eq('estado', 'activo');
+  const { data } = await db.from('proyectos').select('id,nombre').eq('estado','activo');
   const sel = document.getElementById('proyectoSelect');
-  if (!data || data.length === 0) {
-    sel.innerHTML = '<option value="">Sin proyectos activos</option>';
+  if (!data?.length) { sel.innerHTML = '<option>Sin proyectos</option>'; return; }
+  sel.innerHTML = data.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  proyectoId = data[0].id;
+  sel.value = proyectoId;
+  cargarTodo();
+}
+
+async function cargarTodo() {
+  proyectoId = document.getElementById('proyectoSelect').value;
+  if (!proyectoId) return;
+  await Promise.all([
+    cargarWorkers(),
+    cargarDashboard(),
+    cargarMisiones(),
+    cargarAlertas(),
+    cargarMateriales(),
+    cargarEquipo()
+  ]);
+}
+
+// ── WORKERS MAP ──
+async function cargarWorkers() {
+  const { data } = await db.from('workers').select('id,nombre,rol').eq('proyecto_id', proyectoId);
+  allWorkers = {};
+  data?.forEach(w => { allWorkers[w.id] = w; });
+}
+
+// ── DASHBOARD ──
+async function cargarDashboard() {
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const { data: avHoy } = await db.from('avances')
+    .select('id,trabajador_id,desviacion_detectada,confianza')
+    .eq('proyecto_id', proyectoId)
+    .gte('timestamp_mensaje', hoy.toISOString());
+
+  const total = avHoy?.length || 0;
+  const workers = new Set(avHoy?.map(a => a.trabajador_id)).size;
+  const desv = avHoy?.filter(a => a.desviacion_detectada).length || 0;
+  const confs = avHoy?.map(a => a.confianza) || [];
+  const pctAlta = confs.length ? Math.round(confs.filter(c => c === 'alta').length / confs.length * 100) : 0;
+
+  document.getElementById('s-hoy').textContent = total;
+  document.getElementById('s-hoy-sub').textContent = 'desde las 00:00';
+  document.getElementById('s-workers').textContent = workers;
+  document.getElementById('s-desv').textContent = desv;
+  document.getElementById('s-conf').textContent = pctAlta + '%';
+
+  // Etapas
+  const { data: misiones } = await db.from('proyecto_misiones')
+    .select('etapa_id,cantidad_meta,cantidad_ejecutada,pct_avance,estado')
+    .eq('proyecto_id', proyectoId);
+
+  const etapaMap = {};
+  misiones?.forEach(m => {
+    if (!etapaMap[m.etapa_id]) etapaMap[m.etapa_id] = { meta: 0, exec: 0, count: 0, done: 0 };
+    etapaMap[m.etapa_id].meta += parseFloat(m.cantidad_meta || 0);
+    etapaMap[m.etapa_id].exec += parseFloat(m.cantidad_ejecutada || 0);
+    etapaMap[m.etapa_id].count++;
+    if (m.estado === 'completada') etapaMap[m.etapa_id].done++;
+  });
+
+  const html = ETAPA_ORDER.filter(e => etapaMap[e]).map(e => {
+    const d = etapaMap[e];
+    const pct = d.meta > 0 ? Math.min(Math.round(d.exec / d.meta * 100), 100) : 0;
+    const cls = pct === 100 ? 'done' : pct > 0 ? '' : 'red';
+    const color = pct === 100 ? 'var(--green)' : pct > 0 ? 'var(--amber)' : 'var(--g3)';
+    return `<div class="etapa-row">
+      <div><div class="etapa-name">${ETAPA_NOMBRES[e] || e}</div></div>
+      <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+      <div class="etapa-pct" style="color:${color}">${pct}%</div>
+      <div class="etapa-estado badge-${pct===100?'completada':pct>0?'en_curso':'pendiente'}">${pct===100?'✓':pct>0?'↗':'—'}</div>
+    </div>`;
+  }).join('') || '<div class="empty">Sin datos de etapas</div>';
+
+  document.getElementById('etapas-list').innerHTML = html;
+
+  // Feed
+  const { data: feed } = await db.from('avances')
+    .select('etapa_id,mision_id,nivel,cantidad_primaria_valor,cantidad_primaria_unidad,desviacion_detectada,confianza,timestamp_mensaje,trabajador_id,raw_mensaje')
+    .eq('proyecto_id', proyectoId)
+    .order('timestamp_mensaje', { ascending: false })
+    .limit(12);
+
+  if (!feed?.length) {
+    document.getElementById('feed-list').innerHTML = '<div class="empty">Sin avances aún.<br>Envía un mensaje al bot de Telegram.</div>';
     return;
   }
-  sel.innerHTML = data.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
-  proyectoActual = data[0].id;
-  cargarDatos();
+
+  document.getElementById('feed-list').innerHTML = feed.map(a => {
+    const ts = new Date(a.timestamp_mensaje);
+    const diff = Math.round((Date.now() - ts) / 60000);
+    const tiempo = diff < 60 ? `hace ${diff}m` : diff < 1440 ? `hace ${Math.round(diff/60)}h` : ts.toLocaleDateString('es-CO',{day:'numeric',month:'short'});
+    const nombre = allWorkers[a.trabajador_id]?.nombre || 'Worker';
+    const mision = (a.mision_id || a.etapa_id || '').replace(/_/g,' ');
+    const cant = a.cantidad_primaria_valor ? `${a.cantidad_primaria_valor} ${a.cantidad_primaria_unidad||''}` : '';
+    return `<div class="feed-item">
+      <div class="feed-dot ${a.desviacion_detectada?'desv':''}"></div>
+      <div class="feed-body">
+        <div class="feed-top">
+          <span class="feed-mision">${mision}${a.nivel?' · '+a.nivel:''}${a.desviacion_detectada?'<span class="badge-desv">⚠ desv.</span>':''}</span>
+          <span class="feed-time">${tiempo}</span>
+        </div>
+        <div class="feed-meta">${nombre}</div>
+        ${cant?`<span class="feed-cant">${cant}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
-async function cargarDatos() {
-  proyectoActual = document.getElementById('proyectoSelect').value;
-  if (!proyectoActual) return;
-  await Promise.all([cargarStats(), cargarEtapas(), cargarFeed()]);
-}
+// ── ALERTAS ──
+async function cargarAlertas() {
+  const { data: misiones } = await db.from('proyecto_misiones')
+    .select('etapa_id,mision_id,nivel,cantidad_meta,cantidad_ejecutada,pct_avance,estado,fecha_fin_plan')
+    .eq('proyecto_id', proyectoId);
 
-async function cargarStats() {
+  const alertas = [];
   const hoy = new Date();
-  hoy.setHours(0,0,0,0);
-  const hoyISO = hoy.toISOString();
 
-  const { data: avancesHoy } = await db
-    .from('avances')
-    .select('id, trabajador_id, desviacion_detectada, confianza')
-    .eq('proyecto_id', proyectoActual)
-    .gte('timestamp_mensaje', hoyISO);
+  misiones?.forEach(m => {
+    const pct = parseFloat(m.pct_avance || 0);
+    const fin = m.fecha_fin_plan ? new Date(m.fecha_fin_plan) : null;
+    const diasRestantes = fin ? Math.round((fin - hoy) / 86400000) : null;
+    const nombre = `${ETAPA_NOMBRES[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' ('+m.nivel+')':''}`;
 
-  const total = avancesHoy?.length || 0;
-  const workers = new Set(avancesHoy?.map(a => a.trabajador_id)).size;
-  const desviaciones = avancesHoy?.filter(a => a.desviacion_detectada).length || 0;
-  const confianzas = avancesHoy?.map(a => a.confianza) || [];
-  const pctAlta = confianzas.length > 0
-    ? Math.round((confianzas.filter(c => c === 'alta').length / confianzas.length) * 100)
-    : 0;
-
-  document.getElementById('stat-avances-hoy').textContent = total;
-  document.getElementById('stat-avances-sub').textContent = `registros desde las 00:00`;
-  document.getElementById('stat-workers').textContent = workers;
-  document.getElementById('stat-desviaciones').textContent = desviaciones;
-  document.getElementById('stat-confianza').textContent = pctAlta + '%';
-
-  const cardDev = document.getElementById('card-desviaciones');
-  cardDev.querySelector('.stat-value').style.color = desviaciones > 0 ? 'var(--rojo)' : 'var(--verde)';
-}
-
-async function cargarEtapas() {
-  const { data } = await db
-    .from('avances')
-    .select('etapa_id, cantidad_primaria_valor')
-    .eq('proyecto_id', proyectoActual);
-
-  const conteo = {};
-  ETAPAS.forEach(e => { conteo[e.id] = 0; });
-  data?.forEach(a => {
-    if (conteo[a.etapa_id] !== undefined) {
-      conteo[a.etapa_id] += (a.cantidad_primaria_valor || 0);
+    // Misión vencida y no completada
+    if (fin && diasRestantes < 0 && m.estado !== 'completada') {
+      alertas.push({ tipo:'roja', ico:'▲', title:`Vencida: ${nombre}`, desc:`Tenía fecha límite ${fin.toLocaleDateString('es-CO')}. Lleva ${pct.toFixed(0)}% de avance.` });
+    }
+    // Misión por vencer en 3 días
+    else if (fin && diasRestantes >= 0 && diasRestantes <= 3 && m.estado !== 'completada') {
+      alertas.push({ tipo:'amarilla', ico:'◆', title:`Por vencer: ${nombre}`, desc:`Vence en ${diasRestantes} día(s). Avance actual: ${pct.toFixed(0)}%.` });
+    }
+    // Misión en curso con muy bajo avance
+    else if (m.estado === 'en_curso' && pct < 10) {
+      alertas.push({ tipo:'amarilla', ico:'◆', title:`Avance bajo: ${nombre}`, desc:`Solo ${pct.toFixed(1)}% ejecutado. Revisar con el equipo.` });
     }
   });
 
-  const maxVal = Math.max(...Object.values(conteo), 1);
-  const etapasConDatos = ETAPAS.filter(e => conteo[e.id] > 0);
-  const etapasMostrar = etapasConDatos.length > 0 ? ETAPAS : ETAPAS.slice(0, 5);
-
-  const html = etapasMostrar.map(e => {
-    const val = conteo[e.id];
-    const pct = Math.round((val / maxVal) * 100);
-    const clase = val > 0 ? 'activa' : 'pendiente';
-    return `
-      <div class="etapa-row">
-        <div>
-          <div class="etapa-nombre">${e.nombre}</div>
-          <div class="etapa-full">${e.full}</div>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill ${clase}" style="width:${pct}%"></div>
-        </div>
-        <div class="etapa-pct">${val > 0 ? val.toLocaleString() : '—'}</div>
-      </div>`;
-  }).join('');
-
-  document.getElementById('etapas-container').innerHTML = html ||
-    '<div class="empty">Sin avances registrados aún</div>';
-}
-
-async function cargarFeed() {
-  const { data } = await db
-    .from('avances')
-    .select('etapa_id, mision_id, nivel, cantidad_primaria_valor, cantidad_primaria_unidad, desviacion_detectada, desviacion_motivo, confianza, timestamp_mensaje, trabajador_id')
-    .eq('proyecto_id', proyectoActual)
+  // Desviaciones recientes
+  const { data: desv } = await db.from('avances')
+    .select('mision_id,desviacion_motivo,timestamp_mensaje,trabajador_id')
+    .eq('proyecto_id', proyectoId)
+    .eq('desviacion_detectada', true)
     .order('timestamp_mensaje', { ascending: false })
-    .limit(15);
+    .limit(5);
 
-  if (!data || data.length === 0) {
-    document.getElementById('feed-container').innerHTML =
-      '<div class="empty">Sin avances registrados aún.<br>Envía un mensaje al bot de Telegram.</div>';
+  desv?.forEach(d => {
+    const nombre = allWorkers[d.trabajador_id]?.nombre || 'Worker';
+    alertas.push({ tipo:'roja', ico:'⚠', title:`Desviación: ${(d.mision_id||'').replace(/_/g,' ')}`, desc:`Reportada por ${nombre}: ${d.desviacion_motivo || 'sin detalle'}.` });
+  });
+
+  // Misiones completadas recientes (buenas noticias)
+  const { data: completadas } = await db.from('proyecto_misiones')
+    .select('etapa_id,mision_id,nivel')
+    .eq('proyecto_id', proyectoId)
+    .eq('estado', 'completada')
+    .limit(3);
+
+  completadas?.slice(0,2).forEach(m => {
+    alertas.push({ tipo:'verde', ico:'✓', title:`Completada: ${ETAPA_NOMBRES[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}`, desc:`Misión finalizada al 100%.${m.nivel?' '+m.nivel:''}` });
+  });
+
+  document.getElementById('alerta-count').textContent = alertas.length ? `· ${alertas.length}` : '';
+
+  if (!alertas.length) {
+    document.getElementById('alertas-list').innerHTML = '<div class="empty">Sin alertas activas. Todo en orden.</div>';
     return;
   }
 
-  const { data: workers } = await db.from('workers').select('id, nombre').eq('proyecto_id', proyectoActual);
-  const workerMap = {};
-  workers?.forEach(w => { workerMap[w.id] = w.nombre; });
-
-  const html = data.map(a => {
-    const ts = new Date(a.timestamp_mensaje);
-    const hora = ts.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-    const fecha = ts.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
-    const ahora = new Date();
-    const diff = Math.round((ahora - ts) / 60000);
-    const tiempoStr = diff < 60 ? `hace ${diff}m` : diff < 1440 ? `hace ${Math.round(diff/60)}h` : fecha;
-
-    const nombreWorker = workerMap[a.trabajador_id] || a.trabajador_id;
-    const cantidad = a.cantidad_primaria_valor
-      ? `${a.cantidad_primaria_valor} ${a.cantidad_primaria_unidad || ''}`
-      : '';
-    const misionLabel = a.mision_id ? a.mision_id.replace(/_/g, ' ') : a.etapa_id;
-
-    return `
-      <div class="avance-item">
-        <div class="avance-dot ${a.desviacion_detectada ? 'desviacion' : ''}"></div>
-        <div class="avance-body">
-          <div class="avance-top">
-            <div class="avance-mision">${misionLabel}${a.nivel ? ' · ' + a.nivel : ''}
-              ${a.desviacion_detectada ? '<span class="badge-desviacion">⚠ desviación</span>' : ''}
-            </div>
-            <div class="avance-time">${tiempoStr}</div>
-          </div>
-          <div class="avance-meta">${nombreWorker}</div>
-          ${cantidad ? `<div class="avance-cantidad">${cantidad}</div>` : ''}
-        </div>
-      </div>`;
-  }).join('');
-
-  document.getElementById('feed-container').innerHTML = html;
+  document.getElementById('alertas-list').innerHTML = alertas.map(a =>
+    `<div class="alerta ${a.tipo}">
+      <span class="alerta-ico">${a.ico}</span>
+      <div><div class="alerta-title">${a.title}</div><div class="alerta-desc">${a.desc}</div></div>
+    </div>`
+  ).join('');
 }
 
-// Auto-refresh cada 30 segundos
-setInterval(cargarDatos, 30000);
+// ── MISIONES ──
+async function cargarMisiones() {
+  const { data } = await db.from('proyecto_misiones')
+    .select('*')
+    .eq('proyecto_id', proyectoId)
+    .order('etapa_id');
 
-// Inicio
+  allMisiones = data || [];
+
+  const completadas = allMisiones.filter(m => m.estado === 'completada').length;
+  const encurso = allMisiones.filter(m => m.estado === 'en_curso').length;
+  const pendientes = allMisiones.filter(m => m.estado === 'pendiente').length;
+  const globalPct = allMisiones.length ?
+    Math.round(allMisiones.reduce((s,m) => s + parseFloat(m.pct_avance||0), 0) / allMisiones.length) : 0;
+
+  document.getElementById('m-completadas').textContent = completadas;
+  document.getElementById('m-encurso').textContent = encurso;
+  document.getElementById('m-pendientes').textContent = pendientes;
+  document.getElementById('m-global').textContent = globalPct + '%';
+
+  // Filtro etapas
+  const etapas = [...new Set(allMisiones.map(m => m.etapa_id))];
+  const sel = document.getElementById('filtro-etapa');
+  sel.innerHTML = '<option value="">Todas las etapas</option>' +
+    etapas.map(e => `<option value="${e}">${ETAPA_NOMBRES[e]||e}</option>`).join('');
+
+  renderMisiones();
+}
+
+function renderMisiones() {
+  const filtro = document.getElementById('filtro-etapa').value;
+  const lista = filtro ? allMisiones.filter(m => m.etapa_id === filtro) : allMisiones.filter(m => m.estado !== 'pendiente');
+
+  if (!lista.length) {
+    document.getElementById('misiones-list').innerHTML = '<div class="empty">Sin misiones para mostrar.</div>';
+    return;
+  }
+
+  document.getElementById('misiones-list').innerHTML = lista.map(m => {
+    const pct = parseFloat(m.pct_avance || 0);
+    const color = pct === 100 ? 'var(--green)' : pct > 0 ? 'var(--amber)' : 'var(--g3)';
+    const nombre = (m.mision_id || '').replace(/_/g,' ');
+    const meta = `${m.cantidad_meta} ${m.unidad_primaria}`;
+    const exec = `${m.cantidad_ejecutada || 0} ejecutado`;
+    return `<div class="mision-row">
+      <div class="mision-info">
+        <div class="mision-name">${ETAPA_NOMBRES[m.etapa_id]||m.etapa_id} — ${nombre}${m.nivel?' · '+m.nivel:''}</div>
+        <div class="mision-meta">Meta: ${meta} · ${exec}</div>
+      </div>
+      <div class="mision-progress">
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>
+      <div class="mision-pct" style="color:${color}">${pct.toFixed(0)}%</div>
+      <div class="etapa-estado badge-${m.estado}">${m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—'}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── MATERIALES ──
+async function cargarMateriales() {
+  const { data } = await db.from('proyecto_misiones')
+    .select('etapa_id,mision_id,nivel,cantidad_meta,unidad_primaria,cantidad_ejecutada,cantidad_meta_sec,unidad_secundaria,cantidad_ejecutada_sec,estado')
+    .eq('proyecto_id', proyectoId)
+    .neq('estado', 'pendiente')
+    .order('etapa_id');
+
+  if (!data?.length) {
+    document.getElementById('materiales-list').innerHTML = '<div class="empty">Sin datos de cantidades aún.</div>';
+    return;
+  }
+
+  document.getElementById('materiales-list').innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead>
+        <tr style="border-bottom:2px solid var(--g1);">
+          <th style="text-align:left;padding:8px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g5);">Misión</th>
+          <th style="text-align:right;padding:8px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g5);">Meta</th>
+          <th style="text-align:right;padding:8px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g5);">Ejecutado</th>
+          <th style="text-align:right;padding:8px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g5);">%</th>
+          <th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g5);">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(m => {
+          const pct = m.cantidad_meta > 0 ? Math.min(Math.round(m.cantidad_ejecutada / m.cantidad_meta * 100), 100) : 0;
+          const color = pct === 100 ? 'var(--green)' : pct > 50 ? 'var(--amber)' : pct > 0 ? 'var(--ad)' : 'var(--g5)';
+          return `<tr style="border-bottom:1px solid var(--g1);">
+            <td style="padding:9px 6px;">
+              <div style="font-weight:500;">${(m.mision_id||'').replace(/_/g,' ')}</div>
+              <div style="font-size:11px;color:var(--g5);">${ETAPA_NOMBRES[m.etapa_id]||m.etapa_id}${m.nivel?' · '+m.nivel:''}</div>
+            </td>
+            <td style="text-align:right;padding:9px 6px;color:var(--g7);">${m.cantidad_meta} ${m.unidad_primaria||''}</td>
+            <td style="text-align:right;padding:9px 6px;font-weight:600;color:${color};">${m.cantidad_ejecutada||0} ${m.unidad_primaria||''}</td>
+            <td style="text-align:right;padding:9px 6px;font-family:'Syne',sans-serif;font-weight:800;color:${color};">${pct}%</td>
+            <td style="text-align:center;padding:9px 6px;"><span class="etapa-estado badge-${m.estado}">${m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—'}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── EQUIPO ──
+async function cargarEquipo() {
+  const { data: workers } = await db.from('workers').select('id,nombre,rol').eq('proyecto_id', proyectoId);
+  const { data: avances } = await db.from('avances').select('trabajador_id,timestamp_mensaje').eq('proyecto_id', proyectoId);
+
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const semana = new Date(); semana.setDate(semana.getDate()-7);
+
+  const conteoPorWorker = {};
+  const hoySet = new Set();
+  let semanaCount = 0;
+
+  avances?.forEach(a => {
+    conteoPorWorker[a.trabajador_id] = (conteoPorWorker[a.trabajador_id] || 0) + 1;
+    const ts = new Date(a.timestamp_mensaje);
+    if (ts >= hoy) hoySet.add(a.trabajador_id);
+    if (ts >= semana) semanaCount++;
+  });
+
+  const ranking = (workers || []).map(w => ({
+    ...w, count: conteoPorWorker[w.id] || 0
+  })).sort((a,b) => b.count - a.count);
+
+  document.getElementById('e-total').textContent = workers?.length || 0;
+  document.getElementById('e-activos').textContent = hoySet.size;
+  document.getElementById('e-semana').textContent = semanaCount;
+  document.getElementById('e-top').textContent = ranking[0]?.nombre?.split(' ')[0] || '—';
+
+  if (!ranking.length) {
+    document.getElementById('equipo-list').innerHTML = '<div class="empty">Sin workers registrados.</div>';
+    return;
+  }
+
+  const max = ranking[0]?.count || 1;
+  document.getElementById('equipo-list').innerHTML = ranking.map((w,i) => {
+    const pct = Math.round(w.count / max * 100);
+    const color = i === 0 ? 'var(--green)' : i === 1 ? 'var(--amber)' : i >= ranking.length-1 ? 'var(--red)' : 'var(--g5)';
+    const initials = w.nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    return `<div class="worker-row">
+      <div class="worker-rank">#${i+1}</div>
+      <div class="worker-avatar">${initials}</div>
+      <div class="worker-info">
+        <div class="worker-name">${w.nombre}</div>
+        <div class="worker-meta">${w.rol||'worker'} · ${w.count} avances</div>
+      </div>
+      <div class="worker-bar">
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>
+      <div class="worker-score" style="color:${color}">${w.count}</div>
+    </div>`;
+  }).join('');
+}
+
+// Auto-refresh cada 30s
+setInterval(cargarTodo, 30000);
 cargarProyectos();
 </script>
 </body>
