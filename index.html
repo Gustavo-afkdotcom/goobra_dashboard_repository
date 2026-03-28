@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GO OBRA — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --amarillo: #F5C800;
+    --negro: #0A0A0A;
+    --gris-oscuro: #141414;
+    --gris-medio: #1E1E1E;
+    --gris-borde: #2A2A2A;
+    --gris-texto: #888;
+    --blanco: #F0EDE8;
+    --rojo: #E03A3A;
+    --verde: #2ECC71;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--negro);
+    color: var(--blanco);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    height: 56px;
+    border-bottom: 1px solid var(--gris-borde);
+    background: var(--negro);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 3px;
+    color: var(--amarillo);
+  }
+
+  .logo span { color: var(--blanco); }
+
+  .header-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .proyecto-selector {
+    background: var(--gris-medio);
+    border: 1px solid var(--gris-borde);
+    color: var(--blanco);
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+  }
+
+  .live-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--gris-texto);
+  }
+
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--verde);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* LAYOUT */
+  .main {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .grid-top {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  /* STAT CARDS */
+  .stat-card {
+    background: var(--gris-medio);
+    border: 1px solid var(--gris-borde);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: var(--amarillo);
+  }
+
+  .stat-card.alerta::before { background: var(--rojo); }
+  .stat-card.ok::before { background: var(--verde); }
+
+  .stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--gris-texto);
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 1px;
+    color: var(--blanco);
+    line-height: 1;
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--gris-texto);
+    margin-top: 4px;
+  }
+
+  /* ETAPAS */
+  .section-title {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gris-texto);
+    margin-bottom: 1rem;
+  }
+
+  .grid-bottom {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  .panel {
+    background: var(--gris-medio);
+    border: 1px solid var(--gris-borde);
+    border-radius: 6px;
+    padding: 1.5rem;
+  }
+
+  /* ETAPAS PROGRESS */
+  .etapa-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 60px;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .etapa-row:last-child { margin-bottom: 0; }
+
+  .etapa-nombre {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--blanco);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .etapa-full { font-size: 10px; color: var(--gris-texto); }
+
+  .progress-track {
+    height: 6px;
+    background: var(--gris-borde);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: var(--amarillo);
+    border-radius: 3px;
+    transition: width 0.8s ease;
+  }
+
+  .progress-fill.activa { background: var(--amarillo); }
+  .progress-fill.completada { background: var(--verde); }
+  .progress-fill.pendiente { background: var(--gris-borde); }
+
+  .etapa-pct {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--blanco);
+    text-align: right;
+  }
+
+  /* FEED DE AVANCES */
+  .avance-item {
+    display: flex;
+    gap: 1rem;
+    padding: 0.875rem 0;
+    border-bottom: 1px solid var(--gris-borde);
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .avance-item:last-child { border-bottom: none; }
+
+  .avance-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--amarillo);
+    flex-shrink: 0;
+    margin-top: 5px;
+  }
+
+  .avance-dot.desviacion { background: var(--rojo); }
+
+  .avance-body { flex: 1; }
+
+  .avance-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 3px;
+  }
+
+  .avance-mision {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--blanco);
+  }
+
+  .avance-time {
+    font-size: 11px;
+    color: var(--gris-texto);
+    white-space: nowrap;
+    margin-left: 1rem;
+  }
+
+  .avance-meta {
+    font-size: 12px;
+    color: var(--gris-texto);
+  }
+
+  .avance-cantidad {
+    display: inline-block;
+    background: rgba(245, 200, 0, 0.1);
+    color: var(--amarillo);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-top: 4px;
+  }
+
+  .badge-desviacion {
+    display: inline-block;
+    background: rgba(224, 58, 58, 0.15);
+    color: var(--rojo);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-left: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* LOADING */
+  .loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--gris-texto);
+    font-size: 13px;
+  }
+
+  .spinner {
+    width: 24px; height: 24px;
+    border: 2px solid var(--gris-borde);
+    border-top-color: var(--amarillo);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 2rem;
+    color: var(--gris-texto);
+    font-size: 13px;
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .grid-top { grid-template-columns: repeat(2, 1fr); }
+    .grid-bottom { grid-template-columns: 1fr; }
+    .main { padding: 1rem; }
+  }
+
+  .refresh-btn {
+    background: none;
+    border: 1px solid var(--gris-borde);
+    color: var(--gris-texto);
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .refresh-btn:hover { border-color: var(--amarillo); color: var(--amarillo); }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">GO<span> OBRA</span></div>
+  <div class="header-meta">
+    <select class="proyecto-selector" id="proyectoSelect" onchange="cargarDatos()">
+      <option value="">Cargando proyectos...</option>
+    </select>
+    <button class="refresh-btn" onclick="cargarDatos()">↻ Actualizar</button>
+    <div class="live-dot"><div class="dot"></div> En vivo</div>
+  </div>
+</header>
+
+<main class="main">
+  <div class="grid-top">
+    <div class="stat-card" id="card-avances">
+      <div class="stat-label">Avances hoy</div>
+      <div class="stat-value" id="stat-avances-hoy">—</div>
+      <div class="stat-sub" id="stat-avances-sub">cargando...</div>
+    </div>
+    <div class="stat-card" id="card-workers">
+      <div class="stat-label">Workers activos</div>
+      <div class="stat-value" id="stat-workers">—</div>
+      <div class="stat-sub">reportaron hoy</div>
+    </div>
+    <div class="stat-card alerta" id="card-desviaciones">
+      <div class="stat-label">Desviaciones</div>
+      <div class="stat-value" id="stat-desviaciones">—</div>
+      <div class="stat-sub">requieren atención</div>
+    </div>
+    <div class="stat-card ok" id="card-confianza">
+      <div class="stat-label">Confianza promedio</div>
+      <div class="stat-value" id="stat-confianza">—</div>
+      <div class="stat-sub">de los reportes</div>
+    </div>
+  </div>
+
+  <div class="grid-bottom">
+    <div class="panel">
+      <div class="section-title">Progreso por etapa</div>
+      <div id="etapas-container"><div class="loading"><div class="spinner"></div>Cargando etapas...</div></div>
+    </div>
+    <div class="panel">
+      <div class="section-title">Últimos avances</div>
+      <div id="feed-container"><div class="loading"><div class="spinner"></div>Cargando avances...</div></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const SUPABASE_URL = 'https://muyezsssnzlxavchabum.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
+
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const ETAPAS = [
+  { id: 'prel',  nombre: 'PREL',  full: 'Preliminares' },
+  { id: 'mvt',   nombre: 'MVT',   full: 'Movimiento de tierras' },
+  { id: 'cim',   nombre: 'CIM',   full: 'Cimentación' },
+  { id: 'estr',  nombre: 'ESTR',  full: 'Estructura' },
+  { id: 'mamp',  nombre: 'MAMP',  full: 'Mampostería' },
+  { id: 'redes', nombre: 'REDES', full: 'Redes' },
+  { id: 'acab',  nombre: 'ACAB',  full: 'Acabados' },
+  { id: 'urb',   nombre: 'URB',   full: 'Urbanismo' },
+  { id: 'entr',  nombre: 'ENTR',  full: 'Entrega' },
+];
+
+let proyectoActual = null;
+
+async function cargarProyectos() {
+  const { data } = await db.from('proyectos').select('id, nombre').eq('estado', 'activo');
+  const sel = document.getElementById('proyectoSelect');
+  if (!data || data.length === 0) {
+    sel.innerHTML = '<option value="">Sin proyectos activos</option>';
+    return;
+  }
+  sel.innerHTML = data.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
+  proyectoActual = data[0].id;
+  cargarDatos();
+}
+
+async function cargarDatos() {
+  proyectoActual = document.getElementById('proyectoSelect').value;
+  if (!proyectoActual) return;
+  await Promise.all([cargarStats(), cargarEtapas(), cargarFeed()]);
+}
+
+async function cargarStats() {
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  const hoyISO = hoy.toISOString();
+
+  const { data: avancesHoy } = await db
+    .from('avances')
+    .select('id, trabajador_id, desviacion_detectada, confianza')
+    .eq('proyecto_id', proyectoActual)
+    .gte('timestamp_mensaje', hoyISO);
+
+  const total = avancesHoy?.length || 0;
+  const workers = new Set(avancesHoy?.map(a => a.trabajador_id)).size;
+  const desviaciones = avancesHoy?.filter(a => a.desviacion_detectada).length || 0;
+  const confianzas = avancesHoy?.map(a => a.confianza) || [];
+  const pctAlta = confianzas.length > 0
+    ? Math.round((confianzas.filter(c => c === 'alta').length / confianzas.length) * 100)
+    : 0;
+
+  document.getElementById('stat-avances-hoy').textContent = total;
+  document.getElementById('stat-avances-sub').textContent = `registros desde las 00:00`;
+  document.getElementById('stat-workers').textContent = workers;
+  document.getElementById('stat-desviaciones').textContent = desviaciones;
+  document.getElementById('stat-confianza').textContent = pctAlta + '%';
+
+  const cardDev = document.getElementById('card-desviaciones');
+  cardDev.querySelector('.stat-value').style.color = desviaciones > 0 ? 'var(--rojo)' : 'var(--verde)';
+}
+
+async function cargarEtapas() {
+  const { data } = await db
+    .from('avances')
+    .select('etapa_id, cantidad_primaria_valor')
+    .eq('proyecto_id', proyectoActual);
+
+  const conteo = {};
+  ETAPAS.forEach(e => { conteo[e.id] = 0; });
+  data?.forEach(a => {
+    if (conteo[a.etapa_id] !== undefined) {
+      conteo[a.etapa_id] += (a.cantidad_primaria_valor || 0);
+    }
+  });
+
+  const maxVal = Math.max(...Object.values(conteo), 1);
+  const etapasConDatos = ETAPAS.filter(e => conteo[e.id] > 0);
+  const etapasMostrar = etapasConDatos.length > 0 ? ETAPAS : ETAPAS.slice(0, 5);
+
+  const html = etapasMostrar.map(e => {
+    const val = conteo[e.id];
+    const pct = Math.round((val / maxVal) * 100);
+    const clase = val > 0 ? 'activa' : 'pendiente';
+    return `
+      <div class="etapa-row">
+        <div>
+          <div class="etapa-nombre">${e.nombre}</div>
+          <div class="etapa-full">${e.full}</div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill ${clase}" style="width:${pct}%"></div>
+        </div>
+        <div class="etapa-pct">${val > 0 ? val.toLocaleString() : '—'}</div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('etapas-container').innerHTML = html ||
+    '<div class="empty">Sin avances registrados aún</div>';
+}
+
+async function cargarFeed() {
+  const { data } = await db
+    .from('avances')
+    .select('etapa_id, mision_id, nivel, cantidad_primaria_valor, cantidad_primaria_unidad, desviacion_detectada, desviacion_motivo, confianza, timestamp_mensaje, trabajador_id')
+    .eq('proyecto_id', proyectoActual)
+    .order('timestamp_mensaje', { ascending: false })
+    .limit(15);
+
+  if (!data || data.length === 0) {
+    document.getElementById('feed-container').innerHTML =
+      '<div class="empty">Sin avances registrados aún.<br>Envía un mensaje al bot de Telegram.</div>';
+    return;
+  }
+
+  const { data: workers } = await db.from('workers').select('id, nombre').eq('proyecto_id', proyectoActual);
+  const workerMap = {};
+  workers?.forEach(w => { workerMap[w.id] = w.nombre; });
+
+  const html = data.map(a => {
+    const ts = new Date(a.timestamp_mensaje);
+    const hora = ts.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    const fecha = ts.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
+    const ahora = new Date();
+    const diff = Math.round((ahora - ts) / 60000);
+    const tiempoStr = diff < 60 ? `hace ${diff}m` : diff < 1440 ? `hace ${Math.round(diff/60)}h` : fecha;
+
+    const nombreWorker = workerMap[a.trabajador_id] || a.trabajador_id;
+    const cantidad = a.cantidad_primaria_valor
+      ? `${a.cantidad_primaria_valor} ${a.cantidad_primaria_unidad || ''}`
+      : '';
+    const misionLabel = a.mision_id ? a.mision_id.replace(/_/g, ' ') : a.etapa_id;
+
+    return `
+      <div class="avance-item">
+        <div class="avance-dot ${a.desviacion_detectada ? 'desviacion' : ''}"></div>
+        <div class="avance-body">
+          <div class="avance-top">
+            <div class="avance-mision">${misionLabel}${a.nivel ? ' · ' + a.nivel : ''}
+              ${a.desviacion_detectada ? '<span class="badge-desviacion">⚠ desviación</span>' : ''}
+            </div>
+            <div class="avance-time">${tiempoStr}</div>
+          </div>
+          <div class="avance-meta">${nombreWorker}</div>
+          ${cantidad ? `<div class="avance-cantidad">${cantidad}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('feed-container').innerHTML = html;
+}
+
+// Auto-refresh cada 30 segundos
+setInterval(cargarDatos, 30000);
+
+// Inicio
+cargarProyectos();
+</script>
+</body>
+</html>
