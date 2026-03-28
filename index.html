@@ -446,7 +446,7 @@ function renderGantt(){
 
   const weekCols=weeks.map((w,i)=>{
     const isCur=today>=w&&today<new Date(w.getTime()+7*86400000);
-    return`<div class="gantt-week ${isCur?'cur':'}">${w.getDate()}</div>`;
+    return`<div class="gantt-week ${isCur?'cur':''}">` + w.getDate() + `</div>`;
   }).join('');
 
   // Total cols = 200px label + weeks*flex
