@@ -8,595 +8,546 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
-  --black:#0a0a0a;--g9:#111;--g8:#1c1c1c;--g7:#2e2e2e;--g5:#6b6b6b;
-  --g3:#c4c4c4;--g1:#f2f1ef;--g0:#f8f7f5;--white:#fff;
-  --amber:#e8a020;--al:#fdf3dc;--ad:#c4821a;
-  --red:#c0392b;--rl:#fdf0ef;--green:#1a7a4a;--gl:#edf7f2;
+  --bg:#0a0a0a;--bg2:#141414;--bg3:#1e1e1e;--bg4:#2a2a2a;
+  --border:#2a2a2a;--border2:#363636;
+  --text:#f0ede8;--text2:#888;--text3:#555;
+  --amber:#e8a020;--amber-dim:rgba(232,160,32,.12);--amber-border:rgba(232,160,32,.25);
+  --red:#c0392b;--red-dim:rgba(192,57,43,.12);--red-border:rgba(192,57,43,.25);
+  --green:#1a7a4a;--green-dim:rgba(26,122,74,.12);--green-border:rgba(26,122,74,.25);
+  --blue:#1a5a8a;--blue-dim:rgba(26,90,138,.15);
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'DM Sans',sans-serif;background:var(--g0);color:var(--g9);font-size:14px;min-height:100vh;}
-a{text-decoration:none;color:inherit;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
 
 /* HEADER */
-.header{background:var(--black);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
-.logo{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--amber);letter-spacing:2px;}
-.logo span{color:#fff;}
-.header-right{display:flex;align-items:center;gap:1rem;}
-.proyecto-sel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;padding:6px 12px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;}
-.live{display:flex;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.5);}
-.live-dot{width:7px;height:7px;border-radius:50%;background:#2ecc71;animation:pulse 2s infinite;}
+.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 1.5rem;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--amber);letter-spacing:3px;}
+.logo span{color:var(--text);}
+.hdr-r{display:flex;align-items:center;gap:.75rem;}
+.proj-sel{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:5px 10px;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;}
+.live{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#2ecc71;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.refresh-btn{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.6);padding:5px 10px;border-radius:4px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;}
-.refresh-btn:hover{border-color:var(--amber);color:var(--amber);}
+.btn-sm{background:none;border:1px solid var(--border2);color:var(--text2);padding:4px 9px;border-radius:4px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.btn-sm:hover{border-color:var(--amber);color:var(--amber);}
 
 /* TABS */
-.tabs{background:#fff;border-bottom:1px solid var(--g1);padding:0 2rem;display:flex;gap:0;position:sticky;top:56px;z-index:99;}
-.tab{padding:14px 20px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--g5);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;align-items:center;gap:7px;}
-.tab:hover{color:var(--g9);}
-.tab.on{color:var(--g9);border-bottom-color:var(--amber);}
-.tab-ico{font-size:14px;}
+.tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;gap:0;position:sticky;top:52px;z-index:199;overflow-x:auto;}
+.tab{padding:12px 16px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:all .15s;}
+.tab:hover{color:var(--text);}
+.tab.on{color:var(--amber);border-bottom-color:var(--amber);}
 
-/* MAIN */
-.main{padding:1.5rem 2rem;max-width:1400px;margin:0 auto;}
-.tab-panel{display:none;}
-.tab-panel.on{display:block;}
+/* LAYOUT */
+.main{padding:1.25rem 1.5rem;max-width:1440px;margin:0 auto;}
+.tp{display:none;}
+.tp.on{display:block;}
 
 /* STAT CARDS */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem;}
-.stat{background:#fff;border:1px solid var(--g1);border-radius:10px;padding:1.25rem 1.5rem;position:relative;overflow:hidden;}
-.stat::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--amber);}
-.stat.red::before{background:var(--red);}
-.stat.green::before{background:var(--green);}
-.stat-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--g5);margin-bottom:.5rem;}
-.stat-value{font-family:'Syne',sans-serif;font-size:32px;font-weight:800;line-height:1;color:var(--g9);}
-.stat-sub{font-size:11px;color:var(--g5);margin-top:4px;}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.25rem;}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;position:relative;overflow:hidden;}
+.sc::before{content:'';position:absolute;top:0;left:0;width:2px;height:100%;background:var(--amber);}
+.sc.r::before{background:var(--red);}
+.sc.g::before{background:var(--green);}
+.sc.b::before{background:#4a9edd;}
+.sl{font-size:10px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);margin-bottom:.4rem;}
+.sv{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1;color:var(--text);}
+.ss{font-size:11px;color:var(--text3);margin-top:3px;}
 
-/* PANEL GRID */
-.panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
-.panel-grid.wide{grid-template-columns:1fr;}
-.card{background:#fff;border:1px solid var(--g1);border-radius:10px;overflow:hidden;}
-.card-head{padding:14px 18px;border-bottom:1px solid var(--g1);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--g5);display:flex;justify-content:space-between;align-items:center;}
-.card-body{padding:1rem 1.25rem;}
+/* GRID */
+.pg2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.pg1{display:grid;grid-template-columns:1fr;gap:1rem;}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
+.ch{padding:11px 16px;border-bottom:1px solid var(--border);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);display:flex;justify-content:space-between;align-items:center;}
+.cb{padding:1rem;}
 
-/* ETAPAS */
-.etapa-row{display:grid;grid-template-columns:100px 1fr 80px 50px;align-items:center;gap:1rem;padding:8px 0;border-bottom:1px solid var(--g1);}
-.etapa-row:last-child{border-bottom:none;}
-.etapa-name{font-size:12px;font-weight:500;}
-.etapa-full{font-size:10px;color:var(--g5);}
-.bar-track{height:6px;background:var(--g1);border-radius:3px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:3px;background:var(--amber);transition:width .8s ease;}
-.bar-fill.done{background:var(--green);}
-.bar-fill.red{background:var(--red);}
-.etapa-pct{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;text-align:right;}
-.etapa-estado{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-align:center;}
-.badge-completada{background:var(--gl);color:var(--green);}
-.badge-en_curso{background:var(--al);color:var(--ad);}
-.badge-pendiente{background:var(--g1);color:var(--g5);}
+/* BARS */
+.bt{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;}
+.bf{height:100%;border-radius:3px;transition:width .6s ease;}
+
+/* ETAPA ROW */
+.er{display:grid;grid-template-columns:90px 1fr 54px 70px;align-items:center;gap:.75rem;padding:7px 0;border-bottom:1px solid var(--border);}
+.er:last-child{border-bottom:none;}
+.en{font-size:12px;font-weight:500;color:var(--text);}
+.ef{font-size:10px;color:var(--text3);}
+.ep{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;text-align:right;}
+.bdg{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;text-align:center;}
+.bdg-c{background:var(--green-dim);color:#2ecc71;border:1px solid var(--green-border);}
+.bdg-e{background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber-border);}
+.bdg-p{background:var(--bg4);color:var(--text3);border:1px solid var(--border2);}
 
 /* FEED */
-.feed-item{display:flex;gap:1rem;padding:10px 0;border-bottom:1px solid var(--g1);}
-.feed-item:last-child{border-bottom:none;}
-.feed-dot{width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:4px;}
-.feed-dot.desv{background:var(--red);}
-.feed-body{flex:1;}
-.feed-top{display:flex;justify-content:space-between;margin-bottom:2px;}
-.feed-mision{font-size:13px;font-weight:500;}
-.feed-time{font-size:11px;color:var(--g5);}
-.feed-meta{font-size:12px;color:var(--g5);}
-.feed-cant{display:inline-block;background:var(--al);color:var(--ad);font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;margin-top:3px;}
-.badge-desv{background:var(--rl);color:var(--red);font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;margin-left:6px;}
-
-/* MISIONES */
-.mision-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--g1);}
-.mision-row:last-child{border-bottom:none;}
-.mision-info{flex:1;}
-.mision-name{font-size:13px;font-weight:500;margin-bottom:2px;}
-.mision-meta{font-size:11px;color:var(--g5);}
-.mision-progress{width:120px;}
-.mision-pct{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;min-width:42px;text-align:right;}
+.fi{display:flex;gap:.75rem;padding:9px 0;border-bottom:1px solid var(--border);}
+.fi:last-child{border-bottom:none;}
+.fd{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:4px;}
+.fd.d{background:var(--red);}
+.fb{flex:1;}
+.ft{display:flex;justify-content:space-between;margin-bottom:2px;}
+.fm{font-size:13px;font-weight:500;color:var(--text);}
+.fti{font-size:11px;color:var(--text3);}
+.fme{font-size:11px;color:var(--text2);}
+.fc{display:inline-block;background:var(--amber-dim);color:var(--amber);font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;margin-top:3px;border:1px solid var(--amber-border);}
+.bd{background:var(--red-dim);color:var(--red);font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;margin-left:5px;border:1px solid var(--red-border);}
 
 /* ALERTAS */
-.alerta{display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:8px;margin-bottom:10px;}
-.alerta:last-child{margin-bottom:0;}
-.alerta.roja{background:var(--rl);border:1px solid rgba(192,57,43,.2);}
-.alerta.amarilla{background:var(--al);border:1px solid rgba(232,160,32,.25);}
-.alerta.verde{background:var(--gl);border:1px solid rgba(26,122,74,.2);}
-.alerta-ico{font-size:16px;flex-shrink:0;margin-top:1px;}
-.alerta-title{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;margin-bottom:3px;}
-.alerta.roja .alerta-title{color:var(--red);}
-.alerta.amarilla .alerta-title{color:var(--ad);}
-.alerta.verde .alerta-title{color:var(--green);}
-.alerta-desc{font-size:12px;color:var(--g5);line-height:1.5;}
+.al{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:7px;margin-bottom:8px;}
+.al:last-child{margin-bottom:0;}
+.al.r{background:var(--red-dim);border:1px solid var(--red-border);}
+.al.a{background:var(--amber-dim);border:1px solid var(--amber-border);}
+.al.g{background:var(--green-dim);border:1px solid var(--green-border);}
+.ai{font-size:14px;flex-shrink:0;margin-top:1px;}
+.at{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:2px;}
+.al.r .at{color:var(--red);}
+.al.a .at{color:var(--amber);}
+.al.g .at{color:#2ecc71;}
+.ad{font-size:12px;color:var(--text2);line-height:1.5;}
+
+/* MISIONES */
+.mr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.mr:last-child{border-bottom:none;}
+.mi{flex:1;}
+.mn{font-size:13px;font-weight:500;color:var(--text);margin-bottom:1px;}
+.mm{font-size:11px;color:var(--text2);}
+.mp{width:110px;}
+.mpc{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;min-width:38px;text-align:right;}
 
 /* EQUIPO */
-.worker-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--g1);}
-.worker-row:last-child{border-bottom:none;}
-.worker-rank{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:var(--g3);min-width:20px;}
-.worker-avatar{width:32px;height:32px;border-radius:50%;background:var(--al);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--ad);flex-shrink:0;}
-.worker-info{flex:1;}
-.worker-name{font-size:13px;font-weight:500;margin-bottom:1px;}
-.worker-meta{font-size:11px;color:var(--g5);}
-.worker-bar{flex:2;}
-.worker-score{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;min-width:36px;text-align:right;}
+.wr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.wr:last-child{border-bottom:none;}
+.wav{width:30px;height:30px;border-radius:50%;background:var(--amber-dim);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:var(--amber);flex-shrink:0;border:1px solid var(--amber-border);}
+.wi{flex:1;}
+.wn{font-size:13px;font-weight:500;color:var(--text);margin-bottom:1px;}
+.wm{font-size:11px;color:var(--text2);}
+.wb{flex:2;}
+.wsc{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;min-width:28px;text-align:right;}
+.wrk{font-size:10px;font-weight:700;color:var(--text3);min-width:18px;}
 
-/* EMPTY / LOADING */
-.empty{text-align:center;padding:3rem;color:var(--g5);font-size:13px;}
-.spinner{width:24px;height:24px;border:2px solid var(--g1);border-top-color:var(--amber);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1rem;}
+/* ── GANTT ── */
+.gantt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.gantt{min-width:900px;}
+.gantt-head{display:grid;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:0;}
+.gantt-month{text-align:center;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--amber);padding:6px 0;border-right:1px solid var(--border);}
+.gantt-weeks{display:flex;}
+.gantt-week{flex:1;text-align:center;font-size:10px;color:var(--text3);padding:4px 0;border-right:1px solid var(--border);}
+.gantt-week.cur{color:var(--amber);font-weight:700;}
+.gantt-body{}
+.gantt-row{display:flex;align-items:center;border-bottom:1px solid var(--border);min-height:36px;}
+.gantt-row:hover{background:rgba(255,255,255,.02);}
+.gantt-label{width:200px;flex-shrink:0;padding:6px 12px;border-right:1px solid var(--border);}
+.gantt-lname{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gantt-lsub{font-size:10px;color:var(--text3);}
+.gantt-cells{flex:1;display:flex;position:relative;height:36px;}
+.gantt-cell{flex:1;border-right:1px solid var(--border);height:100%;position:relative;}
+.gantt-cell.cur-week{background:rgba(232,160,32,.04);}
+.gantt-bar{position:absolute;top:50%;transform:translateY(-50%);height:18px;border-radius:3px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;z-index:2;cursor:pointer;}
+.gantt-bar:hover{filter:brightness(1.2);}
+.gantt-etapa-head{background:var(--bg3);padding:6px 12px;border-bottom:1px solid var(--border);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:6px;}
+.gantt-etapa-head span{cursor:pointer;font-size:12px;}
+.gantt-today{position:absolute;top:0;bottom:0;width:1px;background:rgba(232,160,32,.5);z-index:10;pointer-events:none;}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{text-align:left;padding:8px 8px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);}
+td{padding:9px 8px;border-bottom:1px solid var(--border);color:var(--text);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+
+/* FILTER */
+.fsel{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:4px 8px;border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;}
+
+/* EMPTY/LOAD */
+.empty{text-align:center;padding:2.5rem;color:var(--text2);font-size:13px;}
+.spin{width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto .75rem;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 @media(max-width:900px){
-  .stats-grid{grid-template-columns:repeat(2,1fr);}
-  .panel-grid{grid-template-columns:1fr;}
-  .tabs{overflow-x:auto;}
+  .sg{grid-template-columns:repeat(2,1fr);}
+  .pg2{grid-template-columns:1fr;}
   .main{padding:1rem;}
 }
 </style>
 </head>
 <body>
 
-<header class="header">
+<header class="hdr">
   <div class="logo">GO<span> OBRA</span></div>
-  <div class="header-right">
-    <select class="proyecto-sel" id="proyectoSelect" onchange="cargarTodo()">
-      <option>Cargando...</option>
-    </select>
-    <button class="refresh-btn" onclick="cargarTodo()">↻</button>
+  <div class="hdr-r">
+    <select class="proj-sel" id="psel" onchange="loadAll()"><option>Cargando...</option></select>
+    <button class="btn-sm" onclick="loadAll()">↻ Actualizar</button>
     <div class="live"><div class="live-dot"></div>En vivo</div>
   </div>
 </header>
 
 <nav class="tabs">
-  <div class="tab on" onclick="switchTab('dashboard',this)"><span class="tab-ico">📊</span>Dashboard</div>
-  <div class="tab" onclick="switchTab('alertas',this)"><span class="tab-ico">🔔</span>Alertas</div>
-  <div class="tab" onclick="switchTab('misiones',this)"><span class="tab-ico">✅</span>Misiones</div>
-  <div class="tab" onclick="switchTab('materiales',this)"><span class="tab-ico">📦</span>Materiales</div>
-  <div class="tab" onclick="switchTab('equipo',this)"><span class="tab-ico">👷</span>Equipo</div>
+  <div class="tab on"  onclick="sw('dashboard',this)">📊 Dashboard</div>
+  <div class="tab"     onclick="sw('alertas',this)">🔔 Alertas</div>
+  <div class="tab"     onclick="sw('misiones',this)">✅ Misiones</div>
+  <div class="tab"     onclick="sw('plan',this)">📅 Plan de obra</div>
+  <div class="tab"     onclick="sw('materiales',this)">📦 Materiales</div>
+  <div class="tab"     onclick="sw('equipo',this)">👷 Equipo</div>
 </nav>
 
 <div class="main">
 
-  <!-- ── DASHBOARD ── -->
-  <div class="tab-panel on" id="tp-dashboard">
-    <div class="stats-grid">
-      <div class="stat"><div class="stat-label">Avances hoy</div><div class="stat-value" id="s-hoy">—</div><div class="stat-sub" id="s-hoy-sub">cargando</div></div>
-      <div class="stat"><div class="stat-label">Workers activos</div><div class="stat-value" id="s-workers">—</div><div class="stat-sub">reportaron hoy</div></div>
-      <div class="stat red"><div class="stat-label">Desviaciones</div><div class="stat-value" id="s-desv">—</div><div class="stat-sub">requieren atención</div></div>
-      <div class="stat green"><div class="stat-label">Confianza promedio</div><div class="stat-value" id="s-conf">—</div><div class="stat-sub">de los reportes</div></div>
-    </div>
-    <div class="panel-grid">
-      <div class="card">
-        <div class="card-head">Progreso por etapa</div>
-        <div class="card-body" id="etapas-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
-      </div>
-      <div class="card">
-        <div class="card-head">Últimos avances</div>
-        <div class="card-body" id="feed-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
-      </div>
-    </div>
+<!-- DASHBOARD -->
+<div class="tp on" id="tp-dashboard">
+  <div class="sg">
+    <div class="sc"><div class="sl">Avances hoy</div><div class="sv" id="s-hoy">—</div><div class="ss" id="s-hoy-s">cargando</div></div>
+    <div class="sc b"><div class="sl">Workers activos</div><div class="sv" id="s-wrk">—</div><div class="ss">reportaron hoy</div></div>
+    <div class="sc r"><div class="sl">Desviaciones</div><div class="sv" id="s-desv">—</div><div class="ss">requieren atención</div></div>
+    <div class="sc g"><div class="sl">Confianza</div><div class="sv" id="s-conf">—</div><div class="ss">promedio reportes</div></div>
   </div>
-
-  <!-- ── ALERTAS ── -->
-  <div class="tab-panel" id="tp-alertas">
-    <div class="panel-grid wide">
-      <div class="card">
-        <div class="card-head">Alertas activas <span id="alerta-count"></span></div>
-        <div class="card-body" id="alertas-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
-      </div>
-    </div>
+  <div class="pg2">
+    <div class="card"><div class="ch">Progreso por etapa</div><div class="cb" id="etapas-l"><div class="empty"><div class="spin"></div>Cargando...</div></div></div>
+    <div class="card"><div class="ch">Últimos avances</div><div class="cb" id="feed-l"><div class="empty"><div class="spin"></div>Cargando...</div></div></div>
   </div>
-
-  <!-- ── MISIONES ── -->
-  <div class="tab-panel" id="tp-misiones">
-    <div class="stats-grid">
-      <div class="stat green"><div class="stat-label">Completadas</div><div class="stat-value" id="m-completadas">—</div></div>
-      <div class="stat"><div class="stat-label">En curso</div><div class="stat-value" id="m-encurso">—</div></div>
-      <div class="stat"><div class="stat-label">Pendientes</div><div class="stat-value" id="m-pendientes">—</div></div>
-      <div class="stat"><div class="stat-label">Avance global</div><div class="stat-value" id="m-global">—</div></div>
-    </div>
-    <div class="panel-grid wide">
-      <div class="card">
-        <div class="card-head">
-          Misiones activas
-          <select id="filtro-etapa" onchange="renderMisiones()" style="background:var(--g0);border:1px solid var(--g1);padding:4px 8px;border-radius:4px;font-size:11px;color:var(--g7);font-family:'DM Sans',sans-serif;">
-            <option value="">Todas las etapas</option>
-          </select>
-        </div>
-        <div class="card-body" id="misiones-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── MATERIALES ── -->
-  <div class="tab-panel" id="tp-materiales">
-    <div class="panel-grid wide">
-      <div class="card">
-        <div class="card-head">Resumen de cantidades ejecutadas por misión</div>
-        <div class="card-body" id="materiales-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── EQUIPO ── -->
-  <div class="tab-panel" id="tp-equipo">
-    <div class="stats-grid">
-      <div class="stat"><div class="stat-label">Workers totales</div><div class="stat-value" id="e-total">—</div></div>
-      <div class="stat green"><div class="stat-label">Activos hoy</div><div class="stat-value" id="e-activos">—</div></div>
-      <div class="stat"><div class="stat-label">Avances esta semana</div><div class="stat-value" id="e-semana">—</div></div>
-      <div class="stat"><div class="stat-label">Top worker</div><div class="stat-value" id="e-top" style="font-size:18px;">—</div></div>
-    </div>
-    <div class="panel-grid wide">
-      <div class="card">
-        <div class="card-head">Ranking por avances registrados</div>
-        <div class="card-body" id="equipo-list"><div class="empty"><div class="spinner"></div>Cargando...</div></div>
-      </div>
-    </div>
-  </div>
-
 </div>
 
+<!-- ALERTAS -->
+<div class="tp" id="tp-alertas">
+  <div class="pg1">
+    <div class="card"><div class="ch">Alertas activas <span id="al-cnt" style="color:var(--amber)"></span></div><div class="cb" id="alertas-l"><div class="empty"><div class="spin"></div>Cargando...</div></div></div>
+  </div>
+</div>
+
+<!-- MISIONES -->
+<div class="tp" id="tp-misiones">
+  <div class="sg">
+    <div class="sc g"><div class="sl">Completadas</div><div class="sv" id="m-c">—</div></div>
+    <div class="sc"><div class="sl">En curso</div><div class="sv" id="m-e">—</div></div>
+    <div class="sc"><div class="sl">Pendientes</div><div class="sv" id="m-p">—</div></div>
+    <div class="sc b"><div class="sl">Avance global</div><div class="sv" id="m-g">—</div></div>
+  </div>
+  <div class="pg1">
+    <div class="card">
+      <div class="ch">Misiones <select class="fsel" id="f-etapa" onchange="renderMis()"><option value="">Todas</option></select></div>
+      <div class="cb" id="mis-l"><div class="empty"><div class="spin"></div>Cargando...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PLAN DE OBRA (GANTT) -->
+<div class="tp" id="tp-plan">
+  <div class="card">
+    <div class="ch">
+      Cronograma
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1a7a4a"></span>Completada</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#e8a020"></span>En curso</span>
+        <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2a2a2a;border:1px solid #363636"></span>Pendiente</span>
+      </div>
+    </div>
+    <div class="gantt-wrap"><div id="gantt-container"><div class="empty"><div class="spin"></div>Cargando...</div></div></div>
+  </div>
+</div>
+
+<!-- MATERIALES -->
+<div class="tp" id="tp-materiales">
+  <div class="pg1">
+    <div class="card">
+      <div class="ch">Cantidades ejecutadas vs meta</div>
+      <div class="cb" id="mat-l"><div class="empty"><div class="spin"></div>Cargando...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- EQUIPO -->
+<div class="tp" id="tp-equipo">
+  <div class="sg">
+    <div class="sc"><div class="sl">Workers totales</div><div class="sv" id="e-tot">—</div></div>
+    <div class="sc g"><div class="sl">Activos hoy</div><div class="sv" id="e-act">—</div></div>
+    <div class="sc b"><div class="sl">Avances semana</div><div class="sv" id="e-sem">—</div></div>
+    <div class="sc"><div class="sl">Top worker</div><div class="sv" id="e-top" style="font-size:17px;">—</div></div>
+  </div>
+  <div class="pg1">
+    <div class="card"><div class="ch">Ranking por avances registrados</div><div class="cb" id="eq-l"><div class="empty"><div class="spin"></div>Cargando...</div></div></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
 <script>
-const SB_URL = 'https://muyezsssnzlxavchabum.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
-const { createClient } = supabase;
-const db = createClient(SB_URL, SB_KEY);
+const SB='https://muyezsssnzlxavchabum.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
+const {createClient}=supabase;
+const db=createClient(SB,SK);
 
-const ETAPA_NOMBRES = {
-  prel:'Preliminares', mvt:'Mov. tierras', cim:'Cimentación',
-  estr:'Estructura', mamp:'Mampostería', redes:'Redes',
-  acab:'Acabados', urb:'Urbanismo', entr:'Entrega'
-};
-const ETAPA_ORDER = ['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
+const EN={'prel':'Preliminares','mvt':'Mov. tierras','cim':'Cimentación','estr':'Estructura','mamp':'Mampostería','redes':'Redes','acab':'Acabados','urb':'Urbanismo','entr':'Entrega'};
+const EO=['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
+const GCOLS=['#1a7a4a','#2980b9','#8e44ad','#e8a020','#c0392b','#16a085','#d35400','#27ae60','#2c3e50'];
 
-let proyectoId = null;
-let allMisiones = [];
-let allWorkers = {};
+let PID=null, WMAPS={}, MDATA=[], currentTab='dashboard';
 
-// ── TAB SWITCH ──
-function switchTab(name, btn) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('on'));
+function sw(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('on'));
   btn.classList.add('on');
-  document.getElementById('tp-' + name).classList.add('on');
+  document.getElementById('tp-'+name).classList.add('on');
+  currentTab=name;
+  if(name==='plan') renderGantt();
 }
 
-// ── LOAD PROJECTS ──
-async function cargarProyectos() {
-  const { data } = await db.from('proyectos').select('id,nombre').eq('estado','activo');
-  const sel = document.getElementById('proyectoSelect');
-  if (!data?.length) { sel.innerHTML = '<option>Sin proyectos</option>'; return; }
-  sel.innerHTML = data.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
-  proyectoId = data[0].id;
-  sel.value = proyectoId;
-  cargarTodo();
+async function loadProjects(){
+  const {data}=await db.from('proyectos').select('id,nombre').eq('estado','activo');
+  const sel=document.getElementById('psel');
+  if(!data?.length){sel.innerHTML='<option>Sin proyectos</option>';return;}
+  sel.innerHTML=data.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  PID=data[0].id; sel.value=PID;
+  loadAll();
 }
 
-async function cargarTodo() {
-  proyectoId = document.getElementById('proyectoSelect').value;
-  if (!proyectoId) return;
-  await Promise.all([
-    cargarWorkers(),
-    cargarDashboard(),
-    cargarMisiones(),
-    cargarAlertas(),
-    cargarMateriales(),
-    cargarEquipo()
-  ]);
+async function loadAll(){
+  PID=document.getElementById('psel').value;
+  if(!PID) return;
+  await Promise.all([loadWorkers(),loadDash(),loadMisiones(),loadAlertas(),loadMateriales(),loadEquipo()]);
+  if(currentTab==='plan') renderGantt();
 }
 
-// ── WORKERS MAP ──
-async function cargarWorkers() {
-  const { data } = await db.from('workers').select('id,nombre,rol').eq('proyecto_id', proyectoId);
-  allWorkers = {};
-  data?.forEach(w => { allWorkers[w.id] = w; });
+async function loadWorkers(){
+  const {data}=await db.from('workers').select('id,nombre,rol').eq('proyecto_id',PID);
+  WMAPS={};
+  data?.forEach(w=>{WMAPS[w.id]=w;});
 }
 
 // ── DASHBOARD ──
-async function cargarDashboard() {
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const { data: avHoy } = await db.from('avances')
-    .select('id,trabajador_id,desviacion_detectada,confianza')
-    .eq('proyecto_id', proyectoId)
-    .gte('timestamp_mensaje', hoy.toISOString());
+async function loadDash(){
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  const {data:av}=await db.from('avances').select('id,trabajador_id,desviacion_detectada,confianza').eq('proyecto_id',PID).gte('timestamp_mensaje',hoy.toISOString());
+  const tot=av?.length||0;
+  const wrks=new Set(av?.map(a=>a.trabajador_id)).size;
+  const desv=av?.filter(a=>a.desviacion_detectada).length||0;
+  const confs=av?.map(a=>a.confianza)||[];
+  const pct=confs.length?Math.round(confs.filter(c=>c==='alta').length/confs.length*100):0;
+  document.getElementById('s-hoy').textContent=tot;
+  document.getElementById('s-hoy-s').textContent='desde las 00:00';
+  document.getElementById('s-wrk').textContent=wrks;
+  document.getElementById('s-desv').textContent=desv;
+  document.getElementById('s-conf').textContent=pct+'%';
 
-  const total = avHoy?.length || 0;
-  const workers = new Set(avHoy?.map(a => a.trabajador_id)).size;
-  const desv = avHoy?.filter(a => a.desviacion_detectada).length || 0;
-  const confs = avHoy?.map(a => a.confianza) || [];
-  const pctAlta = confs.length ? Math.round(confs.filter(c => c === 'alta').length / confs.length * 100) : 0;
-
-  document.getElementById('s-hoy').textContent = total;
-  document.getElementById('s-hoy-sub').textContent = 'desde las 00:00';
-  document.getElementById('s-workers').textContent = workers;
-  document.getElementById('s-desv').textContent = desv;
-  document.getElementById('s-conf').textContent = pctAlta + '%';
-
-  // Etapas
-  const { data: misiones } = await db.from('proyecto_misiones')
-    .select('etapa_id,cantidad_meta,cantidad_ejecutada,pct_avance,estado')
-    .eq('proyecto_id', proyectoId);
-
-  const etapaMap = {};
-  misiones?.forEach(m => {
-    if (!etapaMap[m.etapa_id]) etapaMap[m.etapa_id] = { meta: 0, exec: 0, count: 0, done: 0 };
-    etapaMap[m.etapa_id].meta += parseFloat(m.cantidad_meta || 0);
-    etapaMap[m.etapa_id].exec += parseFloat(m.cantidad_ejecutada || 0);
-    etapaMap[m.etapa_id].count++;
-    if (m.estado === 'completada') etapaMap[m.etapa_id].done++;
+  const {data:mis}=await db.from('proyecto_misiones').select('etapa_id,cantidad_meta,cantidad_ejecutada,estado').eq('proyecto_id',PID);
+  const em={};
+  mis?.forEach(m=>{
+    if(!em[m.etapa_id])em[m.etapa_id]={meta:0,exec:0};
+    em[m.etapa_id].meta+=parseFloat(m.cantidad_meta||0);
+    em[m.etapa_id].exec+=parseFloat(m.cantidad_ejecutada||0);
   });
+  const eh=EO.filter(e=>em[e]).map(e=>{
+    const p=em[e].meta>0?Math.min(Math.round(em[e].exec/em[e].meta*100),100):0;
+    const col=p===100?'var(--green)':p>0?'var(--amber)':'var(--bg4)';
+    return`<div class="er"><div><div class="en">${EN[e]||e}</div></div><div class="bt"><div class="bf" style="width:${p}%;background:${col}"></div></div><div class="ep" style="color:${col}">${p}%</div><div class="bdg ${p===100?'bdg-c':p>0?'bdg-e':'bdg-p'}">${p===100?'✓':p>0?'↗':'—'}</div></div>`;
+  }).join('')||'<div class="empty">Sin datos</div>';
+  document.getElementById('etapas-l').innerHTML=eh;
 
-  const html = ETAPA_ORDER.filter(e => etapaMap[e]).map(e => {
-    const d = etapaMap[e];
-    const pct = d.meta > 0 ? Math.min(Math.round(d.exec / d.meta * 100), 100) : 0;
-    const cls = pct === 100 ? 'done' : pct > 0 ? '' : 'red';
-    const color = pct === 100 ? 'var(--green)' : pct > 0 ? 'var(--amber)' : 'var(--g3)';
-    return `<div class="etapa-row">
-      <div><div class="etapa-name">${ETAPA_NOMBRES[e] || e}</div></div>
-      <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
-      <div class="etapa-pct" style="color:${color}">${pct}%</div>
-      <div class="etapa-estado badge-${pct===100?'completada':pct>0?'en_curso':'pendiente'}">${pct===100?'✓':pct>0?'↗':'—'}</div>
-    </div>`;
-  }).join('') || '<div class="empty">Sin datos de etapas</div>';
-
-  document.getElementById('etapas-list').innerHTML = html;
-
-  // Feed
-  const { data: feed } = await db.from('avances')
-    .select('etapa_id,mision_id,nivel,cantidad_primaria_valor,cantidad_primaria_unidad,desviacion_detectada,confianza,timestamp_mensaje,trabajador_id,raw_mensaje')
-    .eq('proyecto_id', proyectoId)
-    .order('timestamp_mensaje', { ascending: false })
-    .limit(12);
-
-  if (!feed?.length) {
-    document.getElementById('feed-list').innerHTML = '<div class="empty">Sin avances aún.<br>Envía un mensaje al bot de Telegram.</div>';
-    return;
-  }
-
-  document.getElementById('feed-list').innerHTML = feed.map(a => {
-    const ts = new Date(a.timestamp_mensaje);
-    const diff = Math.round((Date.now() - ts) / 60000);
-    const tiempo = diff < 60 ? `hace ${diff}m` : diff < 1440 ? `hace ${Math.round(diff/60)}h` : ts.toLocaleDateString('es-CO',{day:'numeric',month:'short'});
-    const nombre = allWorkers[a.trabajador_id]?.nombre || 'Worker';
-    const mision = (a.mision_id || a.etapa_id || '').replace(/_/g,' ');
-    const cant = a.cantidad_primaria_valor ? `${a.cantidad_primaria_valor} ${a.cantidad_primaria_unidad||''}` : '';
-    return `<div class="feed-item">
-      <div class="feed-dot ${a.desviacion_detectada?'desv':''}"></div>
-      <div class="feed-body">
-        <div class="feed-top">
-          <span class="feed-mision">${mision}${a.nivel?' · '+a.nivel:''}${a.desviacion_detectada?'<span class="badge-desv">⚠ desv.</span>':''}</span>
-          <span class="feed-time">${tiempo}</span>
-        </div>
-        <div class="feed-meta">${nombre}</div>
-        ${cant?`<span class="feed-cant">${cant}</span>`:''}
-      </div>
-    </div>`;
+  const {data:feed}=await db.from('avances').select('etapa_id,mision_id,nivel,cantidad_primaria_valor,cantidad_primaria_unidad,desviacion_detectada,timestamp_mensaje,trabajador_id').eq('proyecto_id',PID).order('timestamp_mensaje',{ascending:false}).limit(12);
+  if(!feed?.length){document.getElementById('feed-l').innerHTML='<div class="empty">Sin avances aún.</div>';return;}
+  document.getElementById('feed-l').innerHTML=feed.map(a=>{
+    const ts=new Date(a.timestamp_mensaje);
+    const diff=Math.round((Date.now()-ts)/60000);
+    const t=diff<60?`hace ${diff}m`:diff<1440?`hace ${Math.round(diff/60)}h`:ts.toLocaleDateString('es-CO',{day:'numeric',month:'short'});
+    const nom=WMAPS[a.trabajador_id]?.nombre||'Worker';
+    const mis=(a.mision_id||a.etapa_id||'').replace(/_/g,' ');
+    const cant=a.cantidad_primaria_valor?`${a.cantidad_primaria_valor} ${a.cantidad_primaria_unidad||''}`:'';
+    return`<div class="fi"><div class="fd ${a.desviacion_detectada?'d':''}"></div><div class="fb"><div class="ft"><span class="fm">${mis}${a.nivel?' · '+a.nivel:''}${a.desviacion_detectada?'<span class="bd">⚠</span>':''}</span><span class="fti">${t}</span></div><div class="fme">${nom}</div>${cant?`<span class="fc">${cant}</span>`:''}</div></div>`;
   }).join('');
 }
 
 // ── ALERTAS ──
-async function cargarAlertas() {
-  const { data: misiones } = await db.from('proyecto_misiones')
-    .select('etapa_id,mision_id,nivel,cantidad_meta,cantidad_ejecutada,pct_avance,estado,fecha_fin_plan')
-    .eq('proyecto_id', proyectoId);
-
-  const alertas = [];
-  const hoy = new Date();
-
-  misiones?.forEach(m => {
-    const pct = parseFloat(m.pct_avance || 0);
-    const fin = m.fecha_fin_plan ? new Date(m.fecha_fin_plan) : null;
-    const diasRestantes = fin ? Math.round((fin - hoy) / 86400000) : null;
-    const nombre = `${ETAPA_NOMBRES[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' ('+m.nivel+')':''}`;
-
-    // Misión vencida y no completada
-    if (fin && diasRestantes < 0 && m.estado !== 'completada') {
-      alertas.push({ tipo:'roja', ico:'▲', title:`Vencida: ${nombre}`, desc:`Tenía fecha límite ${fin.toLocaleDateString('es-CO')}. Lleva ${pct.toFixed(0)}% de avance.` });
-    }
-    // Misión por vencer en 3 días
-    else if (fin && diasRestantes >= 0 && diasRestantes <= 3 && m.estado !== 'completada') {
-      alertas.push({ tipo:'amarilla', ico:'◆', title:`Por vencer: ${nombre}`, desc:`Vence en ${diasRestantes} día(s). Avance actual: ${pct.toFixed(0)}%.` });
-    }
-    // Misión en curso con muy bajo avance
-    else if (m.estado === 'en_curso' && pct < 10) {
-      alertas.push({ tipo:'amarilla', ico:'◆', title:`Avance bajo: ${nombre}`, desc:`Solo ${pct.toFixed(1)}% ejecutado. Revisar con el equipo.` });
-    }
+async function loadAlertas(){
+  const {data:mis}=await db.from('proyecto_misiones').select('etapa_id,mision_id,nivel,cantidad_meta,cantidad_ejecutada,pct_avance,estado,fecha_fin_plan').eq('proyecto_id',PID);
+  const als=[];
+  const hoy=new Date();
+  mis?.forEach(m=>{
+    const pct=parseFloat(m.pct_avance||0);
+    const fin=m.fecha_fin_plan?new Date(m.fecha_fin_plan):null;
+    const dr=fin?Math.round((fin-hoy)/86400000):null;
+    const nm=`${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' ('+m.nivel+')':''}`;
+    if(fin&&dr<0&&m.estado!=='completada') als.push({t:'r',i:'▲',ti:`Vencida: ${nm}`,d:`Fecha límite ${fin.toLocaleDateString('es-CO')}. Avance: ${pct.toFixed(0)}%`});
+    else if(fin&&dr>=0&&dr<=3&&m.estado!=='completada') als.push({t:'a',i:'◆',ti:`Por vencer: ${nm}`,d:`Vence en ${dr} día(s). Avance: ${pct.toFixed(0)}%`});
+    else if(m.estado==='en_curso'&&pct<10) als.push({t:'a',i:'◆',ti:`Avance bajo: ${nm}`,d:`Solo ${pct.toFixed(1)}% ejecutado.`});
   });
-
-  // Desviaciones recientes
-  const { data: desv } = await db.from('avances')
-    .select('mision_id,desviacion_motivo,timestamp_mensaje,trabajador_id')
-    .eq('proyecto_id', proyectoId)
-    .eq('desviacion_detectada', true)
-    .order('timestamp_mensaje', { ascending: false })
-    .limit(5);
-
-  desv?.forEach(d => {
-    const nombre = allWorkers[d.trabajador_id]?.nombre || 'Worker';
-    alertas.push({ tipo:'roja', ico:'⚠', title:`Desviación: ${(d.mision_id||'').replace(/_/g,' ')}`, desc:`Reportada por ${nombre}: ${d.desviacion_motivo || 'sin detalle'}.` });
+  const {data:dv}=await db.from('avances').select('mision_id,desviacion_motivo,timestamp_mensaje,trabajador_id').eq('proyecto_id',PID).eq('desviacion_detectada',true).order('timestamp_mensaje',{ascending:false}).limit(5);
+  dv?.forEach(d=>{
+    const nom=WMAPS[d.trabajador_id]?.nombre||'Worker';
+    als.push({t:'r',i:'⚠',ti:`Desviación: ${(d.mision_id||'').replace(/_/g,' ')}`,d:`Reportada por ${nom}: ${d.desviacion_motivo||'sin detalle'}`});
   });
-
-  // Misiones completadas recientes (buenas noticias)
-  const { data: completadas } = await db.from('proyecto_misiones')
-    .select('etapa_id,mision_id,nivel')
-    .eq('proyecto_id', proyectoId)
-    .eq('estado', 'completada')
-    .limit(3);
-
-  completadas?.slice(0,2).forEach(m => {
-    alertas.push({ tipo:'verde', ico:'✓', title:`Completada: ${ETAPA_NOMBRES[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}`, desc:`Misión finalizada al 100%.${m.nivel?' '+m.nivel:''}` });
-  });
-
-  document.getElementById('alerta-count').textContent = alertas.length ? `· ${alertas.length}` : '';
-
-  if (!alertas.length) {
-    document.getElementById('alertas-list').innerHTML = '<div class="empty">Sin alertas activas. Todo en orden.</div>';
-    return;
-  }
-
-  document.getElementById('alertas-list').innerHTML = alertas.map(a =>
-    `<div class="alerta ${a.tipo}">
-      <span class="alerta-ico">${a.ico}</span>
-      <div><div class="alerta-title">${a.title}</div><div class="alerta-desc">${a.desc}</div></div>
-    </div>`
-  ).join('');
+  const {data:cp}=await db.from('proyecto_misiones').select('etapa_id,mision_id').eq('proyecto_id',PID).eq('estado','completada').limit(2);
+  cp?.forEach(m=>als.push({t:'g',i:'✓',ti:`Completada: ${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}`,d:'Misión finalizada al 100%.'}));
+  document.getElementById('al-cnt').textContent=als.length?`· ${als.length}`:'';
+  document.getElementById('alertas-l').innerHTML=als.length?als.map(a=>`<div class="al ${a.t}"><span class="ai">${a.i}</span><div><div class="at">${a.ti}</div><div class="ad">${a.d}</div></div></div>`).join(''):'<div class="empty">Sin alertas activas. Todo en orden.</div>';
 }
 
 // ── MISIONES ──
-async function cargarMisiones() {
-  const { data } = await db.from('proyecto_misiones')
-    .select('*')
-    .eq('proyecto_id', proyectoId)
-    .order('etapa_id');
-
-  allMisiones = data || [];
-
-  const completadas = allMisiones.filter(m => m.estado === 'completada').length;
-  const encurso = allMisiones.filter(m => m.estado === 'en_curso').length;
-  const pendientes = allMisiones.filter(m => m.estado === 'pendiente').length;
-  const globalPct = allMisiones.length ?
-    Math.round(allMisiones.reduce((s,m) => s + parseFloat(m.pct_avance||0), 0) / allMisiones.length) : 0;
-
-  document.getElementById('m-completadas').textContent = completadas;
-  document.getElementById('m-encurso').textContent = encurso;
-  document.getElementById('m-pendientes').textContent = pendientes;
-  document.getElementById('m-global').textContent = globalPct + '%';
-
-  // Filtro etapas
-  const etapas = [...new Set(allMisiones.map(m => m.etapa_id))];
-  const sel = document.getElementById('filtro-etapa');
-  sel.innerHTML = '<option value="">Todas las etapas</option>' +
-    etapas.map(e => `<option value="${e}">${ETAPA_NOMBRES[e]||e}</option>`).join('');
-
-  renderMisiones();
+async function loadMisiones(){
+  const {data}=await db.from('proyecto_misiones').select('*').eq('proyecto_id',PID).order('etapa_id');
+  MDATA=data||[];
+  const c=MDATA.filter(m=>m.estado==='completada').length;
+  const e=MDATA.filter(m=>m.estado==='en_curso').length;
+  const p=MDATA.filter(m=>m.estado==='pendiente').length;
+  const g=MDATA.length?Math.round(MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length):0;
+  document.getElementById('m-c').textContent=c;
+  document.getElementById('m-e').textContent=e;
+  document.getElementById('m-p').textContent=p;
+  document.getElementById('m-g').textContent=g+'%';
+  const etps=[...new Set(MDATA.map(m=>m.etapa_id))];
+  document.getElementById('f-etapa').innerHTML='<option value="">Todas</option>'+etps.map(e=>`<option value="${e}">${EN[e]||e}</option>`).join('');
+  renderMis();
 }
 
-function renderMisiones() {
-  const filtro = document.getElementById('filtro-etapa').value;
-  const lista = filtro ? allMisiones.filter(m => m.etapa_id === filtro) : allMisiones.filter(m => m.estado !== 'pendiente');
+function renderMis(){
+  const f=document.getElementById('f-etapa').value;
+  const lista=f?MDATA.filter(m=>m.etapa_id===f):MDATA.filter(m=>m.estado!=='pendiente');
+  if(!lista.length){document.getElementById('mis-l').innerHTML='<div class="empty">Sin misiones.</div>';return;}
+  document.getElementById('mis-l').innerHTML=lista.map(m=>{
+    const pct=parseFloat(m.pct_avance||0);
+    const col=pct===100?'var(--green)':pct>0?'var(--amber)':'var(--bg4)';
+    return`<div class="mr"><div class="mi"><div class="mn">${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}</div><div class="mm">Meta: ${m.cantidad_meta} ${m.unidad_primaria||''} · Ejecutado: ${m.cantidad_ejecutada||0}</div></div><div class="mp"><div class="bt"><div class="bf" style="width:${pct}%;background:${col}"></div></div></div><div class="mpc" style="color:${col}">${pct.toFixed(0)}%</div><div class="bdg ${m.estado==='completada'?'bdg-c':m.estado==='en_curso'?'bdg-e':'bdg-p'}">${m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—'}</div></div>`;
+  }).join('');
+}
 
-  if (!lista.length) {
-    document.getElementById('misiones-list').innerHTML = '<div class="empty">Sin misiones para mostrar.</div>';
-    return;
+// ── GANTT ──
+function renderGantt(){
+  if(!MDATA.length){document.getElementById('gantt-container').innerHTML='<div class="empty">Sin datos de misiones.</div>';return;}
+
+  // Calcular rango de fechas
+  const dates=MDATA.flatMap(m=>[m.fecha_inicio_plan,m.fecha_fin_plan].filter(Boolean).map(d=>new Date(d)));
+  if(!dates.length){document.getElementById('gantt-container').innerHTML='<div class="empty">Sin fechas planificadas.</div>';return;}
+
+  const minD=new Date(Math.min(...dates)); minD.setDate(1);
+  const maxD=new Date(Math.max(...dates)); maxD.setMonth(maxD.getMonth()+1); maxD.setDate(1);
+  const today=new Date();
+
+  // Generar semanas
+  const weeks=[];
+  let cur=new Date(minD);
+  while(cur<maxD){
+    weeks.push(new Date(cur));
+    cur.setDate(cur.getDate()+7);
   }
 
-  document.getElementById('misiones-list').innerHTML = lista.map(m => {
-    const pct = parseFloat(m.pct_avance || 0);
-    const color = pct === 100 ? 'var(--green)' : pct > 0 ? 'var(--amber)' : 'var(--g3)';
-    const nombre = (m.mision_id || '').replace(/_/g,' ');
-    const meta = `${m.cantidad_meta} ${m.unidad_primaria}`;
-    const exec = `${m.cantidad_ejecutada || 0} ejecutado`;
-    return `<div class="mision-row">
-      <div class="mision-info">
-        <div class="mision-name">${ETAPA_NOMBRES[m.etapa_id]||m.etapa_id} — ${nombre}${m.nivel?' · '+m.nivel:''}</div>
-        <div class="mision-meta">Meta: ${meta} · ${exec}</div>
-      </div>
-      <div class="mision-progress">
-        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-      </div>
-      <div class="mision-pct" style="color:${color}">${pct.toFixed(0)}%</div>
-      <div class="etapa-estado badge-${m.estado}">${m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—'}</div>
-    </div>`;
+  // Total días
+  const totalDays=(maxD-minD)/86400000;
+
+  function pct(date){return Math.max(0,Math.min(100,(date-minD)/86400000/totalDays*100));}
+
+  // Agrupar por mes para el header
+  const months={};
+  weeks.forEach((w,i)=>{
+    const k=w.toLocaleDateString('es-CO',{month:'short',year:'2-digit'});
+    if(!months[k])months[k]={start:i,count:0};
+    months[k].count++;
+  });
+
+  // Detectar semana actual
+  const todayPct=pct(today);
+
+  // Header meses
+  const monthCols=Object.entries(months).map(([name,{count}])=>
+    `<div class="gantt-month" style="grid-column:span ${count}">${name.toUpperCase()}</div>`
+  ).join('');
+
+  const weekCols=weeks.map((w,i)=>{
+    const isCur=today>=w&&today<new Date(w.getTime()+7*86400000);
+    return`<div class="gantt-week ${isCur?'cur':'}">${w.getDate()}</div>`;
   }).join('');
+
+  // Total cols = 200px label + weeks*flex
+  const colTemplate=`200px repeat(${weeks.length},1fr)`;
+
+  // Agrupar misiones por etapa
+  const byEtapa={};
+  EO.forEach(e=>{byEtapa[e]=[];});
+  MDATA.forEach(m=>{if(byEtapa[m.etapa_id])byEtapa[m.etapa_id].push(m);});
+
+  let rows='';
+  EO.forEach((eid,ei)=>{
+    const ms=byEtapa[eid];
+    if(!ms.length) return;
+    rows+=`<div class="gantt-etapa-head" style="grid-column:span ${weeks.length+1}">${EN[eid]||eid} <span style="color:var(--text3);font-weight:400;font-size:9px;text-transform:none;">(${ms.length} misiones)</span></div>`;
+    ms.forEach(m=>{
+      if(!m.fecha_inicio_plan||!m.fecha_fin_plan) return;
+      const ini=new Date(m.fecha_inicio_plan);
+      const fin=new Date(m.fecha_fin_plan);
+      const left=pct(ini);
+      const right=pct(fin);
+      const width=Math.max(right-left,0.5);
+      const col=m.estado==='completada'?'#1a7a4a':m.estado==='en_curso'?'#e8a020':'#2a2a2a';
+      const textCol=m.estado==='completada'?'#a8e6c0':m.estado==='en_curso'?'#0a0a0a':'#555';
+      const border=m.estado==='pendiente'?'border:1px solid #363636;':'';
+      const label=`${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}`;
+
+      // Celdas semana
+      const cellsHtml=weeks.map((w,wi)=>{
+        const isCur=today>=w&&today<new Date(w.getTime()+7*86400000);
+        return`<div class="gantt-cell ${isCur?'cur-week':''}"></div>`;
+      }).join('');
+
+      rows+=`<div class="gantt-row">
+        <div class="gantt-label"><div class="gantt-lname" title="${label}">${label}</div><div class="gantt-lsub">${m.cantidad_meta} ${m.unidad_primaria||''} · ${parseFloat(m.pct_avance||0).toFixed(0)}%</div></div>
+        <div class="gantt-cells">
+          ${cellsHtml}
+          <div class="gantt-bar" style="left:${left}%;width:${width}%;background:${col};color:${textCol};${border}" title="${label}: ${ini.toLocaleDateString('es-CO')} → ${fin.toLocaleDateString('es-CO')}">${parseFloat(m.pct_avance||0).toFixed(0)}%</div>
+          ${todayPct>0&&todayPct<100?`<div class="gantt-today" style="left:${todayPct}%"></div>`:''}
+        </div>
+      </div>`;
+    });
+  });
+
+  document.getElementById('gantt-container').innerHTML=`
+    <div class="gantt">
+      <div class="gantt-head" style="display:grid;grid-template-columns:${colTemplate};">
+        <div style="border-right:1px solid var(--border);padding:6px 12px;font-size:10px;color:var(--text3);">Misión</div>
+        ${monthCols}
+      </div>
+      <div class="gantt-head" style="display:grid;grid-template-columns:${colTemplate};">
+        <div style="border-right:1px solid var(--border);padding:4px 12px;font-size:10px;color:var(--amber);">HOY ${today.toLocaleDateString('es-CO',{day:'numeric',month:'short'})}</div>
+        ${weekCols}
+      </div>
+      <div class="gantt-body">${rows}</div>
+    </div>`;
+
+  // Scroll to today
+  const wrap=document.querySelector('.gantt-wrap');
+  if(wrap&&todayPct>0){
+    setTimeout(()=>{wrap.scrollLeft=(wrap.scrollWidth*todayPct/100)-wrap.clientWidth/2;},100);
+  }
 }
 
 // ── MATERIALES ──
-async function cargarMateriales() {
-  const { data } = await db.from('proyecto_misiones')
-    .select('etapa_id,mision_id,nivel,cantidad_meta,unidad_primaria,cantidad_ejecutada,cantidad_meta_sec,unidad_secundaria,cantidad_ejecutada_sec,estado')
-    .eq('proyecto_id', proyectoId)
-    .neq('estado', 'pendiente')
-    .order('etapa_id');
-
-  if (!data?.length) {
-    document.getElementById('materiales-list').innerHTML = '<div class="empty">Sin datos de cantidades aún.</div>';
-    return;
-  }
-
-  document.getElementById('materiales-list').innerHTML = `
-    <table style="width:100%;border-collapse:collapse;font-size:13px;">
-      <thead>
-        <tr style="border-bottom:2px solid var(--g1);">
-          <th style="text-align:left;padding:8px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g5);">Misión</th>
-          <th style="text-align:right;padding:8px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g5);">Meta</th>
-          <th style="text-align:right;padding:8px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g5);">Ejecutado</th>
-          <th style="text-align:right;padding:8px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g5);">%</th>
-          <th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--g5);">Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${data.map(m => {
-          const pct = m.cantidad_meta > 0 ? Math.min(Math.round(m.cantidad_ejecutada / m.cantidad_meta * 100), 100) : 0;
-          const color = pct === 100 ? 'var(--green)' : pct > 50 ? 'var(--amber)' : pct > 0 ? 'var(--ad)' : 'var(--g5)';
-          return `<tr style="border-bottom:1px solid var(--g1);">
-            <td style="padding:9px 6px;">
-              <div style="font-weight:500;">${(m.mision_id||'').replace(/_/g,' ')}</div>
-              <div style="font-size:11px;color:var(--g5);">${ETAPA_NOMBRES[m.etapa_id]||m.etapa_id}${m.nivel?' · '+m.nivel:''}</div>
-            </td>
-            <td style="text-align:right;padding:9px 6px;color:var(--g7);">${m.cantidad_meta} ${m.unidad_primaria||''}</td>
-            <td style="text-align:right;padding:9px 6px;font-weight:600;color:${color};">${m.cantidad_ejecutada||0} ${m.unidad_primaria||''}</td>
-            <td style="text-align:right;padding:9px 6px;font-family:'Syne',sans-serif;font-weight:800;color:${color};">${pct}%</td>
-            <td style="text-align:center;padding:9px 6px;"><span class="etapa-estado badge-${m.estado}">${m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—'}</span></td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>`;
+async function loadMateriales(){
+  const {data}=await db.from('proyecto_misiones').select('etapa_id,mision_id,nivel,cantidad_meta,unidad_primaria,cantidad_ejecutada,cantidad_meta_sec,unidad_secundaria,cantidad_ejecutada_sec,estado').eq('proyecto_id',PID).neq('estado','pendiente').order('etapa_id');
+  if(!data?.length){document.getElementById('mat-l').innerHTML='<div class="empty">Sin datos.</div>';return;}
+  document.getElementById('mat-l').innerHTML=`<table>
+    <thead><tr><th>Misión</th><th>Etapa</th><th style="text-align:right">Meta</th><th style="text-align:right">Ejecutado</th><th style="text-align:right">%</th><th>Estado</th></tr></thead>
+    <tbody>${data.map(m=>{
+      const pct=m.cantidad_meta>0?Math.min(Math.round(m.cantidad_ejecutada/m.cantidad_meta*100),100):0;
+      const col=pct===100?'var(--green)':pct>50?'var(--amber)':pct>0?'#d35400':'var(--text3)';
+      return`<tr><td>${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}</td><td style="color:var(--text2)">${EN[m.etapa_id]||m.etapa_id}</td><td style="text-align:right;color:var(--text2)">${m.cantidad_meta} ${m.unidad_primaria||''}</td><td style="text-align:right;font-weight:600;color:${col}">${m.cantidad_ejecutada||0} ${m.unidad_primaria||''}</td><td style="text-align:right;font-family:'Syne',sans-serif;font-weight:800;color:${col}">${pct}%</td><td><span class="bdg ${m.estado==='completada'?'bdg-c':m.estado==='en_curso'?'bdg-e':'bdg-p'}">${m.estado}</span></td></tr>`;
+    }).join('')}</tbody></table>`;
 }
 
 // ── EQUIPO ──
-async function cargarEquipo() {
-  const { data: workers } = await db.from('workers').select('id,nombre,rol').eq('proyecto_id', proyectoId);
-  const { data: avances } = await db.from('avances').select('trabajador_id,timestamp_mensaje').eq('proyecto_id', proyectoId);
-
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const semana = new Date(); semana.setDate(semana.getDate()-7);
-
-  const conteoPorWorker = {};
-  const hoySet = new Set();
-  let semanaCount = 0;
-
-  avances?.forEach(a => {
-    conteoPorWorker[a.trabajador_id] = (conteoPorWorker[a.trabajador_id] || 0) + 1;
-    const ts = new Date(a.timestamp_mensaje);
-    if (ts >= hoy) hoySet.add(a.trabajador_id);
-    if (ts >= semana) semanaCount++;
-  });
-
-  const ranking = (workers || []).map(w => ({
-    ...w, count: conteoPorWorker[w.id] || 0
-  })).sort((a,b) => b.count - a.count);
-
-  document.getElementById('e-total').textContent = workers?.length || 0;
-  document.getElementById('e-activos').textContent = hoySet.size;
-  document.getElementById('e-semana').textContent = semanaCount;
-  document.getElementById('e-top').textContent = ranking[0]?.nombre?.split(' ')[0] || '—';
-
-  if (!ranking.length) {
-    document.getElementById('equipo-list').innerHTML = '<div class="empty">Sin workers registrados.</div>';
-    return;
-  }
-
-  const max = ranking[0]?.count || 1;
-  document.getElementById('equipo-list').innerHTML = ranking.map((w,i) => {
-    const pct = Math.round(w.count / max * 100);
-    const color = i === 0 ? 'var(--green)' : i === 1 ? 'var(--amber)' : i >= ranking.length-1 ? 'var(--red)' : 'var(--g5)';
-    const initials = w.nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
-    return `<div class="worker-row">
-      <div class="worker-rank">#${i+1}</div>
-      <div class="worker-avatar">${initials}</div>
-      <div class="worker-info">
-        <div class="worker-name">${w.nombre}</div>
-        <div class="worker-meta">${w.rol||'worker'} · ${w.count} avances</div>
-      </div>
-      <div class="worker-bar">
-        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
-      </div>
-      <div class="worker-score" style="color:${color}">${w.count}</div>
-    </div>`;
+async function loadEquipo(){
+  const {data:ws}=await db.from('workers').select('id,nombre,rol').eq('proyecto_id',PID);
+  const {data:av}=await db.from('avances').select('trabajador_id,timestamp_mensaje').eq('proyecto_id',PID);
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  const sem=new Date(); sem.setDate(sem.getDate()-7);
+  const cnt={}, hoySet=new Set(); let semC=0;
+  av?.forEach(a=>{cnt[a.trabajador_id]=(cnt[a.trabajador_id]||0)+1; const ts=new Date(a.timestamp_mensaje); if(ts>=hoy)hoySet.add(a.trabajador_id); if(ts>=sem)semC++;});
+  const rank=(ws||[]).map(w=>({...w,n:cnt[w.id]||0})).sort((a,b)=>b.n-a.n);
+  document.getElementById('e-tot').textContent=ws?.length||0;
+  document.getElementById('e-act').textContent=hoySet.size;
+  document.getElementById('e-sem').textContent=semC;
+  document.getElementById('e-top').textContent=rank[0]?.nombre?.split(' ')[0]||'—';
+  if(!rank.length){document.getElementById('eq-l').innerHTML='<div class="empty">Sin workers.</div>';return;}
+  const mx=rank[0]?.n||1;
+  document.getElementById('eq-l').innerHTML=rank.map((w,i)=>{
+    const col=i===0?'var(--green)':i===1?'#4a9edd':i===rank.length-1&&rank.length>2?'var(--red)':'var(--text2)';
+    const ini=w.nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    return`<div class="wr"><div class="wrk">#${i+1}</div><div class="wav">${ini}</div><div class="wi"><div class="wn">${w.nombre}</div><div class="wm">${w.rol||'worker'} · ${w.n} avances</div></div><div class="wb"><div class="bt"><div class="bf" style="width:${Math.round(w.n/mx*100)}%;background:${col}"></div></div></div><div class="wsc" style="color:${col}">${w.n}</div></div>`;
   }).join('');
 }
 
-// Auto-refresh cada 30s
-setInterval(cargarTodo, 30000);
-cargarProyectos();
+setInterval(loadAll,30000);
+loadProjects();
 </script>
 </body>
 </html>
