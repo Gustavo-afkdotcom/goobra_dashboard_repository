@@ -548,6 +548,113 @@ async function loadEquipo(){
 
 setInterval(loadAll,30000);
 loadProjects();
+
+// ── MATERIALES — click por misión ──
+const MAT_DETALLE = {
+  'Cemento': {misiones:[
+    {n:'Levante muros interiores', cant:'0.18 bultos/m²', sem:'~32 bultos para 180m²'},
+    {n:'Pañete interior', cant:'0.20 bultos/m²', sem:'~28 bultos para 140m²'},
+    {n:'Contrapiso', cant:'0.12 bultos/m²', sem:'~18 bultos para 150m²'},
+  ]},
+  'Acero corrugado': {misiones:[
+    {n:'Columnas armado', cant:'18 kg/columna', sem:'~270 kg para 15 columnas'},
+    {n:'Placa entrepiso', cant:'3.5 kg/m²', sem:'~1.008 kg para 288m²'},
+    {n:'Vigas', cant:'12 kg/viga', sem:'~180 kg para 15 vigas'},
+  ]},
+  'Ladrillo bloque #4': {misiones:[
+    {n:'Levante muros interiores', cant:'32 un/m²', sem:'~5.760 un para 180m²'},
+  ]},
+  'Arena de peña': {misiones:[
+    {n:'Levante muros', cant:'0.025 m³/m²', sem:'~4.5 m³'},
+    {n:'Pañete interior', cant:'0.025 m³/m²', sem:'~3.5 m³'},
+  ]},
+  'Gravilla 3/4"': {misiones:[
+    {n:'Concreto en sitio', cant:'0.6 m³/m³', sem:'~8 m³'},
+  ]},
+  'Tubería PVC 4"': {misiones:[
+    {n:'Hidrosanitarias', cant:'1 tubo/6ml', sem:'~8 tubos para 48ml'},
+  ]},
+};
+
+(function rebuildMats(){
+  const el = document.getElementById('tv-mat-list');
+  if(!el) return;
+  el.innerHTML = '';
+  tvMats.forEach(m => {
+    const det = MAT_DETALLE[m.n];
+    const wrap = document.createElement('div');
+    wrap.style.borderBottom = '1px solid rgba(0,0,0,.05)';
+    const detId = 'md-'+m.n.replace(/[^a-z]/gi,'');
+    wrap.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 18px;cursor:${det?'pointer':'default'};user-select:none"
+           ${det?`onclick="toggleMatDet('${detId}',this)"`:''}">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--g9)">${m.n}${det?` <span id="arr-${detId}" style="font-size:10px;color:var(--g5);margin-left:4px">▾ por misión</span>`:''}
+          </div>
+          <div style="font-size:11px;color:var(--g5)">${m.u}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--g9)">${m.r}</div>
+          <div style="font-size:11px;font-weight:600;color:${m.o?'var(--red)':'var(--green)'}">${m.d}</div>
+        </div>
+      </div>
+      ${det?`<div id="${detId}" style="display:none;background:var(--g0);border-top:1px solid rgba(0,0,0,.05);padding:8px 18px 4px">
+        ${det.misiones.map(ms=>`
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04);font-size:12px">
+            <div><span style="color:var(--g7);font-weight:500">${ms.n}</span><span style="color:var(--g5);margin-left:6px">${ms.cant}</span></div>
+            <div style="color:var(--ad);font-weight:600;font-size:11px;white-space:nowrap;margin-left:12px">${ms.sem}</div>
+          </div>`).join('')}
+      </div>` : ''}
+    `;
+    el.appendChild(wrap);
+  });
+})();
+
+function toggleMatDet(id, header){
+  const det = document.getElementById(id);
+  const arr = document.getElementById('arr-'+id);
+  if(!det) return;
+  const open = det.style.display === 'block';
+  det.style.display = open ? 'none' : 'block';
+  if(arr) arr.textContent = open ? '▾ por misión' : '▴ ocultar';
+}
+
+// ── MISIONES — filtro de estado ──
+(function addMisFilter(){
+  const listDiv = document.getElementById('tv-mision-list');
+  if(!listDiv) return;
+  const filterBar = document.createElement('div');
+  filterBar.style.cssText='display:flex;gap:6px;padding:10px 18px;border-bottom:1px solid rgba(0,0,0,.06);flex-wrap:wrap';
+  filterBar.innerHTML=`
+    <button class="mfb on" onclick="filterMis('all',this)">Todas</button>
+    <button class="mfb" onclick="filterMis('curso',this)">En curso</button>
+    <button class="mfb" onclick="filterMis('pend',this)">Pendientes</button>
+    <button class="mfb" onclick="filterMis('done',this)">Completadas</button>
+  `;
+  listDiv.parentElement.insertBefore(filterBar, listDiv);
+  // Style the buttons
+  const style = document.createElement('style');
+  style.textContent=`.mfb{padding:4px 12px;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--g3);background:transparent;color:var(--g5);border-radius:2px;cursor:pointer;transition:all .15s}.mfb:hover{border-color:var(--g7);color:var(--g7)}.mfb.on{background:var(--black);color:var(--white);border-color:var(--black)}`;
+  document.head.appendChild(style);
+})();
+
+function filterMis(tipo, btn){
+  document.querySelectorAll('.mfb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const rows = document.querySelectorAll('#tv-mision-list > div');
+  rows.forEach(row=>{
+    const badge = row.querySelector('span[style*="border-radius"]');
+    if(!badge){row.style.display='';return;}
+    const txt = badge.textContent.toLowerCase();
+    const isCurso = txt.includes('curso');
+    const isPend = txt.includes('pendiente')||txt.includes('verificaci');
+    const isDone = txt.includes('verificado');
+    if(tipo==='all') row.style.display='';
+    else if(tipo==='curso') row.style.display = isCurso?'':'none';
+    else if(tipo==='pend') row.style.display = isPend?'':'none';
+    else if(tipo==='done') row.style.display = isDone?'':'none';
+  });
+}
 </script>
 </body>
 </html>
