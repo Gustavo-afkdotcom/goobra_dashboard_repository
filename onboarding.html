@@ -3,768 +3,648 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>GO Obra — Simula tu obra</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<title>GO Obra — Activa tu obra</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
-  --bg:#0a0a0a;--bg2:#111;--bg3:#181818;--bg4:#222;
-  --border:#1e1e1e;--border2:#2a2a2a;--border3:#333;
-  --text:#f0ede8;--text2:#888;--text3:#444;
-  --amber:#e8a020;--amber-d:rgba(232,160,32,.12);--amber-b:rgba(232,160,32,.25);
-  --green:#27ae60;--red:#c0392b;--blue:#2980b9;
+  --bg:#f5f2ed;--bg2:#ede9e2;--bg3:#fff;
+  --ink:#111;--ink2:#555;--ink3:#999;
+  --amber:#c8720a;--amber-l:#f5e6d0;--amber-ll:#fdf8f2;
+  --border:#ddd8ce;--border2:#c8c0b4;
+  --green:#1a6a3a;--red:#8a1a1a;
+  --r:10px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh}
 
-/* HEADER */
-.hdr{height:52px;display:flex;align-items:center;padding:0 24px;border-bottom:1px solid var(--border)}
-.logo{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--amber);letter-spacing:3px}
-.logo span{color:var(--text)}
-.hdr-r{margin-left:auto;font-size:11px;color:var(--text3)}
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 2rem;height:52px;display:flex;align-items:center;justify-content:space-between;background:rgba(245,242,237,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.logo{font-family:'Syne',sans-serif;font-size:17px;font-weight:800;color:var(--amber);letter-spacing:3px}
+.logo span{color:var(--ink)}
+.nav-r{display:flex;align-items:center;gap:1rem;font-size:13px;color:var(--ink2)}
+.nav-link{color:var(--ink2);text-decoration:none;transition:color .15s}
+.nav-link:hover{color:var(--amber)}
 
-/* PROGRESS */
-.prog-wrap{padding:0 24px;margin-top:0}
-.prog-track{height:2px;background:var(--border2);border-radius:1px;overflow:hidden}
-.prog-fill{height:100%;background:var(--amber);border-radius:1px;transition:width .4s ease}
-.prog-info{display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text3)}
-.prog-step{color:var(--amber);font-family:'Syne',sans-serif;font-weight:700}
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:5rem 2rem 3rem;max-width:960px;margin:0 auto}
+.hero-tag{display:inline-flex;align-items:center;gap:8px;font-family:'DM Mono',monospace;font-size:11px;color:var(--amber);border:1px solid var(--amber-l);background:var(--amber-ll);padding:5px 12px;border-radius:20px;margin-bottom:2rem;letter-spacing:.5px}
+.hero-tag::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--amber);flex-shrink:0}
+h1{font-family:'Syne',sans-serif;font-size:clamp(2.4rem,5vw,3.8rem);font-weight:800;line-height:1.08;color:var(--ink);margin-bottom:1.5rem}
+h1 em{font-style:normal;color:var(--amber)}
+.hero-sub{font-size:1.1rem;color:var(--ink2);line-height:1.7;max-width:540px;margin-bottom:2.5rem}
+.hero-cta{display:inline-flex;align-items:center;gap:10px;background:var(--amber);color:#fff;padding:14px 28px;border-radius:var(--r);font-size:15px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s}
+.hero-cta:hover{background:#a85e08;transform:translateY(-1px)}
+.hero-cta svg{width:16px;height:16px}
 
-/* MAIN */
-.main{max-width:680px;margin:0 auto;padding:48px 24px 80px}
+/* PASOS PREVIOS */
+.preview{padding:2rem;background:var(--bg2);border-radius:16px;border:1px solid var(--border);margin-bottom:2.5rem}
+.preview-title{font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--ink3);margin-bottom:1rem}
+.preview-steps{display:flex;gap:0;position:relative}
+.preview-steps::before{content:'';position:absolute;top:14px;left:14px;right:14px;height:1px;background:var(--border2)}
+.ps{display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;position:relative;z-index:1}
+.ps-n{width:28px;height:28px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:var(--ink2)}
+.ps-n.done{background:var(--amber);border-color:var(--amber);color:#fff}
+.ps-l{font-size:11px;color:var(--ink3);text-align:center;line-height:1.4}
 
-/* STEP */
-.step{display:none;animation:fadeUp .25s ease both}
-.step.on{display:block}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+/* FORM */
+#form-section{padding:2rem 2rem 4rem;max-width:960px;margin:0 auto}
+.form-card{background:var(--bg3);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.06)}
 
-.step-tag{display:inline-flex;align-items:center;gap:6px;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--amber);background:var(--amber-d);border:1px solid var(--amber-b);padding:4px 12px;border-radius:20px;margin-bottom:20px}
-.step-h{font-family:'Syne',sans-serif;font-size:clamp(26px,4vw,40px);font-weight:800;line-height:1.1;margin-bottom:12px}
-.step-sub{font-size:15px;color:var(--text2);line-height:1.65;font-weight:300;margin-bottom:32px}
+/* STEP HEADER */
+.step-header{padding:1.5rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1rem}
+.step-num{width:32px;height:32px;border-radius:50%;background:var(--amber);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;flex-shrink:0}
+.step-info h3{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.step-info p{font-size:12px;color:var(--ink3)}
 
-/* FORM ELEMENTS */
-.fg{margin-bottom:20px}
-.fl{display:block;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
-.fh{font-size:12px;color:var(--text3);margin-bottom:8px;display:block;font-weight:300}
-.fi,.fs{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:13px 16px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);outline:none;transition:border-color .15s;-webkit-appearance:none;appearance:none}
-.fi::placeholder{color:var(--text3)}
-.fi:focus,.fs:focus{border-color:var(--amber)}
-.fs{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
-.fs option{background:var(--bg2)}
-.irow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:480px){.irow{grid-template-columns:1fr}}
+/* STEP PROGRESS */
+.step-progress{height:3px;background:var(--border);position:relative;overflow:hidden}
+.step-fill{height:100%;background:var(--amber);transition:width .4s ease}
 
-/* CHIPS */
-.chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{padding:9px 18px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;transition:all .15s;background:none;font-family:'DM Sans',sans-serif}
-.chip:hover{border-color:var(--border3);color:var(--text)}
-.chip.on{background:var(--amber-d);border-color:var(--amber-b);color:var(--amber)}
-.chips.multi .chip.on{background:var(--amber-d);border-color:var(--amber-b);color:var(--amber)}
+/* STEP BODY */
+.step-body{padding:2rem;display:none}
+.step-body.active{display:block}
 
-/* CARDS (sistema constructivo) */
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
-.card{border:1px solid var(--border2);border-radius:10px;padding:16px;cursor:pointer;transition:all .15s;text-align:center;background:none}
-.card:hover{border-color:var(--border3);background:var(--bg2)}
-.card.on{border-color:var(--amber-b);background:var(--amber-d)}
-.card-ico{font-size:26px;margin-bottom:8px}
-.card-t{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--text);margin-bottom:3px}
-.card-d{font-size:11px;color:var(--text3);font-weight:300;line-height:1.4}
+/* FIELDS */
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.field-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+.field-grid.cols1{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:12px;font-weight:500;color:var(--ink2);letter-spacing:.3px}
+.field input,.field select,.field textarea{
+  padding:10px 12px;border:1px solid var(--border2);border-radius:7px;font-size:14px;font-family:'DM Sans',sans-serif;
+  background:var(--bg);color:var(--ink);outline:none;transition:border-color .15s
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--amber)}
+.field textarea{resize:vertical;min-height:72px}
+.field-hint{font-size:11px;color:var(--ink3);margin-top:2px}
 
-/* RANGE SLIDER */
-.sl-row{margin-bottom:6px}
-.sl-top{display:flex;justify-content:space-between;margin-bottom:6px}
-.sl-l{font-size:13px;color:var(--text2)}
-.sl-v{font-size:14px;font-weight:700;color:var(--amber);font-family:'Syne',sans-serif}
-input[type=range]{width:100%;height:3px;-webkit-appearance:none;background:var(--border2);border-radius:2px;outline:none;cursor:pointer;margin-bottom:4px}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--amber);border:2px solid var(--bg);cursor:pointer}
-.sl-marks{display:flex;justify-content:space-between;font-size:10px;color:var(--text3)}
-
-/* TEXTAREA */
-.fta{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;padding:13px 16px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text);outline:none;resize:vertical;min-height:80px;transition:border-color .15s}
-.fta:focus{border-color:var(--amber)}
-.fta::placeholder{color:var(--text3)}
-
-/* MISIONES CHECKLIST */
-.mis-list{display:flex;flex-direction:column;gap:6px}
-.mis-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;transition:all .15s;background:none}
-.mis-item:hover{border-color:var(--border3)}
-.mis-item.on{border-color:var(--amber-b);background:var(--amber-d)}
-.mis-ck{width:18px;height:18px;border:1px solid var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;transition:all .15s}
-.mis-item.on .mis-ck{background:var(--amber);border-color:var(--amber);color:var(--bg)}
-.mis-name{font-size:13px;font-weight:500;color:var(--text)}
-.mis-sub{font-size:11px;color:var(--text3);margin-top:1px}
-.mis-info{margin-left:auto;font-size:11px;color:var(--text3)}
-
-/* DESVIACION */
-.desv-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-@media(max-width:480px){.desv-cards{grid-template-columns:1fr}}
-.desv-card{border:1px solid var(--border2);border-radius:10px;padding:14px;cursor:pointer;transition:all .15s;background:none}
-.desv-card:hover{border-color:var(--border3)}
-.desv-card.on.pequeña{border-color:rgba(39,174,96,.4);background:rgba(39,174,96,.08)}
-.desv-card.on.mediana{border-color:rgba(232,160,32,.4);background:var(--amber-d)}
-.desv-card.on.grande{border-color:rgba(192,57,43,.4);background:rgba(192,57,43,.08)}
-.desv-ico{font-size:20px;margin-bottom:6px}
-.desv-t{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:3px}
-.desv-d{font-size:11px;color:var(--text3);line-height:1.4}
-
-/* WORKERS INPUT */
-.w-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin-bottom:10px}
-.w-add{padding:13px 16px;background:var(--border2);border:1px solid var(--border3);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;white-space:nowrap;font-family:'DM Sans',sans-serif;transition:all .15s}
-.w-add:hover{background:var(--border3);color:var(--text)}
-.w-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.w-tag{display:flex;align-items:center;gap:6px;padding:5px 10px 5px 12px;background:var(--bg2);border:1px solid var(--border2);border-radius:20px;font-size:12px;color:var(--text2)}
-.w-rm{cursor:pointer;color:var(--text3);font-size:14px;line-height:1;transition:color .1s}
-.w-rm:hover{color:var(--red)}
+/* TOGGLE CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:6px 12px;border-radius:20px;border:1px solid var(--border2);font-size:12px;cursor:pointer;transition:all .15s;color:var(--ink2);background:none;font-family:'DM Sans',sans-serif}
+.chip:hover{border-color:var(--amber);color:var(--amber)}
+.chip.on{background:var(--amber-l);border-color:var(--amber);color:var(--amber);font-weight:500}
 
 /* NAV BUTTONS */
-.fnav{display:flex;gap:10px;margin-top:36px}
-.btn-next{flex:1;padding:15px;background:var(--amber);border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:14px;font-weight:800;letter-spacing:.5px;color:var(--bg);cursor:pointer;transition:all .15s}
-.btn-next:hover{background:#d4911c;transform:translateY(-1px)}
-.btn-next:active{transform:scale(.98)}
-.btn-back{padding:15px 20px;background:none;border:1px solid var(--border2);border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--text3);cursor:pointer;transition:all .15s}
-.btn-back:hover{border-color:var(--border3);color:var(--text2)}
+.step-nav{display:flex;justify-content:space-between;align-items:center;padding:1.5rem 2rem;border-top:1px solid var(--border)}
+.btn-back{background:none;border:1px solid var(--border2);padding:10px 20px;border-radius:7px;font-size:13px;cursor:pointer;color:var(--ink2);font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-back:hover{border-color:var(--ink2);color:var(--ink)}
+.btn-next{background:var(--amber);color:#fff;border:none;padding:11px 24px;border-radius:7px;font-size:14px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:8px}
+.btn-next:hover{background:#a85e08}
+.btn-next:disabled{background:var(--ink3);cursor:not-allowed}
 
-/* SIMULATION SCREEN */
-#sim{display:none}
-#sim.on{display:block}
-.sim-intro{text-align:center;padding:40px 0 32px}
-.sim-h{font-family:'Syne',sans-serif;font-size:clamp(24px,4vw,38px);font-weight:800;margin-bottom:10px}
-.sim-sub{font-size:15px;color:var(--text2);font-weight:300;max-width:480px;margin:0 auto 28px}
-.sim-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
-.sim-card{background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:16px}
-.sim-card.alert{border-color:rgba(192,57,43,.3);background:rgba(192,57,43,.07)}
-.sim-card.warn{border-color:rgba(232,160,32,.3);background:var(--amber-d)}
-.sim-card.ok{border-color:rgba(39,174,96,.3);background:rgba(39,174,96,.07)}
-.sim-l{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
-.sim-v{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1;margin-bottom:3px}
-.sim-card.alert .sim-v{color:var(--red)}
-.sim-card.warn .sim-v{color:var(--amber)}
-.sim-card.ok .sim-v{color:var(--green)}
-.sim-d{font-size:11px;color:var(--text2)}
-.sim-card.alert .sim-d{color:rgba(192,57,43,.8)}
-.sim-card.warn .sim-d{color:rgba(232,160,32,.8)}
-.sim-card.ok .sim-d{color:rgba(39,174,96,.8)}
+/* STEP 4 — RESUMEN */
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.sum-block{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.sum-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:.75rem}
+.sum-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:13px}
+.sum-row:last-child{border:none}
+.sum-label{color:var(--ink2)}
+.sum-val{color:var(--ink);font-weight:500}
 
-.alert-list{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
-.al{display:flex;gap:10px;align-items:flex-start;padding:13px 15px;border-radius:8px;border:1px solid}
-.al.r{background:rgba(192,57,43,.07);border-color:rgba(192,57,43,.25)}
-.al.a{background:var(--amber-d);border-color:var(--amber-b)}
-.al.g{background:rgba(39,174,96,.07);border-color:rgba(39,174,96,.25)}
-.al-ico{font-size:13px;flex-shrink:0;margin-top:1px}
-.al-t{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:2px}
-.al.r .al-t{color:var(--red)}.al.a .al-t{color:var(--amber)}.al.g .al-t{color:var(--green)}
-.al-d{font-size:12px;color:var(--text2);line-height:1.5}
+/* SUCCESS */
+#success{display:none;text-align:center;padding:3rem 2rem}
+#success h2{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--ink);margin-bottom:1rem}
+#success p{color:var(--ink2);margin-bottom:2rem;line-height:1.7}
+.success-ico{font-size:3rem;margin-bottom:1rem}
+.btn-sim{display:inline-flex;align-items:center;gap:10px;background:var(--amber);color:#fff;padding:14px 28px;border-radius:var(--r);font-size:15px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s;text-decoration:none}
+.btn-sim:hover{background:#a85e08}
 
-.mis-prog{display:flex;flex-direction:column;gap:7px;margin-bottom:20px}
-.mp-row{display:flex;align-items:center;gap:10px}
-.mp-n{font-size:12px;color:var(--text2);min-width:160px}
-.mp-bar{flex:1;height:4px;background:var(--border2);border-radius:2px;overflow:hidden}
-.mp-fill{height:100%;border-radius:2px}
-.mp-pct{font-size:11px;font-weight:700;min-width:32px;text-align:right}
+/* TELEGRAM HIGHLIGHT */
+.tg-box{background:var(--amber-ll);border:1px solid var(--amber-l);border-radius:8px;padding:1rem 1.2rem;margin-top:.75rem}
+.tg-box p{font-size:13px;color:var(--ink2);line-height:1.6}
+.tg-box strong{color:var(--amber)}
 
-.sim-cta{background:var(--amber);border:none;border-radius:8px;padding:16px 28px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--bg);cursor:pointer;width:100%;margin-top:8px;transition:all .15s}
-.sim-cta:hover{background:#d4911c;transform:translateY(-1px)}
-.sim-sub-cta{text-align:center;margin-top:12px;font-size:12px;color:var(--text3)}
-.sim-sub-cta a{color:var(--amber)}
+/* SPINNER */
+.spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 
-/* SEPARATORS */
-.sec-sep{display:flex;align-items:center;gap:12px;margin:24px 0 16px}
-.sec-sep-l{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);white-space:nowrap}
-.sec-sep-line{flex:1;height:1px;background:var(--border)}
+/* SECTIONS on/off */
+.sec-toggle{cursor:pointer;display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);margin-bottom:.75rem}
+.sec-toggle h4{font-size:13px;font-weight:500;color:var(--ink)}
+.sec-arr{font-size:12px;color:var(--ink3);transition:transform .2s}
+.sec-collapsible{overflow:hidden;transition:max-height .3s ease;max-height:600px}
+.sec-collapsible.closed{max-height:0}
 
-/* TOOLTIP badge */
-.badge-nota{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:3px 9px;border-radius:20px;margin-top:8px}
+@media(max-width:600px){
+  .field-grid,.field-grid.cols3{grid-template-columns:1fr}
+  .summary{grid-template-columns:1fr}
+  h1{font-size:2rem}
+  .preview-steps{gap:0}
+  .ps-l{display:none}
+}
 </style>
 </head>
 <body>
 
-<div class="hdr">
+<nav>
   <div class="logo">GO<span> OBRA</span></div>
-  <div class="hdr-r" id="hdr-step">Paso 1 de 7</div>
-</div>
+  <div class="nav-r">
+    <a class="nav-link" href="/">Dashboard</a>
+    <a class="nav-link" href="/modelo3d.html">Modelo 3D</a>
+  </div>
+</nav>
 
-<div class="prog-wrap">
-  <div class="prog-track"><div class="prog-fill" id="prog" style="width:14%"></div></div>
-  <div class="prog-info"><span id="prog-label">Información básica</span><span class="prog-step" id="prog-step">1 / 7</span></div>
-</div>
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-tag">Activación de proyecto · 4 pasos · 5 min</div>
+  <h1>Tu obra,<br>bajo <em>control total</em></h1>
+  <p class="hero-sub">Configura tu proyecto y en minutos tendrás un dashboard en vivo, misiones diarias por Telegram y proyección de materiales automática.</p>
 
-<div class="main" id="form-wrap">
-
-<!-- ══ PASO 1: Básicos ══ -->
-<div class="step on" id="s1">
-  <div class="step-tag">01 — Básicos</div>
-  <div class="step-h">Cuéntenos sobre su obra</div>
-  <div class="step-sub">Solo lo esencial para simular su proyecto. Sin tecnicismos.</div>
-
-  <div class="fg">
-    <label class="fl">¿Qué tipo de obra es?</label>
-    <div class="cards" id="tipo-cards">
-      <div class="card" onclick="selCard('tipo-cards',this,'residencial')"><div class="card-ico">🏢</div><div class="card-t">Residencial</div><div class="card-d">Apartamentos / vivienda</div></div>
-      <div class="card" onclick="selCard('tipo-cards',this,'comercial')"><div class="card-ico">🏪</div><div class="card-t">Comercial</div><div class="card-d">Locales, oficinas</div></div>
-      <div class="card" onclick="selCard('tipo-cards',this,'mixto')"><div class="card-ico">🏗</div><div class="card-t">Mixto</div><div class="card-d">Vivienda + comercio</div></div>
-      <div class="card" onclick="selCard('tipo-cards',this,'otro')"><div class="card-ico">🔧</div><div class="card-t">Otro</div><div class="card-d">Bodegas, colegios…</div></div>
+  <div class="preview">
+    <div class="preview-title">Qué pasa después</div>
+    <div class="preview-steps">
+      <div class="ps"><div class="ps-n done">✓</div><div class="ps-l">Datos<br>básicos</div></div>
+      <div class="ps"><div class="ps-n">2</div><div class="ps-l">Geometría<br>y usos</div></div>
+      <div class="ps"><div class="ps-n">3</div><div class="ps-l">Estado<br>actual</div></div>
+      <div class="ps"><div class="ps-n">4</div><div class="ps-l">Activar<br>simulador</div></div>
     </div>
   </div>
 
-  <div class="irow">
-    <div class="fg">
-      <label class="fl">Pisos sobre rasante</label>
-      <select class="fs" id="f-pisos">
-        <option value="">Seleccione</option>
-        <option>1</option><option>2</option><option>3</option><option>4</option>
-        <option>5</option><option>6</option><option>7</option><option>8</option>
-        <option>9</option><option>10</option><option>11</option><option>12</option>
-        <option>13</option><option>14</option><option>+15</option>
-      </select>
-    </div>
-    <div class="fg">
-      <label class="fl">Sótanos</label>
-      <select class="fs" id="f-sotanos">
-        <option value="0">Ninguno</option><option>1</option><option>2</option><option>3</option>
-      </select>
-    </div>
-  </div>
+  <button class="hero-cta" onclick="document.getElementById('form-section').scrollIntoView({behavior:'smooth'})">
+    Activar mi obra
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
+  </button>
+</section>
 
-  <div class="fg">
-    <label class="fl">Área aproximada por piso (m²)</label>
-    <div class="sl-row">
-      <div class="sl-top"><span class="sl-l">Área por piso</span><span class="sl-v" id="v-area">250 m²</span></div>
-      <input type="range" id="sl-area" min="50" max="1000" step="10" value="250" oninput="updSl('area',this.value,' m²')">
-      <div class="sl-marks"><span>50</span><span>250</span><span>500</span><span>750</span><span>1000+</span></div>
-    </div>
-  </div>
+<!-- FORM -->
+<section id="form-section">
+  <div class="form-card">
+    <div class="step-progress"><div class="step-fill" id="prog-fill" style="width:25%"></div></div>
 
-  <div class="fg">
-    <label class="fl">Sistema constructivo</label>
-    <div class="chips" id="sc-chips">
-      <div class="chip" onclick="selChip('sc-chips',this,'porticos')">Pórticos (columnas + vigas)</div>
-      <div class="chip" onclick="selChip('sc-chips',this,'muros')">Muros estructurales</div>
-      <div class="chip" onclick="selChip('sc-chips',this,'metalica')">Estructura metálica</div>
-      <div class="chip" onclick="selChip('sc-chips',this,'mixto_est')">Mixto</div>
-      <div class="chip" onclick="selChip('sc-chips',this,'noSe')">No lo sé bien</div>
-    </div>
-  </div>
-
-  <div class="fnav">
-    <button class="btn-next" onclick="go(2)">Siguiente — Fechas y presupuesto →</button>
-  </div>
-</div>
-
-<!-- ══ PASO 2: Fechas y presupuesto ══ -->
-<div class="step" id="s2">
-  <div class="step-tag">02 — Tiempo y dinero</div>
-  <div class="step-h">¿Cuándo termina y cuánto tiene?</div>
-  <div class="step-sub">Estas dos variables definen las alertas más críticas de su obra.</div>
-
-  <div class="fg">
-    <label class="fl">¿Cuándo espera terminar la obra?</label>
-    <div class="chips" id="fecha-chips">
-      <div class="chip" onclick="selChip('fecha-chips',this,'1m')">En 1 mes</div>
-      <div class="chip" onclick="selChip('fecha-chips',this,'3m')">En 3 meses</div>
-      <div class="chip" onclick="selChip('fecha-chips',this,'6m')">En 6 meses</div>
-      <div class="chip" onclick="selChip('fecha-chips',this,'12m')">En 1 año</div>
-      <div class="chip" onclick="selChip('fecha-chips',this,'18m')">En 18 meses</div>
-      <div class="chip" onclick="selChip('fecha-chips',this,'24m+')">Más de 2 años</div>
-    </div>
-    <span class="badge-nota">Si ya tiene fecha exacta la puede escribir aquí</span>
-    <input class="fi" type="text" id="f-fecha" placeholder="Ej: Diciembre 2026" style="margin-top:8px">
-  </div>
-
-  <div class="fg">
-    <label class="fl">Presupuesto total de la obra (COP)</label>
-    <span class="fh">Aproximado está bien. Esto define el costo de las alertas de sobrecosto.</span>
-    <div class="chips" id="ppto-chips">
-      <div class="chip" onclick="selChip('ppto-chips',this,'500M')">Menos de $500M</div>
-      <div class="chip" onclick="selChip('ppto-chips',this,'1B')">$500M – $1.000M</div>
-      <div class="chip" onclick="selChip('ppto-chips',this,'2B')">$1.000M – $2.000M</div>
-      <div class="chip" onclick="selChip('ppto-chips',this,'5B')">$2.000M – $5.000M</div>
-      <div class="chip" onclick="selChip('ppto-chips',this,'5B+')">Más de $5.000M</div>
-    </div>
-  </div>
-
-  <div class="fg">
-    <label class="fl">¿Cuál es su prioridad?</label>
-    <div class="chips" id="prio-chips">
-      <div class="chip" onclick="selChip('prio-chips',this,'tiempo')">⏱ Tiempo primero</div>
-      <div class="chip" onclick="selChip('prio-chips',this,'costo')">💰 Costo primero</div>
-      <div class="chip" onclick="selChip('prio-chips',this,'equilibrio')">⚖ Equilibrio</div>
-    </div>
-  </div>
-
-  <div class="fnav">
-    <button class="btn-back" onclick="go(1)">← Atrás</button>
-    <button class="btn-next" onclick="go(3)">Siguiente — Etapa actual →</button>
-  </div>
-</div>
-
-<!-- ══ PASO 3: Etapa actual ══ -->
-<div class="step" id="s3">
-  <div class="step-tag">03 — ¿Dónde están hoy?</div>
-  <div class="step-h">¿En qué etapa está la obra ahora mismo?</div>
-  <div class="step-sub">Seleccione la que mejor describe el estado actual. Puede marcar varias si hay etapas corriendo en paralelo.</div>
-
-  <div class="fg">
-    <label class="fl">Etapa actual</label>
-    <div class="mis-list" id="etapa-list">
-      <div class="mis-item" onclick="togMis(this,'prel')"><div class="mis-ck"></div><div><div class="mis-name">Preliminares / cerramiento</div><div class="mis-sub">Campamento, descapote, localización</div></div></div>
-      <div class="mis-item" onclick="togMis(this,'mvt')"><div class="mis-ck"></div><div><div class="mis-name">Movimiento de tierras / excavación</div><div class="mis-sub">Retro, retiro de material, rellenos</div></div></div>
-      <div class="mis-item" onclick="togMis(this,'cim')"><div class="mis-ck"></div><div><div class="mis-name">Cimentación</div><div class="mis-sub">Zapatas, pilotes, vigas de cimentación</div></div></div>
-      <div class="mis-item" onclick="togMis(this,'estr')"><div class="mis-ck"></div><div><div class="mis-name">Estructura — columnas y placas</div><div class="mis-sub">Armado, formaleta, vaciado de concreto</div></div></div>
-      <div class="mis-item" onclick="togMis(this,'mamp')"><div class="mis-ck"></div><div><div class="mis-name">Mampostería</div><div class="mis-sub">Levante de muros, pañete, fachada</div></div></div>
-      <div class="mis-item" onclick="togMis(this,'redes')"><div class="mis-ck"></div><div><div class="mis-name">Redes (hidro, eléctrica, gas)</div><div class="mis-sub">Instalaciones internas, acometidas</div></div></div>
-      <div class="mis-item" onclick="togMis(this,'acab')"><div class="mis-ck"></div><div><div class="mis-name">Acabados</div><div class="mis-sub">Pisos, pintura, carpintería, enchapes</div></div></div>
-      <div class="mis-item" onclick="togMis(this,'entr')"><div class="mis-ck"></div><div><div class="mis-name">Entrega / cierre</div><div class="mis-sub">Aseo fino, certificaciones, actas</div></div></div>
-    </div>
-  </div>
-
-  <div class="fg" id="nivel-piso-fg" style="display:none">
-    <label class="fl">Si está en estructura — ¿en qué piso van?</label>
-    <select class="fs" id="f-nivel-piso">
-      <option value="">Seleccione el piso actual</option>
-    </select>
-  </div>
-
-  <div class="fnav">
-    <button class="btn-back" onclick="go(2)">← Atrás</button>
-    <button class="btn-next" onclick="go(4)">Siguiente — Misiones activas →</button>
-  </div>
-</div>
-
-<!-- ══ PASO 4: Misiones activas ══ -->
-<div class="step" id="s4">
-  <div class="step-tag">04 — Esta semana</div>
-  <div class="step-h">¿Qué están haciendo hoy / esta semana?</div>
-  <div class="step-sub">Seleccione las actividades concretas en curso. Esto permite mostrar las alertas de materiales que aplican.</div>
-
-  <div class="fg">
-    <label class="fl">Actividades en curso ahora mismo</label>
-    <div class="mis-list" id="mis-activas">
-      <div class="mis-item" onclick="togMis(this,'col_arm')"><div class="mis-ck"></div><div><div class="mis-name">Armado de acero — columnas</div><div class="mis-sub">Mat: acero corrugado, alambre negro</div></div><div class="mis-info">kg/día</div></div>
-      <div class="mis-item" onclick="togMis(this,'col_vac')"><div class="mis-ck"></div><div><div class="mis-name">Vaciado de columnas</div><div class="mis-sub">Mat: concreto, formaleta</div></div><div class="mis-info">m³/día</div></div>
-      <div class="mis-item" onclick="togMis(this,'placa')"><div class="mis-ck"></div><div><div class="mis-name">Placa entrepiso</div><div class="mis-sub">Mat: concreto, acero, formaleta, puntales</div></div><div class="mis-info">m²/día</div></div>
-      <div class="mis-item" onclick="togMis(this,'muros_int')"><div class="mis-ck"></div><div><div class="mis-name">Levante de muros interiores</div><div class="mis-sub">Mat: ladrillo, cemento, arena</div></div><div class="mis-info">m²/día</div></div>
-      <div class="mis-item" onclick="togMis(this,'muros_ext')"><div class="mis-ck"></div><div><div class="mis-name">Muros fachada / exteriores</div><div class="mis-sub">Mat: ladrillo fachada, mortero</div></div><div class="mis-info">m²/día</div></div>
-      <div class="mis-item" onclick="togMis(this,'panete')"><div class="mis-ck"></div><div><div class="mis-name">Pañete interior</div><div class="mis-sub">Mat: cemento, arena fina</div></div><div class="mis-info">m²/día</div></div>
-      <div class="mis-item" onclick="togMis(this,'hidro')"><div class="mis-ck"></div><div><div class="mis-name">Redes hidrosanitarias</div><div class="mis-sub">Mat: tubería PVC, accesorios, pegante</div></div><div class="mis-info">ml/día</div></div>
-      <div class="mis-item" onclick="togMis(this,'elec')"><div class="mis-ck"></div><div><div class="mis-name">Redes eléctricas</div><div class="mis-sub">Mat: cable, conduit, cajas</div></div><div class="mis-info">ml/día</div></div>
-      <div class="mis-item" onclick="togMis(this,'pisos')"><div class="mis-ck"></div><div><div class="mis-name">Pisos y enchapes</div><div class="mis-sub">Mat: baldosa, cemento cola</div></div><div class="mis-info">m²/día</div></div>
-      <div class="mis-item" onclick="togMis(this,'pintura')"><div class="mis-ck"></div><div><div class="mis-name">Pintura y estuco</div><div class="mis-sub">Mat: pintura, sellador, lija</div></div><div class="mis-info">m²/día</div></div>
-    </div>
-  </div>
-
-  <div class="fnav">
-    <button class="btn-back" onclick="go(3)">← Atrás</button>
-    <button class="btn-next" onclick="go(5)">Siguiente — El equipo →</button>
-  </div>
-</div>
-
-<!-- ══ PASO 5: Equipo ══ -->
-<div class="step" id="s5">
-  <div class="step-tag">05 — El equipo</div>
-  <div class="step-h">¿Quiénes están en la obra?</div>
-  <div class="step-sub">No necesita nombres exactos. Esto define cuántas personas tienen acceso al sistema y cómo se estructura el seguimiento.</div>
-
-  <div class="fg">
-    <label class="fl">¿Cuántos trabajadores directos hay en obra ahora?</label>
-    <div class="sl-row">
-      <div class="sl-top"><span class="sl-l">Trabajadores</span><span class="sl-v" id="v-wrk">8</span></div>
-      <input type="range" id="sl-wrk" min="1" max="50" step="1" value="8" oninput="updSl('wrk',this.value,'')">
-      <div class="sl-marks"><span>1</span><span>10</span><span>25</span><span>40</span><span>50+</span></div>
-    </div>
-  </div>
-
-  <div class="fg">
-    <label class="fl">¿Hay contratistas o terceros?</label>
-    <div class="chips multi" id="contrat-chips" style="gap:7px">
-      <div class="chip" onclick="togChip(this,'hidro_cont')">Fontanería</div>
-      <div class="chip" onclick="togChip(this,'elec_cont')">Electricista</div>
-      <div class="chip" onclick="togChip(this,'estr_cont')">Estructura</div>
-      <div class="chip" onclick="togChip(this,'acab_cont')">Acabados</div>
-      <div class="chip" onclick="togChip(this,'grua_cont')">Grúa / equipo</div>
-      <div class="chip" onclick="togChip(this,'ninguno')">Ninguno</div>
-    </div>
-  </div>
-
-  <div class="fg">
-    <label class="fl">¿Quién reportará el avance diario?</label>
-    <div class="chips" id="rep-chips">
-      <div class="chip" onclick="selChip('rep-chips',this,'res')">Residente de obra</div>
-      <div class="chip" onclick="selChip('rep-chips',this,'mae')">Maestro de obra</div>
-      <div class="chip" onclick="selChip('rep-chips',this,'arq')">Arquitecto</div>
-      <div class="chip" onclick="selChip('rep-chips',this,'yo')">Yo mismo</div>
-    </div>
-  </div>
-
-  <div class="fnav">
-    <button class="btn-back" onclick="go(4)">← Atrás</button>
-    <button class="btn-next" onclick="go(6)">Siguiente — Desviaciones →</button>
-  </div>
-</div>
-
-<!-- ══ PASO 6: Desviaciones ══ -->
-<div class="step" id="s6">
-  <div class="step-tag">06 — Desviaciones</div>
-  <div class="step-h">¿Está viviendo algún problema ahora mismo?</div>
-  <div class="step-sub">Esto hace que la simulación sea realista. Por defecto asumimos una pequeña desviación — lo más común en obra.</div>
-
-  <div class="fg">
-    <label class="fl">¿Qué tan grande es la desviación actual?</label>
-    <div class="desv-cards">
-      <div class="desv-card pequeña on" onclick="selDesv(this,'pequeña')">
-        <div class="desv-ico">🟢</div>
-        <div class="desv-t" style="color:var(--green)">Pequeña</div>
-        <div class="desv-d">Retraso de 1-5 días. Sobrecosto menor al 5%. Situación normal.</div>
+    <!-- STEP 1: Datos básicos -->
+    <div class="step-body active" id="step-1">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <div class="step-info"><h3>Datos básicos de la obra</h3><p>Nombre, ubicación y contacto principal</p></div>
       </div>
-      <div class="desv-card mediana" onclick="selDesv(this,'mediana')">
-        <div class="desv-ico">🟡</div>
-        <div class="desv-t" style="color:var(--amber)">Mediana</div>
-        <div class="desv-d">1-3 semanas de retraso. Sobrecosto 5-15%. Requiere atención.</div>
+      <div style="padding:2rem">
+        <div class="field-grid cols1">
+          <div class="field">
+            <label>Nombre de la obra</label>
+            <input type="text" id="f-nombre" placeholder="Ej: Edificio Residencial Muzú">
+          </div>
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label>Dirección</label>
+            <input type="text" id="f-dir" placeholder="Calle 12 # 45-23, Bogotá">
+          </div>
+          <div class="field">
+            <label>Sistema constructivo</label>
+            <select id="f-sistema">
+              <option value="porticos">Pórticos (concreto)</option>
+              <option value="ipe">Acero / IPE</option>
+              <option value="mixto">Mixto</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label>Fecha estimada de entrega</label>
+            <input type="month" id="f-fecha">
+          </div>
+          <div class="field">
+            <label>Número Telegram del dueño <span style="color:var(--amber)">*</span></label>
+            <input type="text" id="f-telegram" placeholder="+573100000000">
+            <div class="field-hint">Incluye indicativo. Aquí llegan las misiones diarias.</div>
+          </div>
+        </div>
+        <div class="tg-box">
+          <p>El número de Telegram registrado recibirá las <strong>misiones del día cada mañana</strong> con cantidades esperadas y materiales. Para responder usa el código de obra + número de misión:<br><br>
+          <strong>OBR01 2: hice 25 m², 3 bultos cemento, sin novedades</strong></p>
+        </div>
       </div>
-      <div class="desv-card grande" onclick="selDesv(this,'grande')">
-        <div class="desv-ico">🔴</div>
-        <div class="desv-t" style="color:var(--red)">Grande</div>
-        <div class="desv-d">Más de un mes. Sobrecosto mayor 15%. Crisis activa.</div>
+      <div class="step-nav">
+        <div></div>
+        <button class="btn-next" onclick="goStep(2)">Siguiente <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg></button>
       </div>
     </div>
-  </div>
 
-  <div class="fg">
-    <label class="fl">¿Cuál es la causa principal? (opcional)</label>
-    <div class="chips multi" id="causa-chips">
-      <div class="chip" onclick="togChip(this,'materiales')">Falta de materiales</div>
-      <div class="chip" onclick="togChip(this,'mano_obra')">Mano de obra</div>
-      <div class="chip" onclick="togChip(this,'clima')">Clima / lluvias</div>
-      <div class="chip" onclick="togChip(this,'proveedor')">Proveedor tardó</div>
-      <div class="chip" onclick="togChip(this,'diseño')">Cambios de diseño</div>
-      <div class="chip" onclick="togChip(this,'licencias')">Trámites / licencias</div>
-      <div class="chip" onclick="togChip(this,'contratista')">Contratista incumplió</div>
-      <div class="chip" onclick="togChip(this,'otro_causa')">Otra</div>
+    <!-- STEP 2: Geometría y usos -->
+    <div class="step-body" id="step-2">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <div class="step-info"><h3>Geometría y usos</h3><p>Dimensiones del lote y distribución de pisos</p></div>
+      </div>
+      <div style="padding:2rem">
+        <div class="field-grid cols3">
+          <div class="field">
+            <label>Frente del lote (m)</label>
+            <input type="number" id="f-frente" value="12" min="4" max="50" step="0.5">
+          </div>
+          <div class="field">
+            <label>Fondo del lote (m)</label>
+            <input type="number" id="f-fondo" value="24" min="8" max="80" step="0.5">
+          </div>
+          <div class="field">
+            <label>Total de pisos</label>
+            <input type="number" id="f-pisos" value="12" min="1" max="30" step="1">
+          </div>
+        </div>
+        <div class="field-grid cols3">
+          <div class="field">
+            <label>Sótanos</label>
+            <input type="number" id="f-sotanos" value="2" min="0" max="5">
+          </div>
+          <div class="field">
+            <label>Unidades por piso residencial</label>
+            <input type="number" id="f-uds-piso" value="4" min="1" max="20">
+          </div>
+          <div class="field">
+            <label>Altura piso a piso (m)</label>
+            <input type="number" id="f-altura" value="2.8" min="2.2" max="4.0" step="0.1">
+          </div>
+        </div>
+
+        <div style="margin-bottom:1rem">
+          <div class="sec-toggle" onclick="toggleSec(this)">
+            <h4>Usos por piso</h4>
+            <span class="sec-arr">▾</span>
+          </div>
+          <div class="sec-collapsible">
+            <div class="field-grid">
+              <div class="field">
+                <label>Piso 1 — uso</label>
+                <select id="f-uso-p1">
+                  <option value="comercio">Comercio / local</option>
+                  <option value="vivienda">Vivienda</option>
+                  <option value="parqueadero">Parqueadero</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Piso 2 — uso</label>
+                <select id="f-uso-p2">
+                  <option value="oficinas">Oficinas</option>
+                  <option value="vivienda" selected>Vivienda</option>
+                  <option value="comercio">Comercio</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label>Pisos 3 en adelante</label>
+              <select id="f-uso-resto">
+                <option value="vivienda">Vivienda (apartamentos)</option>
+                <option value="oficinas">Oficinas</option>
+                <option value="mixto">Mixto</option>
+              </select>
+            </div>
+            <div id="area-calc" style="margin-top:.75rem;padding:.75rem 1rem;background:var(--bg);border-radius:7px;border:1px solid var(--border);font-size:13px;color:var(--ink2)">
+              — m² útil/piso · — unidades totales
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="goStep(1)">← Atrás</button>
+        <button class="btn-next" onclick="goStep(3)">Siguiente →</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Estado actual -->
+    <div class="step-body" id="step-3">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <div class="step-info"><h3>Estado actual de la obra</h3><p>Qué etapas van y qué pasa esta semana</p></div>
+      </div>
+      <div style="padding:2rem">
+        <div class="field" style="margin-bottom:1.25rem">
+          <label>Etapa actual de la obra</label>
+          <div class="chips" id="chips-etapa">
+            <div class="chip" data-v="prel">Preliminares</div>
+            <div class="chip" data-v="mvt">Movimiento tierras</div>
+            <div class="chip" data-v="cim">Cimentación</div>
+            <div class="chip on" data-v="estr">Estructura</div>
+            <div class="chip" data-v="mamp">Mampostería</div>
+            <div class="chip" data-v="redes">Redes</div>
+            <div class="chip" data-v="acab">Acabados</div>
+          </div>
+          <div class="field-hint">Selecciona todas las que están activas simultáneamente</div>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label>¿En qué piso va la estructura?</label>
+            <input type="number" id="f-piso-actual" value="3" min="1" max="30">
+          </div>
+          <div class="field">
+            <label>Número de trabajadores activos</label>
+            <input type="number" id="f-workers" value="8" min="1" max="100">
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:1.25rem">
+          <label>¿Qué misiones están activas esta semana?</label>
+          <div class="chips" id="chips-misiones">
+            <div class="chip on" data-v="columnas_vaciado">Vaciado columnas</div>
+            <div class="chip" data-v="columnas_armado">Armado columnas</div>
+            <div class="chip" data-v="placa_entrepiso">Placa entrepiso</div>
+            <div class="chip on" data-v="levante_muros_interiores">Levante muros</div>
+            <div class="chip" data-v="panete_interior">Pañete interior</div>
+            <div class="chip on" data-v="hidrosanitarias">Hidrosanitarias</div>
+            <div class="chip on" data-v="electricas">Eléctricas</div>
+            <div class="chip" data-v="pisos_enchapes">Pisos/enchapes</div>
+          </div>
+        </div>
+
+        <div class="field" style="margin-bottom:1.25rem">
+          <label>Desviaciones típicas en esta u otras obras</label>
+          <div class="chips" id="chips-desv">
+            <div class="chip on" data-v="pequeñas">Pequeñas (materiales)</div>
+            <div class="chip" data-v="medianas">Medianas (tiempo)</div>
+            <div class="chip" data-v="grandes">Grandes (presupuesto)</div>
+            <div class="chip" data-v="ninguna">Sin desviaciones</div>
+          </div>
+          <div class="field-hint">Esto calibra las alertas del sistema</div>
+        </div>
+
+        <div class="field">
+          <label>Notas adicionales (opcional)</label>
+          <textarea id="f-notas" placeholder="Ej: Hay retraso en el piso 3 por lluvia. El residente es Juan Pérez..."></textarea>
+        </div>
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="goStep(2)">← Atrás</button>
+        <button class="btn-next" onclick="goStep(4)">Ver resumen →</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: Resumen y activar -->
+    <div class="step-body" id="step-4">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <div class="step-info"><h3>Resumen y activación</h3><p>Confirma los datos y activa el simulador</p></div>
+      </div>
+      <div style="padding:2rem">
+        <div class="summary" id="summary-content"></div>
+        <div class="tg-box" style="margin-top:1.5rem">
+          <p>Al activar, el bot enviará las <strong>primeras misiones del día</strong> a tu Telegram en los próximos minutos. El simulador estará disponible inmediatamente con todos los datos de tu obra.</p>
+        </div>
+      </div>
+      <div class="step-nav">
+        <button class="btn-back" onclick="goStep(3)">← Atrás</button>
+        <button class="btn-next" id="btn-activar" onclick="activar()">
+          <span id="btn-activar-txt">Activar simulador</span>
+          <span id="btn-activar-spin" style="display:none"><div class="spin"></div></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- SUCCESS -->
+    <div id="success">
+      <div class="success-ico">🏗</div>
+      <h2>¡Obra activada!</h2>
+      <p>Tu simulador está listo. El bot de Telegram enviará las primeras misiones esta mañana.<br>Guarda el link del simulador — es tu dashboard en vivo.</p>
+      <a id="btn-ir-sim" href="#" class="btn-sim">Abrir simulador →</a>
     </div>
   </div>
-
-  <div class="fg">
-    <label class="fl">¿Ha tenido problemas similares en obras anteriores?</label>
-    <div class="chips" id="hist-chips">
-      <div class="chip" onclick="selChip('hist-chips',this,'si')">Sí, los mismos</div>
-      <div class="chip" onclick="selChip('hist-chips',this,'otros')">Sí, pero diferentes</div>
-      <div class="chip" onclick="selChip('hist-chips',this,'no')">No, primera vez</div>
-      <div class="chip" onclick="selChip('hist-chips',this,'primera')">Es mi primera obra</div>
-    </div>
-  </div>
-
-  <div class="fg">
-    <label class="fl">¿Algo más que deba saber? (opcional)</label>
-    <textarea class="fta" id="f-notas" placeholder="Situación especial, restricción de acceso, proveedor problemático, condición del terreno…"></textarea>
-  </div>
-
-  <div class="fnav">
-    <button class="btn-back" onclick="go(5)">← Atrás</button>
-    <button class="btn-next" onclick="go(7)">Siguiente — Sus datos →</button>
-  </div>
-</div>
-
-<!-- ══ PASO 7: Contacto ══ -->
-<div class="step" id="s7">
-  <div class="step-tag">07 — Último paso</div>
-  <div class="step-h">¿Dónde le enviamos la simulación?</div>
-  <div class="step-sub">Le mostramos la simulación ahora mismo, aquí en pantalla. Si quiere guardarla o que le contactemos, deje sus datos.</div>
-
-  <div class="irow">
-    <div class="fg"><label class="fl">Nombre</label><input class="fi" type="text" id="f-nombre" placeholder="Su nombre"></div>
-    <div class="fg"><label class="fl">WhatsApp</label><input class="fi" type="tel" id="f-tel" placeholder="310 000 0000"></div>
-  </div>
-  <div class="fg"><label class="fl">Nombre o dirección de la obra</label><input class="fi" type="text" id="f-obra" placeholder="Ej: Edificio calle 35 · Puente Aranda"></div>
-
-  <div style="background:var(--amber-d);border:1px solid var(--amber-b);border-radius:8px;padding:14px 16px;margin-bottom:24px;font-size:13px;color:var(--text2);line-height:1.6">
-    Sus datos solo se usan para contactarle. No los compartimos con nadie.
-  </div>
-
-  <div class="fnav">
-    <button class="btn-back" onclick="go(6)">← Atrás</button>
-    <button class="btn-next" onclick="simular()">Ver simulación de mi obra →</button>
-  </div>
-</div>
-
-</div><!-- /form-wrap -->
-
-<!-- ══ SIMULACIÓN ══ -->
-<div class="main" id="sim">
-  <div class="sim-intro">
-    <div class="step-tag" style="justify-content:center">Simulación · <span id="sim-nombre-tag">Su obra</span></div>
-    <div class="sim-h">Así se vería su obra<br>en GO Obra</div>
-    <div class="sim-sub">Basado en lo que nos contó. Los datos reales son aún mejores — esto es con la info mínima que nos dio.</div>
-  </div>
-
-  <!-- KPIs -->
-  <div class="sim-grid" id="sim-kpis"></div>
-
-  <!-- Alertas -->
-  <div class="sec-sep"><span class="sec-sep-l">Alertas activas</span><div class="sec-sep-line"></div></div>
-  <div class="alert-list" id="sim-alertas"></div>
-
-  <!-- Misiones en curso -->
-  <div class="sec-sep"><span class="sec-sep-l">Misiones en curso · esta semana</span><div class="sec-sep-line"></div></div>
-  <div class="mis-prog" id="sim-misiones"></div>
-
-  <!-- Materiales críticos -->
-  <div class="sec-sep"><span class="sec-sep-l">Materiales — próximas 2 semanas</span><div class="sec-sep-line"></div></div>
-  <div class="alert-list" id="sim-materiales"></div>
-
-  <!-- CTA -->
-  <div style="margin-top:32px;background:var(--bg2);border:1px solid var(--border2);border-radius:12px;padding:24px;text-align:center">
-    <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:8px">¿Quiere ver esto con sus datos reales?</div>
-    <div style="font-size:14px;color:var(--text2);margin-bottom:20px;line-height:1.6;font-weight:300">En 24 horas instalamos GO Obra en su proyecto. El residente reporta por WhatsApp y usted ve el avance real en tiempo real.</div>
-    <a href="https://wa.me/573144160606?text=Hola%2C%20acabo%20de%20simular%20mi%20obra%20en%20GO%20Obra%20y%20quiero%20instalarlo%20en%20mi%20proyecto." target="_blank">
-      <button class="sim-cta">Instalar en mi obra — WhatsApp →</button>
-    </a>
-    <div class="sim-sub-cta">o escríbanos a <a href="mailto:hola@goobra.co">hola@goobra.co</a> · Sin contrato de permanencia</div>
-  </div>
-</div>
+</section>
 
 <script>
-// ── STATE ──
-const S = {
-  tipo:'', pisos:'', sotanos:'0', area:250, sc:'',
-  fecha:'', ppto:'', prio:'',
-  etapas:new Set(), nivelPiso:'',
-  misActivas:new Set(),
-  wrk:8, contrat:new Set(), rep:'',
-  desv:'pequeña', causas:new Set(), hist:'', notas:'',
-  nombre:'', tel:'', obra:''
-};
+const SB='https://muyezsssnzlxavchabum.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
+const db=supabase.createClient(SB,SK);
 
-let curStep = 1;
-const TOTAL = 7;
+let currentStep=1;
 
-const LABELS = ['','Información básica','Tiempo y dinero','Etapa actual','Misiones activas','El equipo','Desviaciones','Sus datos'];
-
-// ── NAVIGATION ──
-function go(n){
-  document.getElementById('s'+curStep).classList.remove('on');
-  curStep = n;
-  document.getElementById('s'+n).classList.add('on');
-  const pct = Math.round(n/TOTAL*100);
-  document.getElementById('prog').style.width = pct+'%';
-  document.getElementById('prog-label').textContent = LABELS[n];
-  document.getElementById('prog-step').textContent = n+' / '+TOTAL;
-  document.getElementById('hdr-step').textContent = 'Paso '+n+' de '+TOTAL;
-  window.scrollTo({top:0,behavior:'smooth'});
-  // Dynamic pisos in nivel selector
-  if(n===3) buildNivelPiso();
-}
-
-function buildNivelPiso(){
-  const p = parseInt(S.pisos)||12;
-  const sel = document.getElementById('f-nivel-piso');
-  sel.innerHTML = '<option value="">Seleccione el piso actual</option>';
-  for(let i=1;i<=p;i++) sel.innerHTML += `<option value="${i}">Piso ${i}</option>`;
-}
-
-// ── CHIPS / CARDS ──
-function selCard(gid, el, val){
-  document.querySelectorAll('#'+gid+' .card').forEach(c=>c.classList.remove('on'));
-  el.classList.add('on');
-  const key = gid.replace('-cards','');
-  S[key] = val;
-}
-function selChip(gid, el, val){
-  document.querySelectorAll('#'+gid+' .chip').forEach(c=>c.classList.remove('on'));
-  el.classList.add('on');
-  const key = gid.replace('-chips','').replace('-','_');
-  S[key] = val;
-}
-function togChip(el, val){
-  el.classList.toggle('on');
-  // find parent set
-  const gid = el.parentElement.id;
-  const key = gid.replace('-chips','');
-  if(!S[key]) S[key] = new Set();
-  if(el.classList.contains('on')) S[key].add(val);
-  else S[key].delete(val);
-}
-function togMis(el, val){
-  el.classList.toggle('on');
-  const ck = el.querySelector('.mis-ck');
-  const listId = el.parentElement.id;
-  if(listId==='etapa-list'){
-    if(el.classList.contains('on')){ S.etapas.add(val); ck.textContent='✓'; }
-    else{ S.etapas.delete(val); ck.textContent=''; }
-    // Show piso selector if estructura selected
-    document.getElementById('nivel-piso-fg').style.display =
-      S.etapas.has('estr') ? 'block' : 'none';
-  } else {
-    if(el.classList.contains('on')){ S.misActivas.add(val); ck.textContent='✓'; }
-    else{ S.misActivas.delete(val); ck.textContent=''; }
-  }
-}
-function selDesv(el, val){
-  document.querySelectorAll('.desv-card').forEach(c=>c.classList.remove('on'));
-  el.classList.add('on');
-  S.desv = val;
-}
-function updSl(key, val, suf){
-  S[key] = parseFloat(val);
-  document.getElementById('v-'+key).textContent = val+suf;
-}
-
-// ── READ INPUTS ──
-function readInputs(){
-  S.pisos = document.getElementById('f-pisos').value;
-  S.sotanos = document.getElementById('f-sotanos').value;
-  S.fecha = document.getElementById('f-fecha').value || S.fecha_chips || '';
-  S.nivelPiso = document.getElementById('f-nivel-piso').value;
-  S.notas = document.getElementById('f-notas').value;
-  S.nombre = document.getElementById('f-nombre').value;
-  S.tel = document.getElementById('f-tel').value;
-  S.obra = document.getElementById('f-obra').value;
-}
-
-// ── SIMULATE ──
-function simular(){
-  readInputs();
-  document.getElementById('form-wrap').style.display='none';
-  document.getElementById('prog-wrap').style.display='none';
-  document.getElementById('sim').classList.add('on');
-  window.scrollTo({top:0,behavior:'smooth'});
-
-  const nombre = S.obra||S.nombre||'Su obra';
-  document.getElementById('sim-nombre-tag').textContent = nombre;
-
-  buildSim();
-}
-
-function buildSim(){
-  // Derived numbers
-  const pisos = parseInt(S.pisos)||8;
-  const area = S.area||250;
-  const areaTotal = pisos*area;
-  const wrkN = S.wrk||8;
-
-  // Desviacion multipliers
-  const dMult = S.desv==='grande'?1.18:S.desv==='mediana'?1.08:1.03;
-  const dDias = S.desv==='grande'?28:S.desv==='mediana'?10:3;
-  const dPct = S.desv==='grande'?18:S.desv==='mediana'?9:3;
-
-  // Ppto base
-  const pptoMap = {'500M':350,'1B':750,'2B':1500,'5B':3500,'5B+':6000};
-  const pptoBase = (pptoMap[S.ppto]||1000);
-  const pptoProj = Math.round(pptoBase*dMult*10)/10;
-  const pptoOver = Math.round((pptoProj-pptoBase)*10)/10;
-
-  // Avance estimado
-  const etapaAvance = {prel:95,mvt:90,cim:85,estr:60,mamp:45,redes:35,acab:25,entr:90};
-  let avanceEst = 50;
-  if(S.etapas.size){
-    const avgs = [...S.etapas].map(e=>etapaAvance[e]||50);
-    avanceEst = Math.round(avgs.reduce((a,b)=>a+b,0)/avgs.length);
-  }
-  const avanceReal = Math.max(5, avanceEst - dPct);
-  const avancePlan = avanceEst;
-
-  // KPIs
-  const kpiClass = S.desv==='pequeña'?'warn':S.desv==='mediana'?'warn':'alert';
-  document.getElementById('sim-kpis').innerHTML = `
-    <div class="sim-card ${kpiClass}">
-      <div class="sim-l">Avance real</div>
-      <div class="sim-v">${avanceReal}%</div>
-      <div class="sim-d">−${dPct}% vs plan (${avancePlan}%)</div>
-    </div>
-    <div class="sim-card ${S.desv==='pequeña'?'ok':'alert'}">
-      <div class="sim-l">Retraso estimado</div>
-      <div class="sim-v">${dDias}d</div>
-      <div class="sim-d">${S.desv==='pequeña'?'Recuperable esta semana':'Requiere acción inmediata'}</div>
-    </div>
-    <div class="sim-card ${pptoOver>pptoBase*.1?'alert':'warn'}">
-      <div class="sim-l">Proyección costo</div>
-      <div class="sim-v">$${pptoProj}M</div>
-      <div class="sim-d">+$${pptoOver}M sobrecosto</div>
-    </div>
-    <div class="sim-card ok">
-      <div class="sim-l">Equipo activo</div>
-      <div class="sim-v">${wrkN}</div>
-      <div class="sim-d">personas en obra ahora</div>
-    </div>`;
-
-  // Alertas
-  const alertas = [];
-  if(S.desv!=='pequeña') alertas.push({t:'r',ico:'▲',titulo:`Retraso de ${dDias} días`,desc:`${S.desv==='grande'?'Crisis activa — ':' '}La obra va ${dPct}% por debajo del plan. Si no se recupera, la entrega se mueve ${dDias} días.`});
-
-  // Material alerts based on misiones
-  const matAlerts = {
-    col_arm:{mat:'Acero corrugado',msg:'Para la siguiente semana de armado de columnas necesita verificar stock. Consumo típico: 180-270 kg/columna.'},
-    col_vac:{mat:'Concreto',msg:'Confirme pedido de concreto para vaciado. Tiempo de entrega: 24-48h con planta.'},
-    placa:{mat:'Concreto + formaleta',msg:'Placa requiere pedido anticipado. Coordine bomba y formaleta con 3 días de anticipación.'},
-    muros_int:{mat:'Ladrillo bloque #4 + cemento',msg:'Para 2 semanas de levante: calcule 32 ladrillos/m² + 0.18 bultos cemento/m².'},
-    muros_ext:{mat:'Ladrillo fachada',msg:'Ladrillo fachada tiene mayor tiempo de entrega. Pida con 1 semana de anticipación.'},
-    panete:{mat:'Cemento + arena fina',msg:'Consumo pañete: 0.2 bultos cemento/m². Verifique stock para semana siguiente.'},
-    hidro:{mat:'Tubería PVC + accesorios',msg:'Antes de iniciar siguiente piso, pida accesorios y uniones de tubería.'},
-    elec:{mat:'Cable THHN #12 + conduit',msg:'Cable tiene alta rotación. Mantenga stock para 2 semanas de trabajo.'},
-  };
-  S.misActivas.forEach(m=>{
-    if(matAlerts[m]) alertas.push({t:'a',ico:'◆',titulo:`Materiales: ${matAlerts[m].mat}`,desc:matAlerts[m].msg});
+// Step navigation
+function goStep(n){
+  if(n>currentStep && !validateStep(currentStep)) return;
+  document.getElementById('step-'+currentStep).classList.remove('active');
+  currentStep=n;
+  document.getElementById('step-'+n).classList.add('active');
+  document.getElementById('prog-fill').style.width=(n*25)+'%';
+  if(n===4) buildSummary();
+  document.getElementById('form-section').scrollIntoView({behavior:'smooth'});
+  // Update preview steps
+  document.querySelectorAll('.ps-n').forEach((el,i)=>{
+    el.classList.toggle('done', i<n);
+    if(i<n) el.textContent='✓';
+    else el.textContent=i+1;
   });
-
-  // Causas
-  if(S.causas instanceof Set){
-    if(S.causas.has('materiales')) alertas.push({t:'r',ico:'▲',titulo:'Falta de materiales — alerta repetida',desc:'Ha identificado falta de materiales como causa de desviación. GO Obra le avisa 5 días antes de que se acaben los materiales críticos.'});
-    if(S.causas.has('clima')) alertas.push({t:'a',ico:'◆',titulo:'Factor climático detectado',desc:'Las lluvias afectan vaciados y pañetes. GO Obra rastrea rendimiento por día y detecta pérdidas por clima.'});
-    if(S.causas.has('contratista')) alertas.push({t:'r',ico:'▲',titulo:'Incumplimiento de contratista',desc:'GO Obra registra cada reporte — si un contratista no cumple, queda documentado con fecha y hora.'});
-  }
-
-  // Positiva
-  alertas.push({t:'g',ico:'✓',titulo:'Dashboard activo desde el día 1',desc:'Con GO Obra instalado, habría tenido estas alertas en el momento en que ocurrieron — no en el siguiente informe.'});
-
-  document.getElementById('sim-alertas').innerHTML = alertas.slice(0,5).map(a=>
-    `<div class="al ${a.t}"><span class="al-ico">${a.ico}</span><div><div class="al-t">${a.titulo}</div><div class="al-d">${a.desc}</div></div></div>`
-  ).join('');
-
-  // Misiones progress
-  const misNombres = {
-    col_arm:{n:'Armado columnas',c:'#e8a020'},
-    col_vac:{n:'Vaciado columnas',c:'#e8a020'},
-    placa:{n:'Placa entrepiso',c:'#e8a020'},
-    muros_int:{n:'Levante muros',c:'#27ae60'},
-    muros_ext:{n:'Muros fachada',c:'#27ae60'},
-    panete:{n:'Pañete interior',c:'#27ae60'},
-    hidro:{n:'Hidrosanitarias',c:'#2980b9'},
-    elec:{n:'Eléctricas',c:'#2980b9'},
-    pisos:{n:'Pisos/enchapes',c:'#9b59b6'},
-    pintura:{n:'Pintura',c:'#9b59b6'},
-  };
-  const misList = [...S.misActivas].slice(0,6);
-  if(!misList.length){
-    // Default based on etapa
-    if(S.etapas.has('estr')) misList.push('col_arm','col_vac','placa');
-    else if(S.etapas.has('mamp')) misList.push('muros_int','panete');
-    else if(S.etapas.has('redes')) misList.push('hidro','elec');
-  }
-  document.getElementById('sim-misiones').innerHTML = misList.map(m=>{
-    const info = misNombres[m]||{n:m,c:'#888'};
-    const pct = Math.floor(Math.random()*50+20);
-    return `<div class="mp-row">
-      <span class="mp-n">${info.n}</span>
-      <div class="mp-bar"><div class="mp-fill" style="width:${pct}%;background:${info.c}"></div></div>
-      <span class="mp-pct" style="color:${info.c}">${pct}%</span>
-    </div>`;
-  }).join('');
-
-  // Materiales críticos próximas 2 semanas
-  const matCrit = [];
-  if(S.misActivas.has('col_arm')||S.etapas.has('estr')) matCrit.push({t:'a',ico:'◆',titulo:'Acero corrugado',desc:'Consumo próximas 2 semanas: ~'+Math.round(S.area*0.35)+'kg. Tiempo pedido: 3-5 días.'});
-  if(S.misActivas.has('col_vac')||S.misActivas.has('placa')) matCrit.push({t:'a',ico:'◆',titulo:'Concreto premezclado',desc:'Próximo vaciado requiere coordinar bomba. Reserve con 48h de anticipación.'});
-  if(S.misActivas.has('muros_int')||S.misActivas.has('muros_ext')) matCrit.push({t:'a',ico:'◆',titulo:'Ladrillo + cemento',desc:'Para '+Math.round(S.area*0.6)+'m² de muro: ~'+Math.round(S.area*0.6*32)+' ladrillos + '+Math.round(S.area*0.6*0.18)+' bultos cemento.'});
-  if(S.misActivas.has('hidro')) matCrit.push({t:'g',ico:'✓',titulo:'Tubería PVC',desc:'Stock aparenta suficiente para 2 semanas. Verificar accesorios y pegante.'});
-  if(!matCrit.length) matCrit.push({t:'a',ico:'◆',titulo:'Cemento gris',desc:'Material crítico en cualquier etapa. GO Obra rastrea consumo diario vs inventario.'},{t:'g',ico:'✓',titulo:'Sin alertas críticas esta semana',desc:'Basado en las etapas seleccionadas, no hay materiales en estado crítico inmediato.'});
-
-  document.getElementById('sim-materiales').innerHTML = matCrit.slice(0,4).map(a=>
-    `<div class="al ${a.t}"><span class="al-ico">${a.ico}</span><div><div class="al-t">${a.titulo}</div><div class="al-d">${a.desc}</div></div></div>`
-  ).join('');
 }
 
-// ── UTILS ──
-// Pisos selector syncs to S
-document.getElementById('f-pisos').addEventListener('change',function(){ S.pisos=this.value; });
-document.getElementById('f-sotanos').addEventListener('change',function(){ S.sotanos=this.value; });
-document.getElementById('f-nivel-piso').addEventListener('change',function(){ S.nivelPiso=this.value; });
+function validateStep(s){
+  if(s===1){
+    const nom=document.getElementById('f-nombre').value.trim();
+    const tg=document.getElementById('f-telegram').value.trim();
+    if(!nom){alert('Ingresa el nombre de la obra');return false;}
+    if(!tg){alert('Ingresa el número de Telegram');return false;}
+  }
+  return true;
+}
+
+// Chips
+document.querySelectorAll('.chips').forEach(container=>{
+  container.addEventListener('click',e=>{
+    const chip=e.target.closest('.chip');
+    if(!chip) return;
+    const multi = container.id!=='chips-etapa'||true; // todos multi
+    chip.classList.toggle('on');
+  });
+});
+
+function getChips(id){
+  return [...document.querySelectorAll(`#${id} .chip.on`)].map(c=>c.dataset.v);
+}
+
+// Area calc
+function calcArea(){
+  const fr=parseFloat(document.getElementById('f-frente').value)||12;
+  const fo=parseFloat(document.getElementById('f-fondo').value)||24;
+  const pi=parseInt(document.getElementById('f-pisos').value)||12;
+  const up=parseInt(document.getElementById('f-uds-piso').value)||4;
+  const area=Math.round(fr*fo*.72);
+  const uds=2+Math.max(0,pi-2)*up;
+  document.getElementById('area-calc').textContent=`${area} m² útil/piso · ${uds} unidades totales`;
+}
+['f-frente','f-fondo','f-pisos','f-uds-piso'].forEach(id=>{
+  const el=document.getElementById(id);
+  if(el) el.addEventListener('input',calcArea);
+});
+calcArea();
+
+// Section toggle
+function toggleSec(el){
+  const body=el.nextElementSibling;
+  const arr=el.querySelector('.sec-arr');
+  body.classList.toggle('closed');
+  if(arr) arr.style.transform=body.classList.contains('closed')?'rotate(-90deg)':'';
+}
+
+// Summary
+function buildSummary(){
+  const SIST={porticos:'Pórticos concreto',ipe:'Acero / IPE',mixto:'Mixto'};
+  const etapas=getChips('chips-etapa').join(', ')||'—';
+  const misiones=getChips('chips-misiones').map(m=>m.replace(/_/g,' ')).join(', ')||'—';
+  const desv=getChips('chips-desv').join(', ')||'—';
+  const fr=document.getElementById('f-frente').value;
+  const fo=document.getElementById('f-fondo').value;
+  const pi=document.getElementById('f-pisos').value;
+  const so=document.getElementById('f-sotanos').value;
+  const al=document.getElementById('f-altura').value;
+  const up=document.getElementById('f-uds-piso').value;
+  const area=Math.round(fr*fo*.72);
+
+  document.getElementById('summary-content').innerHTML=`
+    <div class="sum-block">
+      <div class="sum-title">Obra</div>
+      <div class="sum-row"><span class="sum-label">Nombre</span><span class="sum-val">${document.getElementById('f-nombre').value||'—'}</span></div>
+      <div class="sum-row"><span class="sum-label">Dirección</span><span class="sum-val">${document.getElementById('f-dir').value||'—'}</span></div>
+      <div class="sum-row"><span class="sum-label">Sistema</span><span class="sum-val">${SIST[document.getElementById('f-sistema').value]||'—'}</span></div>
+      <div class="sum-row"><span class="sum-label">Entrega estimada</span><span class="sum-val">${document.getElementById('f-fecha').value||'—'}</span></div>
+      <div class="sum-row"><span class="sum-label">Telegram</span><span class="sum-val">${document.getElementById('f-telegram').value||'—'}</span></div>
+    </div>
+    <div class="sum-block">
+      <div class="sum-title">Edificio</div>
+      <div class="sum-row"><span class="sum-label">Lote</span><span class="sum-val">${fr}m × ${fo}m</span></div>
+      <div class="sum-row"><span class="sum-label">Pisos</span><span class="sum-val">${pi} + ${so} sótanos</span></div>
+      <div class="sum-row"><span class="sum-label">Altura p/p</span><span class="sum-val">${al} m</span></div>
+      <div class="sum-row"><span class="sum-label">M² útil/piso</span><span class="sum-val">${area} m²</span></div>
+      <div class="sum-row"><span class="sum-label">Aptos/piso</span><span class="sum-val">${up} uds</span></div>
+    </div>
+    <div class="sum-block">
+      <div class="sum-title">Estado actual</div>
+      <div class="sum-row"><span class="sum-label">Etapas activas</span><span class="sum-val">${etapas}</span></div>
+      <div class="sum-row"><span class="sum-label">Piso estructura</span><span class="sum-val">Piso ${document.getElementById('f-piso-actual').value}</span></div>
+      <div class="sum-row"><span class="sum-label">Workers</span><span class="sum-val">${document.getElementById('f-workers').value}</span></div>
+      <div class="sum-row"><span class="sum-label">Desviaciones</span><span class="sum-val">${desv}</span></div>
+    </div>
+    <div class="sum-block">
+      <div class="sum-title">Misiones activas</div>
+      <div style="font-size:12px;color:var(--ink2);line-height:1.8">${misiones}</div>
+    </div>`;
+}
+
+// ACTIVAR
+async function activar(){
+  const btn=document.getElementById('btn-activar');
+  btn.disabled=true;
+  document.getElementById('btn-activar-txt').style.display='none';
+  document.getElementById('btn-activar-spin').style.display='flex';
+
+  try{
+    const nombre=document.getElementById('f-nombre').value.trim();
+    const fr=parseFloat(document.getElementById('f-frente').value);
+    const fo=parseFloat(document.getElementById('f-fondo').value);
+    const pisos=parseInt(document.getElementById('f-pisos').value);
+    const sotanos=parseInt(document.getElementById('f-sotanos').value);
+    const altura=parseFloat(document.getElementById('f-altura').value);
+    const telegram=document.getElementById('f-telegram').value.trim();
+    const sistema=document.getElementById('f-sistema').value;
+    const fecha=document.getElementById('f-fecha').value;
+    const workers=parseInt(document.getElementById('f-workers').value)||8;
+    const pisoActual=parseInt(document.getElementById('f-piso-actual').value)||1;
+    const uds=parseInt(document.getElementById('f-uds-piso').value)||4;
+    const etapas=getChips('chips-etapa');
+    const misiones=getChips('chips-misiones');
+    const desv=getChips('chips-desv');
+    const notas=document.getElementById('f-notas').value.trim();
+
+    // Generar código de obra (OBR + 4 dígitos)
+    const codigo='OBR'+Math.floor(1000+Math.random()*9000);
+
+    // Crear proyecto en Supabase
+    const {data:proj, error:eProj}=await db.from('proyectos').insert({
+      id: codigo.toLowerCase()+'_'+Date.now(),
+      nombre,
+      direccion: document.getElementById('f-dir').value.trim(),
+      numero_pisos: pisos,
+      m2_por_piso: Math.round(fr*fo*0.72),
+      sistema_constructivo: sistema,
+      uso: 'mixto',
+      fecha_inicio: new Date().toISOString().split('T')[0],
+      fecha_fin_estimada: fecha?fecha+'-01':null,
+      estado: 'activo',
+      dueno_wa: telegram
+    }).select().single();
+
+    if(eProj) throw eProj;
+    const pid=proj.id;
+
+    // Crear misiones activas en proyecto_misiones
+    const hoy=new Date();
+    const fin=new Date(hoy); fin.setMonth(fin.getMonth()+6);
+    const misionRows=misiones.map((m,i)=>({
+      id: pid+'_'+m+'_'+i,
+      proyecto_id: pid,
+      etapa_id: etapas[0]||'estr',
+      mision_id: m,
+      nivel: m.includes('columnas')||m.includes('placa')||m.includes('vigas')?'piso '+pisoActual:null,
+      cantidad_meta: getMetaDefault(m,fr,fo,pisos),
+      unidad_primaria: getUnidad(m),
+      fecha_inicio_plan: hoy.toISOString().split('T')[0],
+      fecha_fin_plan: fin.toISOString().split('T')[0],
+      dias_plan: 180,
+      estado: 'en_curso'
+    }));
+
+    if(misionRows.length){
+      await db.from('proyecto_misiones').insert(misionRows);
+    }
+
+    // Guardar telegram_id en workers (el dueño como residente)
+    // Extraer solo números del telegram
+    const tgNum=telegram.replace(/\D/g,'');
+    await db.from('workers').insert({
+      proyecto_id: pid,
+      nombre: nombre+' (Residente)',
+      rol: 'res',
+      numero_wa: telegram,
+      telegram_id: tgNum,
+      activo: true,
+      mision_activa: misiones[0]||null
+    });
+
+    // Guardar código de obra en localStorage para referencia
+    localStorage.setItem('goobra_last_proj', pid);
+    localStorage.setItem('goobra_last_codigo', codigo);
+
+    // ÉXITO
+    document.querySelectorAll('.step-body').forEach(s=>s.style.display='none');
+    document.getElementById('success').style.display='block';
+    document.getElementById('btn-ir-sim').href=`/simulador.html?proyecto=${pid}&codigo=${codigo}`;
+
+  }catch(err){
+    console.error(err);
+    alert('Error al activar: '+JSON.stringify(err.message||err));
+    btn.disabled=false;
+    document.getElementById('btn-activar-txt').style.display='inline';
+    document.getElementById('btn-activar-spin').style.display='none';
+  }
+}
+
+function getMetaDefault(mision, fr, fo, pisos){
+  const a=fr*fo*.72;
+  const map={
+    'columnas_vaciado': 15,
+    'columnas_armado': 1200,
+    'placa_entrepiso': Math.round(a*pisos),
+    'vigas': Math.round((fr+fo)*2*pisos),
+    'levante_muros_interiores': Math.round(a*pisos*.6),
+    'panete_interior': Math.round(a*pisos*1.2),
+    'hidrosanitarias': Math.round(pisos*80),
+    'electricas': Math.round(pisos*130),
+    'pisos_enchapes': Math.round(a*pisos*.85),
+    'pintura_final': Math.round(a*pisos*1.8),
+  };
+  return map[mision]||100;
+}
+
+function getUnidad(mision){
+  const map={
+    'columnas_armado':'kg','columnas_vaciado':'un','placa_entrepiso':'m2',
+    'vigas':'ml','levante_muros_interiores':'m2','panete_interior':'m2',
+    'panete_exterior':'m2','hidrosanitarias':'ml','electricas':'ml',
+    'pisos_enchapes':'m2','pintura_final':'m2',
+  };
+  return map[mision]||'un';
+}
+
+// Set default fecha
+const d=new Date(); d.setMonth(d.getMonth()+14);
+document.getElementById('f-fecha').value=d.toISOString().slice(0,7);
 </script>
 </body>
 </html>
