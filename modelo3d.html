@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>GO Obra — Modelo 3D</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#090909;--bg2:#111;--bg3:#171717;--bg4:#1e1e1e;
+  --border:#1e1e1e;--border2:#2a2a2a;--border3:#333;
+  --text:#edeae4;--text2:#777;--text3:#3a3a3a;
+  --amber:#e8a020;--amber-d:rgba(232,160,32,.12);
+  --green:#27ae60;--blue:#2980b9;--red:#c0392b;
+  --panel:272px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden}
+
+#hdr{height:46px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 18px;gap:14px;position:fixed;top:0;left:0;right:0;z-index:200}
+.logo{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--amber);letter-spacing:3px}
+.logo span{color:var(--text)}
+.hdr-sep{width:1px;height:20px;background:var(--border2)}
+.hdr-tag{font-size:10px;color:var(--text3);letter-spacing:.5px}
+.hdr-r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.bdg{font-size:10px;padding:3px 9px;border-radius:20px;border:1px solid}
+.bdg-ok{border-color:rgba(39,174,96,.3);color:var(--green);background:rgba(39,174,96,.08)}
+.bdg-warn{border-color:rgba(232,160,32,.3);color:var(--amber);background:var(--amber-d)}
+.hdr-btn{font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--border2);color:var(--text2);background:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.hdr-btn:hover{border-color:var(--amber);color:var(--amber)}
+select.hdr-sel{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:4px 8px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer}
+
+#app{display:flex;height:calc(100vh - 46px);margin-top:46px}
+
+/* PANEL */
+#panel{width:var(--panel);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+#panel::-webkit-scrollbar{width:2px}
+#panel::-webkit-scrollbar-thumb{background:var(--border2)}
+
+.sec{border-bottom:1px solid var(--border);padding:12px 14px}
+.sec-hd{display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:0}
+.sec-hd:hover .sec-t{color:var(--text2)}
+.sec-t{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--text3);transition:color .15s}
+.sec-arr{font-size:10px;color:var(--text3);transition:transform .2s}
+.sec-body{overflow:hidden;transition:max-height .25s ease;max-height:600px;padding-top:10px}
+.sec-body.closed{max-height:0;padding-top:0}
+
+.slr{margin-bottom:9px}
+.slr-top{display:flex;justify-content:space-between;margin-bottom:3px}
+.slr-l{font-size:11px;color:var(--text2)}
+.slr-v{font-size:11px;font-weight:500;color:var(--amber);font-family:'Syne',sans-serif;min-width:36px;text-align:right}
+input[type=range]{width:100%;height:2px;-webkit-appearance:none;appearance:none;background:var(--border2);border-radius:1px;outline:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--amber);cursor:pointer;border:2px solid var(--bg2)}
+
+.layers{display:flex;flex-wrap:wrap;gap:4px}
+.lb{font-size:10px;padding:3px 9px;border-radius:20px;cursor:pointer;border:1px solid var(--border2);color:var(--text3);background:none;transition:all .15s}
+.lb:hover{border-color:var(--amber);color:var(--amber)}
+.lb.on{background:var(--amber-d);border-color:rgba(232,160,32,.4);color:var(--amber)}
+
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.stat{background:var(--bg3);border-radius:5px;padding:8px 10px;border:1px solid var(--border)}
+.stat-l{font-size:10px;color:var(--text3);margin-bottom:2px}
+.stat-v{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text)}
+
+.seq-item{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px}
+.seq-item:last-child{border:none}
+.seq-ico{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.seq-name{flex:1;color:var(--text2)}
+.seq-st{font-size:10px;font-weight:500}
+.seq-st.done{color:var(--green)}
+.seq-st.prog{color:var(--amber)}
+.seq-st.pend{color:var(--text3)}
+
+.phase-row{margin-bottom:8px}
+.phase-top{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+.phase-n{color:var(--text2)}
+.phase-p{color:var(--amber);font-weight:500;font-family:'Syne',sans-serif}
+.phase-bar{height:2px;background:var(--border2);border-radius:1px}
+.phase-fill{height:100%;border-radius:1px;background:var(--amber);transition:width .6s ease}
+
+.leg{display:flex;align-items:center;gap:7px;padding:3px 0;font-size:11px;color:var(--text2)}
+.leg-d{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+
+/* CANVAS */
+#cw{flex:1;position:relative;min-width:0}
+#c{width:100%;height:100%;display:block;outline:none}
+
+/* OVERLAY */
+#fi{position:absolute;bottom:16px;right:16px;background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:13px 16px;min-width:190px;transform:translateY(10px);opacity:0;transition:all .2s;pointer-events:none}
+#fi.show{transform:translateY(0);opacity:1;pointer-events:auto}
+#fi h4{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--amber);margin-bottom:8px}
+.mi{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text2)}
+.mi:last-child{border:none}
+.mi-d{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+#fi-close{position:absolute;top:10px;right:12px;font-size:14px;color:var(--text3);cursor:pointer;background:none;border:none;color:var(--text3)}
+#fi-close:hover{color:var(--text)}
+
+#hint{position:absolute;bottom:16px;left:16px;font-size:10px;color:var(--text3);line-height:1.9}
+
+/* LIVE badge */
+.live{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+<div id="hdr">
+  <div class="logo">GO<span> OBRA</span></div>
+  <div class="hdr-sep"></div>
+  <div class="hdr-tag">MODELO 3D</div>
+  <select class="hdr-sel" id="proj-sel"><option>Cargando...</option></select>
+  <div class="hdr-r">
+    <div class="live"><div class="live-dot"></div>En vivo</div>
+    <button class="hdr-btn" onclick="reload3d()">↻ Actualizar</button>
+    <div class="bdg bdg-ok" id="supa-st">● Supabase</div>
+  </div>
+</div>
+
+<div id="app">
+<div id="panel">
+
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)"><span class="sec-t">Lote</span><span class="sec-arr">▾</span></div>
+    <div class="sec-body">
+      <div class="slr"><div class="slr-top"><span class="slr-l">Frente</span><span class="slr-v" id="v-frente">12 m</span></div><input type="range" id="sl-frente" min="8" max="24" step=".5" value="12"></div>
+      <div class="slr"><div class="slr-top"><span class="slr-l">Fondo</span><span class="slr-v" id="v-fondo">24 m</span></div><input type="range" id="sl-fondo" min="12" max="50" step=".5" value="24"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)"><span class="sec-t">Retrocesos</span><span class="sec-arr">▾</span></div>
+    <div class="sec-body">
+      <div class="slr"><div class="slr-top"><span class="slr-l">Antejardín</span><span class="slr-v" id="v-ante">5 m</span></div><input type="range" id="sl-ante" min="0" max="7" step=".5" value="5"></div>
+      <div class="slr"><div class="slr-top"><span class="slr-l">Patio central</span><span class="slr-v" id="v-patio">3 m</span></div><input type="range" id="sl-patio" min="2" max="8" step=".5" value="3"></div>
+      <div class="slr"><div class="slr-top"><span class="slr-l">Jardín posterior</span><span class="slr-v" id="v-jardin">3 m</span></div><input type="range" id="sl-jardin" min="0" max="6" step=".5" value="3"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)"><span class="sec-t">Alturas y pisos</span><span class="sec-arr">▾</span></div>
+    <div class="sec-body">
+      <div class="slr"><div class="slr-top"><span class="slr-l">Piso a piso</span><span class="slr-v" id="v-altura">2.8 m</span></div><input type="range" id="sl-altura" min="2.6" max="3.5" step=".1" value="2.8"></div>
+      <div class="slr"><div class="slr-top"><span class="slr-l">Pisos sobre rasante</span><span class="slr-v" id="v-pisos">12</span></div><input type="range" id="sl-pisos" min="1" max="20" step="1" value="12"></div>
+      <div class="slr"><div class="slr-top"><span class="slr-l">Sótanos</span><span class="slr-v" id="v-sotanos">2</span></div><input type="range" id="sl-sotanos" min="0" max="4" step="1" value="2"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)"><span class="sec-t">Retroceso columnas (voladizo)</span><span class="sec-arr">▾</span></div>
+    <div class="sec-body">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:8px;line-height:1.5">La columna se retrocede del borde. La losa vuela hacia afuera.</div>
+      <div class="slr"><div class="slr-top"><span class="slr-l">Fachada frontal</span><span class="slr-v" id="v-vf">0.8 m</span></div><input type="range" id="sl-vf" min="0" max="1.8" step=".1" value="0.8"></div>
+      <div class="slr"><div class="slr-top"><span class="slr-l">Fachada posterior</span><span class="slr-v" id="v-vb">0.5 m</span></div><input type="range" id="sl-vb" min="0" max="1.8" step=".1" value="0.5"></div>
+      <div class="slr"><div class="slr-top"><span class="slr-l">Medianera izquierda</span><span class="slr-v" id="v-vl">0.0 m</span></div><input type="range" id="sl-vl" min="0" max="1.5" step=".1" value="0"></div>
+      <div class="slr"><div class="slr-top"><span class="slr-l">Medianera derecha</span><span class="slr-v" id="v-vr">0.0 m</span></div><input type="range" id="sl-vr" min="0" max="1.5" step=".1" value="0"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)"><span class="sec-t">Capas</span><span class="sec-arr">▾</span></div>
+    <div class="sec-body">
+      <div class="layers" id="layers">
+        <div class="lb on" data-l="lote">Lote</div>
+        <div class="lb on" data-l="estr">Estructura</div>
+        <div class="lb on" data-l="usos">Usos</div>
+        <div class="lb on" data-l="redes">Redes</div>
+        <div class="lb on" data-l="pf">Punto fijo</div>
+        <div class="lb" data-l="ejes">Ejes</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)"><span class="sec-t">Secuencia constructiva</span><span class="sec-arr">▾</span></div>
+    <div class="sec-body" id="seq-body">
+      <div style="font-size:11px;color:var(--text3)">Conectando...</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)"><span class="sec-t">Avance por etapa</span><span class="sec-arr">▾</span></div>
+    <div class="sec-body" id="avance-body">
+      <div style="font-size:11px;color:var(--text3)">Selecciona proyecto...</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)"><span class="sec-t">Métricas</span><span class="sec-arr">▾</span></div>
+    <div class="sec-body">
+      <div class="stats">
+        <div class="stat"><div class="stat-l">Área útil/piso</div><div class="stat-v" id="m-util">—</div></div>
+        <div class="stat"><div class="stat-l">Área total</div><div class="stat-v" id="m-tot">—</div></div>
+        <div class="stat"><div class="stat-l">Unidades</div><div class="stat-v" id="m-uds">—</div></div>
+        <div class="stat"><div class="stat-l">Altura total</div><div class="stat-v" id="m-hgt">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-hd" onclick="toggleSec(this)"><span class="sec-t">Leyenda</span><span class="sec-arr">▾</span></div>
+    <div class="sec-body">
+      <div class="leg"><div class="leg-d" style="background:#333"></div>Sótano / parqueadero</div>
+      <div class="leg"><div class="leg-d" style="background:#c47a20"></div>Comercio (P1)</div>
+      <div class="leg"><div class="leg-d" style="background:#1a5a8a"></div>Oficinas (P2)</div>
+      <div class="leg"><div class="leg-d" style="background:#1a6a3a"></div>Vivienda (P3+)</div>
+      <div class="leg"><div class="leg-d" style="background:#6a2a5a"></div>Punto fijo / escaleras</div>
+      <div class="leg"><div class="leg-d" style="background:#1a6a9a"></div>Red agua</div>
+      <div class="leg"><div class="leg-d" style="background:#8a8a1a"></div>Red eléctrica</div>
+      <div class="leg"><div class="leg-d" style="background:#9a4a1a"></div>Red gas</div>
+      <div class="leg"><div class="leg-d" style="background:rgba(232,160,32,.25);border:1px solid rgba(232,160,32,.3)"></div>Losa volada</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="cw">
+  <canvas id="c" tabindex="0"></canvas>
+  <div id="fi">
+    <button id="fi-close" onclick="document.getElementById('fi').classList.remove('show')">×</button>
+    <h4 id="fi-title">Piso 1</h4>
+    <div id="fi-body"></div>
+  </div>
+  <div id="hint">Arrastra · Scroll zoom · ← → ↑ ↓ teclado · Click = info piso</div>
+</div>
+</div>
+
+<script>
+// ── SUPABASE ──
+const SB='https://muyezsssnzlxavchabum.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
+const db=supabase.createClient(SB,SK);
+let MISIONES=[], PROJ_ID=null;
+
+// Secuencia constructiva — orden lógico de la obra
+// Cada fase corresponde a misiones de Supabase
+const FASES=[
+  {id:'f_cerr',    nombre:'Cerramiento provisional',   misions:['cerramiento_provisional'],      grp:'lote'},
+  {id:'f_camp',    nombre:'Campamento / bodega',        misions:['limpieza_descapote'],           grp:'lote'},
+  {id:'f_excav',   nombre:'Excavación',                 misions:['excavacion_mecanica','retiro_material'], grp:'estr'},
+  {id:'f_cim',     nombre:'Cimentación',                misions:['armado_zapatas','vaciado_zapatas'], grp:'estr'},
+  {id:'f_contra',  nombre:'Contrapiso / losa 0',        misions:['contrapiso'],                   grp:'estr'},
+  {id:'f_col_p1',  nombre:'Columnas piso 1',            misions:['columnas_armado','columnas_vaciado'], nivel:'piso 1', grp:'estr'},
+  {id:'f_placa_p1',nombre:'Placa piso 1',               misions:['placa_entrepiso','vigas'],      nivel:'piso 1', grp:'estr'},
+  {id:'f_col_p2',  nombre:'Columnas piso 2',            misions:['columnas_armado','columnas_vaciado'], nivel:'piso 2', grp:'estr'},
+  {id:'f_placa_p2',nombre:'Placa piso 2',               misions:['placa_entrepiso','vigas'],      nivel:'piso 2', grp:'estr'},
+  {id:'f_col_p3',  nombre:'Columnas piso 3',            misions:['columnas_armado','columnas_vaciado'], nivel:'piso 3', grp:'estr'},
+  {id:'f_placa_p3',nombre:'Placa piso 3+',              misions:['placa_entrepiso'],              nivel:'piso 3', grp:'estr'},
+  {id:'f_mamp',    nombre:'Mampostería',                 misions:['levante_muros_interiores'],     grp:'usos'},
+  {id:'f_redes',   nombre:'Redes hidrosanitarias',      misions:['hidrosanitarias'],              grp:'redes'},
+  {id:'f_elec',    nombre:'Redes eléctricas',           misions:['electricas'],                   grp:'redes'},
+  {id:'f_acab',    nombre:'Acabados',                   misions:['pisos_enchapes','pintura_final'], grp:'usos'},
+];
+
+function getFaseEstado(fase){
+  const mis=MISIONES.filter(m=>{
+    const matchMis=fase.misions.includes(m.mision_id);
+    const matchNivel=!fase.nivel||(m.nivel&&m.nivel.toLowerCase()===fase.nivel.toLowerCase());
+    return matchMis&&matchNivel;
+  });
+  if(!mis.length) return 'pend';
+  const allDone=mis.every(m=>m.estado==='completada');
+  const anyProg=mis.some(m=>m.estado==='en_curso'||m.estado==='completada');
+  if(allDone) return 'done';
+  if(anyProg) return 'prog';
+  return 'pend';
+}
+
+async function loadProjects(){
+  const {data}=await db.from('proyectos').select('id,nombre,numero_pisos').eq('estado','activo');
+  const sel=document.getElementById('proj-sel');
+  if(!data?.length){sel.innerHTML='<option>Sin proyectos</option>';return;}
+  sel.innerHTML=data.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  PROJ_ID=data[0].id;
+  if(data[0].numero_pisos){P.pisos=data[0].numero_pisos;document.getElementById('sl-pisos').value=P.pisos;}
+  await loadMisiones();
+}
+
+async function loadMisiones(){
+  if(!PROJ_ID) return;
+  const {data}=await db.from('proyecto_misiones')
+    .select('etapa_id,mision_id,nivel,estado,pct_avance')
+    .eq('proyecto_id',PROJ_ID);
+  MISIONES=data||[];
+  renderSeq();
+  renderAvance();
+  rebuild();
+  document.getElementById('supa-st').textContent='● Conectado';
+  document.getElementById('supa-st').className='bdg bdg-ok';
+}
+
+async function reload3d(){
+  await loadMisiones();
+}
+
+document.getElementById('proj-sel').addEventListener('change',function(){
+  PROJ_ID=this.value; loadMisiones();
+});
+
+// Auto-refresh cada 30s
+setInterval(loadMisiones, 30000);
+
+function renderSeq(){
+  const ELAB={done:'listo',prog:'en curso',pend:'pendiente'};
+  const ECOL={done:'#27ae60',prog:'#e8a020',pend:'#333'};
+  document.getElementById('seq-body').innerHTML=FASES.map(f=>{
+    const st=getFaseEstado(f);
+    return`<div class="seq-item">
+      <div class="seq-ico" style="background:${ECOL[st]}"></div>
+      <span class="seq-name">${f.nombre}</span>
+      <span class="seq-st ${st}">${ELAB[st]}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderAvance(){
+  const ETAPAS={prel:'Preliminares',mvt:'Mov. tierras',cim:'Cimentación',estr:'Estructura',mamp:'Mampostería',redes:'Redes',acab:'Acabados',urb:'Urbanismo',entr:'Entrega'};
+  const byE={};
+  MISIONES.forEach(m=>{
+    if(!byE[m.etapa_id])byE[m.etapa_id]={t:0,c:0};
+    byE[m.etapa_id].t++;
+    if(m.estado==='completada')byE[m.etapa_id].c++;
+  });
+  document.getElementById('avance-body').innerHTML=Object.entries(byE).map(([e,v])=>{
+    const p=v.t?Math.round(v.c/v.t*100):0;
+    return`<div class="phase-row">
+      <div class="phase-top"><span class="phase-n">${ETAPAS[e]||e}</span><span class="phase-p">${p}%</span></div>
+      <div class="phase-bar"><div class="phase-fill" style="width:${p}%"></div></div>
+    </div>`;
+  }).join('')||'<div style="font-size:11px;color:var(--text3)">Sin datos</div>';
+}
+
+// ── THREE.JS ──
+const canvas=document.getElementById('c');
+const cw=document.getElementById('cw');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x090909,1);
+
+const scene=new THREE.Scene();
+scene.fog=new THREE.FogExp2(0x090909,.018);
+
+const camera=new THREE.PerspectiveCamera(38,1,.1,300);
+
+scene.add(new THREE.AmbientLight(0xffffff,.55));
+const sun=new THREE.DirectionalLight(0xfff8ec,1.1);
+sun.position.set(18,28,18);scene.add(sun);
+const fill=new THREE.DirectionalLight(0xe8f4ff,.35);
+fill.position.set(-12,8,-12);scene.add(fill);
+
+const grid=new THREE.GridHelper(120,60,0x161616,0x111);
+grid.position.y=-.01;scene.add(grid);
+
+// Groups
+const GRP={lote:new THREE.Group(),estr:new THREE.Group(),usos:new THREE.Group(),redes:new THREE.Group(),pf:new THREE.Group(),ejes:new THREE.Group()};
+Object.values(GRP).forEach(g=>scene.add(g));
+const LST={lote:true,estr:true,usos:true,redes:true,pf:true,ejes:false};
+Object.entries(LST).forEach(([k,v])=>GRP[k].visible=v);
+
+document.getElementById('layers').addEventListener('click',e=>{
+  const b=e.target.closest('.lb'); if(!b)return;
+  const l=b.dataset.l;
+  LST[l]=!LST[l];GRP[l].visible=LST[l];
+  b.classList.toggle('on',LST[l]);
+});
+
+let P={frente:12,fondo:24,ante:5,patio:3,jardin:3,altura:2.8,pisos:12,sotanos:2,vf:.8,vb:.5,vl:0,vr:0};
+const floorMeshes=[];
+
+function M(c,o=1){return new THREE.MeshLambertMaterial({color:c,transparent:o<1,opacity:o});}
+function BOX(w,h,d,c,o=1){return new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c,o));}
+function CYL(r,h,c,o=1){return new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,8),M(c,o));}
+
+function rebuild(){
+  Object.values(GRP).forEach(g=>{while(g.children.length)g.remove(g.children[0])});
+  floorMeshes.length=0;
+
+  const {frente,fondo,ante,patio,jardin,altura,pisos,sotanos,vf,vb,vl,vr}=P;
+  const bloq=fondo-ante-patio-jardin;
+  const bf=bloq*.52, ba=bloq*.48;
+  const zMin=-fondo/2, zMax=fondo/2;
+  const zA=zMin+ante;
+  const zB=zA+bf;
+  const zPF=zB+patio/2;
+  const zC=zB+patio;
+  const zD=zC+ba;
+  const xEjes=[-frente/2,-frente/6,frente/6,frente/2];
+  const zEjes=[zA,zB,zC,zD];
+
+  // Columnas retrocedidas según retroceso
+  // retroceso = vf (fachada frente), vb (fachada posterior), vl, vr
+  const xColMin=-frente/2+vl;
+  const xColMax= frente/2-vr;
+  const zColA=zA+vf;  // eje A retrocedido
+  const zColD=zD-vb;  // eje D retrocedido
+  const xCols=[xColMin, (xColMin+xColMax)/3*1, (xColMin+xColMax)/3*2, xColMax];
+  const zCols=[zColA, zB, zC, zColD];
+
+  // Check fases para visibilidad constructiva
+  const fCerr=getFaseEstado({misions:['cerramiento_provisional']});
+  const fExcav=getFaseEstado({misions:['excavacion_mecanica']});
+  const fCim=getFaseEstado({misions:['armado_zapatas','vaciado_zapatas']});
+  const fContra=getFaseEstado({misions:['contrapiso']});
+  const pisosComp=[];
+  for(let p=1;p<=pisos;p++){
+    const st=getFaseEstado({misions:['placa_entrepiso'],nivel:'piso '+p});
+    if(st==='done') pisosComp.push(p);
+  }
+  const mampost=getFaseEstado({misions:['levante_muros_interiores']});
+  const redesSt=getFaseEstado({misions:['hidrosanitarias']});
+  const elecSt=getFaseEstado({misions:['electricas']});
+
+  // ── LOTE ──
+  const lg=GRP.lote;
+  const yBase=-(sotanos*altura);
+  // Suelo lote
+  const suelo=BOX(frente+.6,0.08,fondo+.6,0x0d0d0d,.95);
+  suelo.position.set(0,yBase-.04,0); lg.add(suelo);
+
+  // Antejardín
+  const aj=BOX(frente,.04,ante,0x0f1f0f,.9);
+  aj.position.set(0,yBase,zMin+ante/2); lg.add(aj);
+  if(jardin>0){
+    const jrd=BOX(frente,.04,jardin,0x0f1f0f,.7);
+    jrd.position.set(0,yBase,zMax-jardin/2); lg.add(jrd);
+  }
+  // Patio
+  const patM=BOX(frente,.04,patio,0x0a1a1a,.9);
+  patM.position.set(0,yBase,zPF); lg.add(patM);
+
+  // Cerramiento (solo si fase completada)
+  if(fCerr==='done'||fCerr==='prog'){
+    const cH=2.2;
+    [[0,zMin-.05,frente,.1],[0,zMax+.05,frente,.1],[-frente/2-.05,0,.1,fondo],[frente/2+.05,0,.1,fondo]].forEach(([x,z,w,d])=>{
+      const wall=BOX(w,cH,d,0x1a1a1a,.9);
+      wall.position.set(x,yBase+cH/2,z); lg.add(wall);
+    });
+  }
+
+  // ── SÓTANOS ──
+  if(sotanos>0&&(fExcav==='done'||fCim==='done')){
+    for(let s=1;s<=sotanos;s++){
+      const yMid=-(s*altura)+altura/2;
+      const sot=BOX(frente,altura-.1,bf+patio+ba,0x1e1e1e,.8);
+      sot.position.set(0,yMid,zA+(bf+patio+ba)/2); GRP.estr.add(sot);
+      const ls=BOX(frente+vl+vr,.16,bf+patio+ba,0x0c0c0c,.95);
+      ls.position.set((vr-vl)/2,-(s-1)*altura-.08,zA+(bf+patio+ba)/2); GRP.estr.add(ls);
+    }
+  }
+
+  // ── COLUMNAS + VIGAS ──
+  if(fCim==='done'||fContra==='done'||pisosComp.length>0){
+    const maxPisoCol=pisosComp.length>0?Math.max(...pisosComp):fContra==='done'?1:0;
+    const colH=(maxPisoCol+sotanos)*altura;
+    const colSize=Math.max(.22,frente/55+.18);
+    xCols.forEach(x=>{
+      zCols.forEach(z=>{
+        const col=BOX(colSize,colH,colSize,0x2a2a2a);
+        col.position.set(x,yBase+colH/2,z); GRP.estr.add(col);
+      });
+    });
+    // Vigas por piso completo
+    pisosComp.forEach(p=>{
+      const yTop=(p-sotanos)*altura-.1;
+      zCols.forEach(z=>{
+        const v=BOX(frente,.2,.2,0x1a1a1a); v.position.set(0,yTop,z); GRP.estr.add(v);
+      });
+      xCols.forEach(x=>{
+        const v=BOX(.2,.2,bf+patio+ba,0x1a1a1a,.9); v.position.set(x,yTop,zA+(bf+patio+ba)/2); GRP.estr.add(v);
+      });
+    });
+  }
+
+  // ── USOS / LOSAS ──
+  for(let pi=0;pi<pisos;pi++){
+    const p=pi+1;
+    const yBot=pi*altura;
+    const yMid=yBot+altura/2;
+    const losaY=yBot+altura-.09;
+    const isComp=pisosComp.includes(p);
+    if(!isComp) continue; // solo mostrar pisos con placa completa
+
+    let uso=p===1?'com':p===2?'ofi':'viv';
+    const colUso=uso==='com'?0xc47a20:uso==='ofi'?0x1a5a8a:0x1a6a3a;
+
+    // Bloque frente — columnas retrocedidas, losa vuela al borde del lote
+    // Estructura (entre columnas): de xColMin a xColMax, de zColA a zB
+    const bfW=xColMax-xColMin;
+    const bfD=zB-zColA;
+    const bfUso=BOX(bfW,altura-.2,bfD,colUso,.72);
+    bfUso.position.set((xColMin+xColMax)/2,yMid,(zColA+zB)/2);
+    bfUso.userData={piso:p,uso};GRP.usos.add(bfUso);floorMeshes.push(bfUso);
+
+    // Losa vuela hasta borde real del lote (incluye voladizo)
+    const losaFW=frente+vl+vr;
+    const losaFD=bf+vf;
+    const losaF=BOX(losaFW,.16,losaFD,0x0d0d0d,.97);
+    losaF.position.set((vr-vl)/2,losaY,zA+(losaFD)/2);
+    GRP.usos.add(losaF);
+
+    // Parte volada del frente (losa volada, semi-transparente amber)
+    if(vf>0){
+      const volFMesh=BOX(losaFW,altura*.35,vf,0xe8a020,.18);
+      volFMesh.position.set((vr-vl)/2,yMid,zA+vf/2);
+      GRP.usos.add(volFMesh);
+    }
+
+    // Bloque atras
+    const baW=xColMax-xColMin;
+    const baD=zColD-zC;
+    const baUso=BOX(baW,altura-.2,baD,colUso,.72);
+    baUso.position.set((xColMin+xColMax)/2,yMid,(zC+zColD)/2);
+    baUso.userData={piso:p,uso};GRP.usos.add(baUso);floorMeshes.push(baUso);
+
+    const losaAW=frente+vl+vr;
+    const losaAD=ba+vb;
+    const losaA=BOX(losaAW,.16,losaAD,0x0d0d0d,.97);
+    losaA.position.set((vr-vl)/2,losaY,zC+(losaAD)/2);
+    GRP.usos.add(losaA);
+    if(vb>0){
+      const volBMesh=BOX(losaAW,altura*.35,vb,0xe8a020,.18);
+      volBMesh.position.set((vr-vl)/2,yMid,zD-vb/2);
+      GRP.usos.add(volBMesh);
+    }
+
+    // Laterales volados
+    if(vl>0){
+      const vlM=BOX(vl,altura*.35,bf+ba+patio,0xe8a020,.15);
+      vlM.position.set(-frente/2-vl/2,yMid,zA+(bf+patio+ba)/2);
+      GRP.usos.add(vlM);
+    }
+    if(vr>0){
+      const vrM=BOX(vr,altura*.35,bf+ba+patio,0xe8a020,.15);
+      vrM.position.set(frente/2+vr/2,yMid,zA+(bf+patio+ba)/2);
+      GRP.usos.add(vrM);
+    }
+  }
+
+  // Techo
+  if(pisosComp.length===pisos){
+    const techo=BOX(frente+vl+vr,.18,bf+patio+ba+vf+vb,0x0d0d0d,.97);
+    techo.position.set((vr-vl)/2,pisos*altura+.09,zA+(bf+patio+ba)/2+(vf-vb)/2);
+    GRP.usos.add(techo);
+  }
+
+  // ── MAMPOSTERÍA ──
+  if(mampost==='done'||mampost==='prog'){
+    const pisosM=mampost==='done'?pisos:Math.max(1,Math.floor(pisos*.5));
+    for(let pi=0;pi<pisosM;pi++){
+      const p=pi+1;
+      if(!pisosComp.includes(p)) continue;
+      const yMid=pi*altura+altura/2;
+      // Muros exteriores semi-transparentes
+      const mW=BOX(frente,.1,bf+ba,0x2a1a0a,.5);
+      mW.position.set(0,yMid,zA+(bf+ba)/2+patio/2); GRP.usos.add(mW);
+    }
+  }
+
+  // ── PUNTO FIJO ──
+  const pfPisos=pisosComp.length>0?pisosComp.length:0;
+  if(pfPisos>0){
+    const pfH=pfPisos*altura;
+    const pfW=Math.min(frente*.38,3.8);
+    const pfD=patio*.8;
+    const pfM=BOX(pfW,pfH,pfD,0x6a2a5a,.82);
+    pfM.position.set(0,pfH/2,zPF); GRP.pf.add(pfM);
+    // Ascensores
+    [-pfW*.2,pfW*.2].forEach(ox=>{
+      const asc=CYL(.55,pfH,0x1a3050,.85);
+      asc.position.set(ox,pfH/2,zPF); GRP.pf.add(asc);
+    });
+  }
+
+  // ── REDES ──
+  const redesPisos=pisosComp.length;
+  if(redesPisos>0){
+    const rH=redesPisos*altura;
+    const rzBase=zB+.2;
+    // Agua
+    if(redesSt==='done'||redesSt==='prog'){
+      const ag=BOX(.09,rH,.09,0x1a6a9a,.92);
+      ag.position.set(-1.2,rH/2,rzBase); GRP.redes.add(ag);
+      for(let pi=0;pi<redesPisos;pi++){
+        const y=pi*altura+altura*.55;
+        [zA+bf*.5,zC+ba*.5].forEach(z=>{
+          const r=BOX(frente*.8,.04,.04,0x1a6a9a,.7);
+          r.position.set(0,y,z); GRP.redes.add(r);
+        });
+      }
+    }
+    // Eléctrica
+    if(elecSt==='done'||elecSt==='prog'){
+      const el=BOX(.09,rH,.09,0x8a8a1a,.92);
+      el.position.set(-1,.5+rH/2,rzBase); GRP.redes.add(el);
+      for(let pi=0;pi<redesPisos;pi++){
+        const y=pi*altura+altura*.42;
+        [zA+bf*.5,zC+ba*.5].forEach(z=>{
+          const r=BOX(frente*.8,.04,.04,0x8a8a1a,.65);
+          r.position.set(0,y,z); GRP.redes.add(r);
+        });
+      }
+    }
+    // Gas
+    const gas=BOX(.09,rH,.09,0x9a4a1a,.92);
+    gas.position.set(-.8,rH/2,rzBase); GRP.redes.add(gas);
+
+    // Contadores fachada
+    const cont=BOX(frente*.4,.3,.1,0x222,.95);
+    cont.position.set(0,.3,-fondo/2+.06); GRP.redes.add(cont);
+  }
+
+  // ── EJES ──
+  ['A','B','C','D'].forEach((n,i)=>{
+    const z=zEjes[i];
+    const tc=document.createElement('canvas');tc.width=40;tc.height=40;
+    const tx=tc.getContext('2d');
+    tx.fillStyle='rgba(232,160,32,.95)';tx.font='bold 26px monospace';
+    tx.textAlign='center';tx.textBaseline='middle';tx.fillText(n,20,20);
+    const lm=new THREE.Mesh(new THREE.PlaneGeometry(.7,.7),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(tc),transparent:true,depthWrite:false}));
+    lm.position.set(-frente/2-1,1,z);lm.rotation.y=Math.PI/2;GRP.ejes.add(lm);
+  });
+  [1,2,3,4].forEach((n,i)=>{
+    const x=xEjes[i];
+    const tc=document.createElement('canvas');tc.width=40;tc.height=40;
+    const tx=tc.getContext('2d');
+    tx.fillStyle='rgba(52,150,220,.95)';tx.font='bold 26px monospace';
+    tx.textAlign='center';tx.textBaseline='middle';tx.fillText(n,20,20);
+    const lm=new THREE.Mesh(new THREE.PlaneGeometry(.7,.7),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(tc),transparent:true,depthWrite:false}));
+    lm.position.set(x,1,zA-1.2);GRP.ejes.add(lm);
+  });
+
+  // ── MÉTRICAS ──
+  const aUtil=(bf+ba)*frente;
+  document.getElementById('m-util').textContent=Math.round(aUtil)+' m²';
+  document.getElementById('m-tot').textContent=Math.round(aUtil*pisos/100)/10+'k m²';
+  document.getElementById('m-uds').textContent=(1+1+Math.max(0,pisos-2)*4);
+  document.getElementById('m-hgt').textContent=Math.round((pisos+sotanos)*altura*10)/10+' m';
+}
+
+// ── SLIDERS ──
+const SL=[
+  ['frente','frente',v=>v+' m'],[' fondo','fondo',v=>v+' m'],
+  ['ante','ante',v=>v+' m'],['patio','patio',v=>v+' m'],['jardin','jardin',v=>v+' m'],
+  ['altura','altura',v=>v+' m'],['pisos','pisos',v=>+v],['sotanos','sotanos',v=>+v],
+  ['vf','vf',v=>parseFloat(v).toFixed(1)+' m'],['vb','vb',v=>parseFloat(v).toFixed(1)+' m'],
+  ['vl','vl',v=>parseFloat(v).toFixed(1)+' m'],['vr','vr',v=>parseFloat(v).toFixed(1)+' m'],
+];
+SL.forEach(([id,key,fmt])=>{
+  const sl=document.getElementById('sl-'+id.trim());
+  const vl=document.getElementById('v-'+id.trim());
+  if(!sl||!vl) return;
+  sl.addEventListener('input',()=>{P[key]=parseFloat(sl.value);vl.textContent=fmt(sl.value);rebuild();});
+});
+
+// Section toggle
+function toggleSec(hd){
+  const body=hd.parentElement.querySelector('.sec-body');
+  const arr=hd.querySelector('.sec-arr');
+  if(!body) return;
+  const closed=body.classList.toggle('closed');
+  if(arr) arr.style.transform=closed?'rotate(-90deg)':'';
+}
+
+// ── ORBIT ──
+let rotY=.55,rotX=.3,zoom=1,drag=false,px=0,py=0;
+const PIV=new THREE.Vector3(0,3,0);
+function updateCam(){
+  const r=36*zoom;
+  camera.position.set(PIV.x+r*Math.sin(rotY)*Math.cos(rotX),PIV.y+r*Math.sin(rotX),PIV.z+r*Math.cos(rotY)*Math.cos(rotX));
+  camera.lookAt(PIV);
+}
+canvas.addEventListener('mousedown',e=>{drag=true;px=e.clientX;py=e.clientY;canvas.style.cursor='grabbing'});
+window.addEventListener('mouseup',()=>{drag=false;canvas.style.cursor='grab'});
+window.addEventListener('mousemove',e=>{
+  if(!drag)return;
+  rotY+=(e.clientX-px)*.007;rotX=Math.max(-1.1,Math.min(1.1,rotX+(e.clientY-py)*.007));
+  px=e.clientX;py=e.clientY;updateCam();
+});
+canvas.addEventListener('wheel',e=>{zoom=Math.max(.25,Math.min(4.5,zoom+e.deltaY*.0008));updateCam();},{passive:true});
+canvas.style.cursor='grab';
+let tp=null;
+canvas.addEventListener('touchstart',e=>{tp={x:e.touches[0].clientX,y:e.touches[0].clientY}});
+canvas.addEventListener('touchmove',e=>{
+  if(!tp)return;
+  rotY+=(e.touches[0].clientX-tp.x)*.009;rotX=Math.max(-1.1,Math.min(1.1,rotX+(e.touches[0].clientY-tp.y)*.009));
+  tp={x:e.touches[0].clientX,y:e.touches[0].clientY};updateCam();
+},{passive:true});
+window.addEventListener('keydown',e=>{
+  const s=.04;
+  if(e.key==='ArrowLeft')rotY-=s;if(e.key==='ArrowRight')rotY+=s;
+  if(e.key==='ArrowUp')rotX=Math.max(-1.1,rotX-s);if(e.key==='ArrowDown')rotX=Math.min(1.1,rotX+s);
+  if(e.key==='+')zoom=Math.max(.25,zoom-.1);if(e.key==='-')zoom=Math.min(4.5,zoom+.1);
+  updateCam();
+});
+
+// ── RAYCASTER ──
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+let mx0=0,my0=0;
+canvas.addEventListener('mousedown',e=>{mx0=e.clientX;my0=e.clientY;});
+canvas.addEventListener('mouseup',e=>{
+  if(Math.abs(e.clientX-mx0)+Math.abs(e.clientY-my0)>5)return;
+  const rect=canvas.getBoundingClientRect();
+  mouse.x=((e.clientX-rect.left)/rect.width)*2-1;
+  mouse.y=-((e.clientY-rect.top)/rect.height)*2+1;
+  ray.setFromCamera(mouse,camera);
+  const hits=ray.intersectObjects(floorMeshes);
+  if(hits.length){showFloor(hits[0].object.userData.piso);}
+});
+
+const EUSOS={com:'Comercio',ofi:'Oficinas',viv:'Vivienda'};
+const ECOL={completada:'#27ae60',en_curso:'#e8a020',pendiente:'#333'};
+const ELAB={completada:'✓ listo',en_curso:'↗ en curso',pendiente:'— pendiente'};
+
+function showFloor(p){
+  const uso=p===1?'com':p===2?'ofi':'viv';
+  const mis=MISIONES.filter(m=>m.nivel&&parseInt(m.nivel.replace(/\D/g,''))===p);
+  document.getElementById('fi-title').textContent=`Piso ${p} · ${EUSOS[uso]}`;
+  document.getElementById('fi-body').innerHTML=mis.length
+    ?mis.map(m=>`<div class="mi"><div class="mi-d" style="background:${ECOL[m.estado]||'#333'}"></div><span>${(m.mision_id||'').replace(/_/g,' ')} <span style="color:${ECOL[m.estado]||'#333'}">${ELAB[m.estado]||''}</span></span></div>`).join('')
+    :`<div style="font-size:11px;color:#333">Sin misiones con nivel asignado</div>`;
+  document.getElementById('fi').classList.add('show');
+}
+
+// ── RESIZE ──
+function resize(){
+  const w=cw.clientWidth,h=cw.clientHeight||600;
+  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+window.addEventListener('resize',resize);resize();
+
+// ── ANIMATE ──
+(function animate(){requestAnimationFrame(animate);renderer.render(scene,camera);})();
+
+// ── INIT ──
+rebuild();updateCam();
+loadProjects().catch(()=>{
+  document.getElementById('supa-st').textContent='● Sin conexión';
+  document.getElementById('supa-st').className='bdg bdg-warn';
+});
+</script>
+</body>
+</html>
