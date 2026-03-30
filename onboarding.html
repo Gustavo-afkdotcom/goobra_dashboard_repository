@@ -397,6 +397,8 @@ h1 em{font-style:normal;color:var(--amber)}
       <h2>¡Obra activada!</h2>
       <p>Tu simulador está listo. El bot de Telegram enviará las primeras misiones esta mañana.<br>Guarda el link del simulador — es tu dashboard en vivo.</p>
       <a id="btn-ir-sim" href="#" class="btn-sim">Abrir simulador →</a>
+      <div id="sim-url-display" style="display:none;margin-top:1.5rem;padding:10px 14px;background:#f5f2ed;border:1px solid #ddd8ce;border-radius:8px;font-family:'DM Mono',monospace;font-size:12px;color:#555;word-break:break-all"></div>
+      <p style="margin-top:1rem;font-size:12px;color:#999">Guarda este link — es el acceso permanente a tu simulador.</p>
     </div>
   </div>
 </section>
@@ -604,7 +606,12 @@ async function activar(){
     // ÉXITO
     document.querySelectorAll('.step-body').forEach(s=>s.style.display='none');
     document.getElementById('success').style.display='block';
-    document.getElementById('btn-ir-sim').href=`/simulador.html?proyecto=${pid}&codigo=${codigo}`;
+    const simURL = `/simulador.html?proyecto=${pid}&codigo=${codigo}`;
+    document.getElementById('btn-ir-sim').href = simURL;
+    document.getElementById('sim-url-display').textContent = simURL;
+    document.getElementById('sim-url-display').style.display = 'block';
+    localStorage.setItem('goobra_sim_url', simURL);
+    localStorage.setItem('goobra_last_proj', pid);
 
   }catch(err){
     console.error(err);
@@ -640,6 +647,16 @@ function getUnidad(mision){
     'pisos_enchapes':'m2','pintura_final':'m2',
   };
   return map[mision]||'un';
+}
+
+// Check for saved session
+const savedURL = localStorage.getItem('goobra_sim_url');
+if (savedURL) {
+  const resume = document.createElement('div');
+  resume.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#c8720a;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;cursor:pointer;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.15)';
+  resume.innerHTML = '↗ Continuar en simulador';
+  resume.onclick = () => window.location.href = savedURL;
+  document.body.appendChild(resume);
 }
 
 // Set default fecha

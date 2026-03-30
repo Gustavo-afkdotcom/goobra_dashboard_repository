@@ -287,8 +287,26 @@ let PID=params.get('proyecto');
 const CODIGO=params.get('codigo')||'—';
 let WMAPS={}, MDATA=[], ADAT=[], currentTab='dashboard';
 
-// Fallback to test project
-if(!PID) PID='proy_edificio_001';
+// If no project in URL, show project selector
+if(!PID){
+  // Check localStorage for last project
+  const saved = localStorage.getItem('goobra_last_proj');
+  if(saved){
+    PID = saved;
+  } else {
+    // Show selector overlay
+    document.body.innerHTML = `
+      <div style="min-height:100vh;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;color:#f0ede8">
+        <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#e8a020;letter-spacing:3px;margin-bottom:2rem">GO OBRA</div>
+        <div style="background:#111;border:1px solid #222;border-radius:12px;padding:2rem;width:360px;text-align:center">
+          <h2 style="font-size:18px;margin-bottom:.5rem">Selecciona tu obra</h2>
+          <p style="font-size:13px;color:#777;margin-bottom:1.5rem">Ingresa el link completo que recibiste al activar tu simulador, o accede desde el onboarding.</p>
+          <a href="/onboarding.html" style="display:inline-block;background:#e8a020;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500">Activar nueva obra →</a>
+        </div>
+      </div>`;
+    throw new Error('No project ID');
+  }
+}
 
 function sw(name,btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
