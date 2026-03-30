@@ -365,7 +365,24 @@ document.getElementById('layers').addEventListener('click',e=>{
   b.classList.toggle('on',LST[l]);
 });
 
-let P={frente:12,fondo:24,ante:5,patio:3,jardin:3,altura:2.8,pisos:12,sotanos:2,vf:.8,vb:.5,vl:0,vr:0};
+// Read params from URL if coming from simulador
+const urlP=new URLSearchParams(location.search);
+let P={
+  frente: parseFloat(urlP.get('frente'))||12,
+  fondo:  parseFloat(urlP.get('fondo'))||24,
+  ante:5, patio:3, jardin:3,
+  altura: parseFloat(urlP.get('altura'))||2.8,
+  pisos:  parseInt(urlP.get('pisos'))||12,
+  sotanos:parseInt(urlP.get('sotanos'))||2,
+  vf:.8,vb:.5,vl:0,vr:0
+};
+// Sync sliders to URL params
+['frente','fondo','altura','pisos','sotanos'].forEach(k=>{
+  const sl=document.getElementById('sl-'+k);
+  const vl=document.getElementById('v-'+k);
+  if(sl){sl.value=P[k];}
+  if(vl){vl.textContent=P[k]+(k==='pisos'||k==='sotanos'?'':' m');}
+});
 const floorMeshes=[];
 
 function M(c,o=1){return new THREE.MeshLambertMaterial({color:c,transparent:o<1,opacity:o});}

@@ -285,6 +285,14 @@ const RENDIMIENTOS={
 const params=new URLSearchParams(location.search);
 let PID=params.get('proyecto');
 const CODIGO=params.get('codigo')||'—';
+// Geometry params for 3D model
+const GEO={
+  frente: parseFloat(params.get('frente'))||12,
+  fondo:  parseFloat(params.get('fondo'))||24,
+  pisos:  parseInt(params.get('pisos'))||12,
+  sotanos:parseInt(params.get('sotanos'))||2,
+  altura: parseFloat(params.get('altura'))||2.8
+};
 let WMAPS={}, MDATA=[], ADAT=[], currentTab='dashboard';
 
 // If no project in URL, show project selector
@@ -554,7 +562,7 @@ function loadModelo(){
   const wrap=document.getElementById('modelo-frame-wrap');
   if(wrap.querySelector('iframe')) return;
   const fr=document.createElement('iframe');
-  fr.src=`/modelo3d.html?proyecto=${PID}`;
+  fr.src=`/modelo3d.html?proyecto=${PID}&frente=${GEO.frente}&fondo=${GEO.fondo}&pisos=${GEO.pisos}&sotanos=${GEO.sotanos}&altura=${GEO.altura}`;
   fr.style.cssText='width:100%;height:calc(100vh - 130px);border:none;border-radius:8px';
   wrap.appendChild(fr);
 }

@@ -527,31 +527,28 @@ async function activar(){
   document.getElementById('btn-activar-spin').style.display='flex';
 
   try{
-    const nombre=document.getElementById('f-nombre').value.trim();
-    const fr=parseFloat(document.getElementById('f-frente').value);
-    const fo=parseFloat(document.getElementById('f-fondo').value);
-    const pisos=parseInt(document.getElementById('f-pisos').value);
-    const sotanos=parseInt(document.getElementById('f-sotanos').value);
-    const altura=parseFloat(document.getElementById('f-altura').value);
+    const nombre=document.getElementById('f-nombre').value.trim()||'Mi Obra';
+    const fr=parseFloat(document.getElementById('f-frente').value)||12;
+    const fo=parseFloat(document.getElementById('f-fondo').value)||24;
+    const pisos=parseInt(document.getElementById('f-pisos').value)||12;
+    const sotanos=parseInt(document.getElementById('f-sotanos').value)||2;
+    const altura=parseFloat(document.getElementById('f-altura').value)||2.8;
     const telegram=document.getElementById('f-telegram').value.trim();
-    const sistema=document.getElementById('f-sistema').value;
+    const sistema=document.getElementById('f-sistema').value||'porticos';
     const fecha=document.getElementById('f-fecha').value;
-    const workers=parseInt(document.getElementById('f-workers').value)||8;
-    const pisoActual=parseInt(document.getElementById('f-piso-actual').value)||1;
     const uds=parseInt(document.getElementById('f-uds-piso').value)||4;
-    const etapas=getChips('chips-etapa');
-    const misiones=getChips('chips-misiones');
-    const desv=getChips('chips-desv');
-    const notas=document.getElementById('f-notas').value.trim();
+    const pisoActual=parseInt(document.getElementById('f-piso-actual').value)||3;
+    const etapasSelec=getChips('chips-etapa');
+    const misionesSelec=getChips('chips-misiones');
 
-    // Generar código de obra (OBR + 4 dígitos)
     const codigo='OBR'+Math.floor(1000+Math.random()*9000);
+    const pid=codigo.toLowerCase()+'_'+Date.now();
 
-    // Crear proyecto en Supabase
-    const {data:proj, error:eProj}=await db.from('proyectos').insert({
-      id: codigo.toLowerCase()+'_'+Date.now(),
+    // Crear proyecto
+    const {data:proj,error:eProj}=await db.from('proyectos').insert({
+      id: pid,
       nombre,
-      direccion: document.getElementById('f-dir').value.trim(),
+      direccion: document.getElementById('f-dir').value.trim()||'Bogotá D.C.',
       numero_pisos: pisos,
       m2_por_piso: Math.round(fr*fo*0.72),
       sistema_constructivo: sistema,
@@ -561,61 +558,153 @@ async function activar(){
       estado: 'activo',
       dueno_wa: telegram
     }).select().single();
-
     if(eProj) throw eProj;
-    const pid=proj.id;
 
-    // Crear misiones activas en proyecto_misiones
+    // Orden de etapas
+    const ORDEN_ETAPAS=['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
+    const idxActual=ORDEN_ETAPAS.indexOf(etapasSelec[0]||'estr');
+
+    // Generar misiones completas con estado inteligente
     const hoy=new Date();
-    const fin=new Date(hoy); fin.setMonth(fin.getMonth()+6);
-    const misionRows=misiones.map((m,i)=>({
-      id: pid+'_'+m+'_'+i,
-      proyecto_id: pid,
-      etapa_id: etapas[0]||'estr',
-      mision_id: m,
-      nivel: m.includes('columnas')||m.includes('placa')||m.includes('vigas')?'piso '+pisoActual:null,
-      cantidad_meta: getMetaDefault(m,fr,fo,pisos),
-      unidad_primaria: getUnidad(m),
-      fecha_inicio_plan: hoy.toISOString().split('T')[0],
-      fecha_fin_plan: fin.toISOString().split('T')[0],
-      dias_plan: 180,
-      estado: 'en_curso'
-    }));
+    const misionRows=[];
+    const areaUtil=Math.round(fr*fo*0.72);
 
-    if(misionRows.length){
-      await db.from('proyecto_misiones').insert(misionRows);
+    // Definir todas las misiones del proyecto
+    const todasMisiones=[
+      // PRELIMINARES
+      {etapa:'prel',mision:'limpieza_descapote',meta:fr*fo,u:'m2',dias:3},
+      {etapa:'prel',mision:'localizacion_replanteo',meta:fr*fo,u:'m2',dias:3},
+      {etapa:'prel',mision:'cerramiento_provisional',meta:(fr+fo)*2,u:'ml',dias:5},
+      // MOV TIERRAS
+      {etapa:'mvt',mision:'excavacion_mecanica',meta:fr*fo*2.5,u:'m3',dias:8},
+      {etapa:'mvt',mision:'retiro_material',meta:fr*fo*2.5,u:'m3',dias:8},
+      // CIMENTACION
+      {etapa:'cim',mision:'armado_zapatas',meta:Math.round(fr*fo*15),u:'kg',dias:15},
+      {etapa:'cim',mision:'vaciado_zapatas',meta:Math.round(fr*fo*0.4),u:'m3',dias:7},
+      {etapa:'cim',mision:'contrapiso',meta:fr*fo,u:'m2',dias:8},
+      // ESTRUCTURA — por piso
+      ...Array.from({length:pisos},(_, i)=>[
+        {etapa:'estr',mision:'columnas_armado',nivel:'piso '+(i+1),meta:Math.round(fr/3)*4*18,u:'kg',dias:6},
+        {etapa:'estr',mision:'columnas_vaciado',nivel:'piso '+(i+1),meta:Math.round(fr/3)*4,u:'un',dias:5},
+        {etapa:'estr',mision:'vigas',nivel:'piso '+(i+1),meta:Math.round((fr+fo)*2),u:'ml',dias:6},
+        {etapa:'estr',mision:'placa_entrepiso',nivel:'piso '+(i+1),meta:fr*fo,u:'m2',dias:6},
+      ]).flat(),
+      // MAMPOSTERIA
+      {etapa:'mamp',mision:'levante_muros_interiores',meta:Math.round(areaUtil*pisos*0.6),u:'m2',dias:90},
+      {etapa:'mamp',mision:'fachada_muros_ext',meta:Math.round((fr+fo)*2*pisos*2.6),u:'m2',dias:80},
+      {etapa:'mamp',mision:'panete_interior',meta:Math.round(areaUtil*pisos*1.2),u:'m2',dias:90},
+      // REDES
+      {etapa:'redes',mision:'hidrosanitarias',meta:Math.round(pisos*80),u:'ml',dias:90},
+      {etapa:'redes',mision:'electricas',meta:Math.round(pisos*130),u:'ml',dias:90},
+      // ACABADOS
+      {etapa:'acab',mision:'pisos_enchapes',meta:Math.round(areaUtil*pisos*0.85),u:'m2',dias:90},
+      {etapa:'acab',mision:'pintura_final',meta:Math.round(areaUtil*pisos*1.8),u:'m2',dias:90},
+      // ENTREGA
+      {etapa:'entr',mision:'aseo_fino',meta:areaUtil*pisos,u:'m2',dias:15},
+      {etapa:'entr',mision:'actas_entrega',meta:uds,u:'un',dias:10},
+    ];
+
+    // Calcular fechas base y estado
+    let fechaCursor=new Date(hoy);
+    fechaCursor.setMonth(fechaCursor.getMonth()-6); // empezó hace 6 meses aprox
+
+    todasMisiones.forEach((m,idx)=>{
+      const idxEtapa=ORDEN_ETAPAS.indexOf(m.etapa);
+      let estado, pctAvance=0, cantEjec=0;
+
+      if(idxEtapa < idxActual){
+        // Etapas anteriores = completadas
+        estado='completada';
+        cantEjec=m.meta;
+        pctAvance=100;
+      } else if(idxEtapa === idxActual){
+        // Etapa actual = en curso
+        // Si es estructura, completar pisos anteriores al actual
+        if(m.etapa==='estr' && m.nivel){
+          const numPiso=parseInt(m.nivel.replace('piso ',''));
+          if(numPiso < pisoActual){
+            estado='completada'; cantEjec=m.meta; pctAvance=100;
+          } else if(numPiso === pisoActual){
+            // Misiones activas en el piso actual
+            if(misionesSelec.includes(m.mision)){
+              estado='en_curso';
+              cantEjec=Math.round(m.meta*0.4);
+            } else if(m.mision==='columnas_armado'){
+              estado='completada'; cantEjec=m.meta; pctAvance=100;
+            } else {
+              estado='pendiente'; cantEjec=0;
+            }
+          } else {
+            estado='pendiente'; cantEjec=0;
+          }
+        } else {
+          // Otras misiones de la etapa actual
+          if(misionesSelec.includes(m.mision)){
+            estado='en_curso';
+            cantEjec=Math.round(m.meta*0.35);
+          } else {
+            estado='pendiente'; cantEjec=0;
+          }
+        }
+      } else {
+        // Etapas futuras = pendiente
+        estado='pendiente'; cantEjec=0;
+      }
+
+      const fIni=new Date(fechaCursor);
+      const fFin=new Date(fechaCursor);
+      fFin.setDate(fFin.getDate()+m.dias);
+      if(estado!=='pendiente') fechaCursor.setDate(fechaCursor.getDate()+m.dias);
+
+      misionRows.push({
+        id: pid+'_'+m.etapa+'_'+(m.mision)+'_'+(m.nivel||'')+'_'+idx,
+        proyecto_id: pid,
+        etapa_id: m.etapa,
+        mision_id: m.mision,
+        nivel: m.nivel||null,
+        cantidad_meta: m.meta,
+        unidad_primaria: m.u,
+        fecha_inicio_plan: fIni.toISOString().split('T')[0],
+        fecha_fin_plan: fFin.toISOString().split('T')[0],
+        dias_plan: m.dias,
+        estado,
+        cantidad_ejecutada: cantEjec
+      });
+    });
+
+    // Insertar misiones en lotes de 20
+    for(let i=0;i<misionRows.length;i+=20){
+      const lote=misionRows.slice(i,i+20);
+      const {error}=await db.from('proyecto_misiones').insert(lote);
+      if(error) console.warn('Lote error:',error);
     }
 
-    // Guardar telegram_id en workers (el dueño como residente)
-    // Extraer solo números del telegram
+    // Crear worker (residente = dueño)
     const tgNum=telegram.replace(/\D/g,'');
     await db.from('workers').insert({
       proyecto_id: pid,
       nombre: nombre+' (Residente)',
       rol: 'res',
       numero_wa: telegram,
-      telegram_id: tgNum,
+      telegram_id: tgNum||null,
       activo: true,
-      mision_activa: misiones[0]||null
+      mision_activa: misionesSelec[0]?('estr.'+misionesSelec[0]):null
     });
 
-    // Guardar código de obra en localStorage para referencia
-    localStorage.setItem('goobra_last_proj', pid);
-    localStorage.setItem('goobra_last_codigo', codigo);
-
-    // ÉXITO
-    document.querySelectorAll('.step-body').forEach(s=>s.style.display='none');
-    document.getElementById('success').style.display='block';
-    const simURL = `/simulador.html?proyecto=${pid}&codigo=${codigo}`;
-    document.getElementById('btn-ir-sim').href = simURL;
-    document.getElementById('sim-url-display').textContent = simURL;
-    document.getElementById('sim-url-display').style.display = 'block';
+    // Guardar en localStorage y redirigir
+    const simURL=`/simulador.html?proyecto=${pid}&codigo=${codigo}&frente=${fr}&fondo=${fo}&pisos=${pisos}&sotanos=${sotanos}&altura=${altura}`;
     localStorage.setItem('goobra_sim_url', simURL);
     localStorage.setItem('goobra_last_proj', pid);
 
+    document.querySelectorAll('.step-body').forEach(s=>s.style.display='none');
+    document.getElementById('success').style.display='block';
+    document.getElementById('btn-ir-sim').href=simURL;
+    document.getElementById('sim-url-display').textContent=window.location.origin+simURL;
+    document.getElementById('sim-url-display').style.display='block';
+
   }catch(err){
     console.error(err);
-    alert('Error al activar: '+JSON.stringify(err.message||err));
+    alert('Error al activar: '+(err.message||JSON.stringify(err)));
     btn.disabled=false;
     document.getElementById('btn-activar-txt').style.display='inline';
     document.getElementById('btn-activar-spin').style.display='none';
