@@ -10,351 +10,97 @@
   :root {
     --amarillo: #F5C800;
     --negro: #0A0A0A;
-    --gris-oscuro: #141414;
     --gris-medio: #1E1E1E;
     --gris-borde: #2A2A2A;
     --gris-texto: #888;
     --blanco: #F0EDE8;
     --rojo: #E03A3A;
     --verde: #2ECC71;
+    --naranja: #F59300;
   }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--negro); color: var(--blanco); font-family: 'DM Sans', sans-serif; font-size: 14px; min-height: 100vh; }
 
-  body {
-    background: var(--negro);
-    color: var(--blanco);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    min-height: 100vh;
-  }
-
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
-    height: 56px;
-    border-bottom: 1px solid var(--gris-borde);
-    background: var(--negro);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-
-  .logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 24px;
-    letter-spacing: 3px;
-    color: var(--amarillo);
-  }
-
+  .header { display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 56px; border-bottom: 1px solid var(--gris-borde); background: var(--negro); position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px; color: var(--amarillo); }
   .logo span { color: var(--blanco); }
+  .header-meta { display: flex; align-items: center; gap: 1.5rem; }
+  .proyecto-selector { background: var(--gris-medio); border: 1px solid var(--gris-borde); color: var(--blanco); padding: 6px 12px; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
+  .live-dot { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gris-texto); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--verde); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-  .header-meta {
-    display: flex;
-    align-items: center;
-    gap: 1.5rem;
-  }
+  .main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
 
-  .proyecto-selector {
-    background: var(--gris-medio);
-    border: 1px solid var(--gris-borde);
-    color: var(--blanco);
-    padding: 6px 12px;
-    border-radius: 4px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 13px;
-    cursor: pointer;
-  }
+  /* SEMÁFORO */
+  .semaforo-banner { border-radius: 6px; padding: 1.25rem 1.75rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; border: 1px solid var(--gris-borde); position: relative; overflow: hidden; }
+  .semaforo-banner::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; }
+  .semaforo-banner.ganando { background: rgba(46,204,113,0.06); } .semaforo-banner.ganando::before { background: var(--verde); }
+  .semaforo-banner.en_riesgo { background: rgba(245,147,0,0.06); } .semaforo-banner.en_riesgo::before { background: var(--naranja); }
+  .semaforo-banner.perdiendo { background: rgba(224,58,58,0.06); } .semaforo-banner.perdiendo::before { background: var(--rojo); }
+  .semaforo-left { display: flex; align-items: center; gap: 1.25rem; }
+  .semaforo-icon { font-size: 32px; line-height: 1; }
+  .semaforo-titulo { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; }
+  .semaforo-sub { font-size: 12px; color: var(--gris-texto); margin-top: 3px; }
+  .semaforo-right { display: flex; gap: 2.5rem; }
+  .semaforo-dato { text-align: right; }
+  .semaforo-dato-val { font-family: 'Bebas Neue', sans-serif; font-size: 26px; }
+  .semaforo-dato-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--gris-texto); }
+  .rojo { color: var(--rojo); } .naranja { color: var(--naranja); } .verde { color: var(--verde); } .amarillo { color: var(--amarillo); }
 
-  .live-dot {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--gris-texto);
-  }
-
-  .dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--verde);
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-
-  .main {
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-
-  .grid-top {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  .stat-card {
-    background: var(--gris-medio);
-    border: 1px solid var(--gris-borde);
-    border-radius: 6px;
-    padding: 1.25rem 1.5rem;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .stat-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 3px; height: 100%;
-    background: var(--amarillo);
-  }
-
+  /* STATS */
+  .grid-top { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--gris-medio); border: 1px solid var(--gris-borde); border-radius: 6px; padding: 1.25rem 1.5rem; position: relative; overflow: hidden; }
+  .stat-card::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background: var(--amarillo); }
   .stat-card.alerta::before { background: var(--rojo); }
   .stat-card.ok::before { background: var(--verde); }
+  .stat-label { font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--gris-texto); margin-bottom: 0.5rem; }
+  .stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1px; line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--gris-texto); margin-top: 4px; }
 
-  .stat-label {
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: var(--gris-texto);
-    margin-bottom: 0.5rem;
-  }
+  /* PANELES */
+  .grid-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .panel { background: var(--gris-medio); border: 1px solid var(--gris-borde); border-radius: 6px; padding: 1.5rem; }
+  .section-title { font-size: 11px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--gris-texto); margin-bottom: 1rem; }
 
-  .stat-value {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px;
-    letter-spacing: 1px;
-    color: var(--blanco);
-    line-height: 1;
-  }
+  /* BARRAS */
+  .avance-wrap { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+  .avance-label { font-size: 11px; color: var(--gris-texto); white-space: nowrap; width: 90px; }
+  .avance-track { flex: 1; height: 8px; background: var(--gris-borde); border-radius: 4px; overflow: hidden; }
+  .avance-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
+  .avance-fill.real { background: var(--amarillo); }
+  .avance-fill.costo { background: var(--rojo); }
+  .avance-pct { font-family: 'Bebas Neue', sans-serif; font-size: 18px; width: 55px; text-align: right; }
 
-  .stat-sub {
-    font-size: 11px;
-    color: var(--gris-texto);
-    margin-top: 4px;
-  }
+  /* TABLA */
+  .fin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+  .fin-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--gris-texto); text-align: right; padding: 0 0 0.5rem 0; font-weight: 500; }
+  .fin-table th:first-child { text-align: left; }
+  .fin-table td { padding: 0.55rem 0; border-bottom: 1px solid var(--gris-borde); font-size: 12px; text-align: right; }
+  .fin-table td:first-child { text-align: left; }
+  .fin-table tr:last-child td { border-bottom: none; }
+  .etapa-tag { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background: rgba(245,200,0,0.1); color: var(--amarillo); margin-right: 4px; }
 
-  .section-title {
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--gris-texto);
-    margin-bottom: 1rem;
-  }
-
-  .grid-bottom {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-  }
-
-  .panel {
-    background: var(--gris-medio);
-    border: 1px solid var(--gris-borde);
-    border-radius: 6px;
-    padding: 1.5rem;
-  }
-
-  .etapa-row {
-    display: grid;
-    grid-template-columns: 80px 1fr 60px;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .etapa-row:last-child { margin-bottom: 0; }
-
-  .etapa-nombre {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--blanco);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .etapa-full { font-size: 10px; color: var(--gris-texto); }
-
-  .progress-track {
-    height: 6px;
-    background: var(--gris-borde);
-    border-radius: 3px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: var(--amarillo);
-    border-radius: 3px;
-    transition: width 0.8s ease;
-  }
-
-  .progress-fill.activa { background: var(--amarillo); }
-  .progress-fill.completada { background: var(--verde); }
-  .progress-fill.pendiente { background: var(--gris-borde); }
-
-  .etapa-pct {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
-    color: var(--blanco);
-    text-align: right;
-  }
-
-  .avance-item {
-    display: flex;
-    gap: 1rem;
-    padding: 0.875rem 0;
-    border-bottom: 1px solid var(--gris-borde);
-    animation: fadeIn 0.3s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
+  /* FEED */
+  .avance-item { display: flex; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--gris-borde); }
   .avance-item:last-child { border-bottom: none; }
-
-  .avance-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--amarillo);
-    flex-shrink: 0;
-    margin-top: 5px;
-  }
-
+  .avance-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amarillo); flex-shrink: 0; margin-top: 5px; }
   .avance-dot.desviacion { background: var(--rojo); }
-
   .avance-body { flex: 1; }
+  .avance-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+  .avance-mision { font-size: 13px; font-weight: 500; }
+  .avance-time { font-size: 11px; color: var(--gris-texto); white-space: nowrap; margin-left: 1rem; }
+  .avance-meta { font-size: 12px; color: var(--gris-texto); }
+  .avance-cantidad { display: inline-block; background: rgba(245,200,0,0.1); color: var(--amarillo); font-size: 11px; padding: 2px 8px; border-radius: 3px; margin-top: 4px; }
+  .badge-desviacion { display: inline-block; background: rgba(224,58,58,0.15); color: var(--rojo); font-size: 10px; padding: 2px 8px; border-radius: 3px; margin-left: 6px; text-transform: uppercase; }
 
-  .avance-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 3px;
-  }
-
-  .avance-mision {
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--blanco);
-  }
-
-  .avance-time {
-    font-size: 11px;
-    color: var(--gris-texto);
-    white-space: nowrap;
-    margin-left: 1rem;
-  }
-
-  .avance-meta {
-    font-size: 12px;
-    color: var(--gris-texto);
-  }
-
-  .avance-cantidad {
-    display: inline-block;
-    background: rgba(245, 200, 0, 0.1);
-    color: var(--amarillo);
-    font-size: 11px;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 3px;
-    margin-top: 4px;
-  }
-
-  .badge-desviacion {
-    display: inline-block;
-    background: rgba(224, 58, 58, 0.15);
-    color: var(--rojo);
-    font-size: 10px;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 3px;
-    margin-left: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  /* PANEL DESVIACIONES */
-  .desv-item {
-    display: flex;
-    gap: 1rem;
-    padding: 0.875rem 0;
-    border-bottom: 1px solid var(--gris-borde);
-  }
-  .desv-item:last-child { border-bottom: none; }
-  .desv-nivel {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    padding: 2px 8px;
-    border-radius: 3px;
-    white-space: nowrap;
-    height: fit-content;
-    margin-top: 2px;
-  }
-  .desv-nivel.alto { background: rgba(224,58,58,0.2); color: var(--rojo); }
-  .desv-nivel.medio { background: rgba(245,200,0,0.15); color: var(--amarillo); }
-  .desv-nivel.bajo { background: rgba(46,204,113,0.15); color: var(--verde); }
-  .desv-motivo { font-size: 13px; color: var(--blanco); margin-bottom: 3px; }
-  .desv-meta { font-size: 11px; color: var(--gris-texto); }
-
-  .loading {
-    text-align: center;
-    padding: 3rem;
-    color: var(--gris-texto);
-    font-size: 13px;
-  }
-
-  .spinner {
-    width: 24px; height: 24px;
-    border: 2px solid var(--gris-borde);
-    border-top-color: var(--amarillo);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    margin: 0 auto 1rem;
-  }
-
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .empty {
-    text-align: center;
-    padding: 2rem;
-    color: var(--gris-texto);
-    font-size: 13px;
-  }
-
-  @media (max-width: 900px) {
-    .grid-top { grid-template-columns: repeat(2, 1fr); }
-    .grid-bottom { grid-template-columns: 1fr; }
-    .main { padding: 1rem; }
-  }
-
-  .refresh-btn {
-    background: none;
-    border: 1px solid var(--gris-borde);
-    color: var(--gris-texto);
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    font-family: 'DM Sans', sans-serif;
-  }
-
+  .loading { text-align: center; padding: 2rem; color: var(--gris-texto); font-size: 13px; }
+  .spinner { width: 24px; height: 24px; border: 2px solid var(--gris-borde); border-top-color: var(--amarillo); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .empty { text-align: center; padding: 2rem; color: var(--gris-texto); font-size: 13px; }
+  .refresh-btn { background: none; border: 1px solid var(--gris-borde); color: var(--gris-texto); padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
   .refresh-btn:hover { border-color: var(--amarillo); color: var(--amarillo); }
+  @media (max-width:900px) { .grid-top{grid-template-columns:repeat(2,1fr)} .grid-bottom{grid-template-columns:1fr} .main{padding:1rem} .semaforo-right{gap:1rem} }
 </style>
 </head>
 <body>
@@ -362,70 +108,112 @@
 <header class="header">
   <div class="logo">GO<span> OBRA</span></div>
   <div class="header-meta">
-    <select class="proyecto-selector" id="proyectoSelect" onchange="cargarDatos()">
-      <option value="">Cargando proyectos...</option>
-    </select>
+    <select class="proyecto-selector" id="proyectoSelect" onchange="cargarDatos()"></select>
     <button class="refresh-btn" onclick="cargarDatos()">↻ Actualizar</button>
     <div class="live-dot"><div class="dot"></div> En vivo</div>
   </div>
 </header>
 
 <main class="main">
+
+  <div class="semaforo-banner en_riesgo" id="semaforo-banner">
+    <div class="semaforo-left">
+      <div class="semaforo-icon" id="semaforo-icon">⏳</div>
+      <div>
+        <div class="semaforo-titulo" id="semaforo-titulo">Analizando presupuesto...</div>
+        <div class="semaforo-sub" id="semaforo-sub">cruzando datos de campo vs presupuesto original</div>
+      </div>
+    </div>
+    <div class="semaforo-right">
+      <div class="semaforo-dato">
+        <div class="semaforo-dato-val amarillo" id="sem-avance">—</div>
+        <div class="semaforo-dato-label">avance real</div>
+      </div>
+      <div class="semaforo-dato">
+        <div class="semaforo-dato-val" id="sem-presupuesto">—</div>
+        <div class="semaforo-dato-label">presupuesto</div>
+      </div>
+      <div class="semaforo-dato">
+        <div class="semaforo-dato-val rojo" id="sem-sobrecosto">—</div>
+        <div class="semaforo-dato-label">sobrecosto material</div>
+      </div>
+      <div class="semaforo-dato">
+        <div class="semaforo-dato-val" id="sem-pct">—</div>
+        <div class="semaforo-dato-label">% desviación</div>
+      </div>
+    </div>
+  </div>
+
   <div class="grid-top">
-    <div class="stat-card" id="card-avances">
+    <div class="stat-card">
       <div class="stat-label">Avances hoy</div>
       <div class="stat-value" id="stat-avances-hoy">—</div>
       <div class="stat-sub" id="stat-avances-sub">cargando...</div>
     </div>
-    <div class="stat-card" id="card-workers">
+    <div class="stat-card">
       <div class="stat-label">Workers activos</div>
       <div class="stat-value" id="stat-workers">—</div>
       <div class="stat-sub">reportaron hoy</div>
     </div>
-    <div class="stat-card alerta" id="card-desviaciones">
-      <div class="stat-label">Desviaciones activas</div>
+    <div class="stat-card alerta">
+      <div class="stat-label">Desviaciones abiertas</div>
       <div class="stat-value" id="stat-desviaciones">—</div>
       <div class="stat-sub" id="stat-desviaciones-sub">requieren atención</div>
     </div>
-    <div class="stat-card ok" id="card-confianza">
-      <div class="stat-label">Confianza promedio</div>
+    <div class="stat-card ok">
+      <div class="stat-label">Confianza reportes</div>
       <div class="stat-value" id="stat-confianza">—</div>
-      <div class="stat-sub">de los reportes</div>
+      <div class="stat-sub">mensajes alta confianza</div>
     </div>
   </div>
 
   <div class="grid-bottom">
     <div class="panel">
-      <div class="section-title">Últimos avances</div>
-      <div id="feed-container"><div class="loading"><div class="spinner"></div>Cargando avances...</div></div>
+      <div class="section-title">Presupuesto vs Realidad</div>
+      <div class="avance-wrap">
+        <div class="avance-label">Avance obra</div>
+        <div class="avance-track"><div class="avance-fill real" id="bar-avance" style="width:0%"></div></div>
+        <div class="avance-pct amarillo" id="pct-avance">—</div>
+      </div>
+      <div class="avance-wrap">
+        <div class="avance-label">Sobrecosto mat.</div>
+        <div class="avance-track"><div class="avance-fill costo" id="bar-sobrecosto" style="width:0%"></div></div>
+        <div class="avance-pct rojo" id="pct-sobrecosto">—</div>
+      </div>
+      <div id="financiero-container"><div class="loading"><div class="spinner"></div>Calculando...</div></div>
     </div>
+
     <div class="panel">
-      <div class="section-title">Desviaciones abiertas</div>
-      <div id="desviaciones-container"><div class="loading"><div class="spinner"></div>Cargando desviaciones...</div></div>
+      <div class="section-title">Últimos avances de campo</div>
+      <div id="feed-container"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
     </div>
   </div>
+
 </main>
 
 <script>
 const SUPABASE_URL = 'https://muyezsssnzlxavchabum.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
-
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
-
 let proyectoActual = null;
 
+const ETAPA_NOMBRES = { prel:'Preliminares', mvt:'Mov. Tierras', cim:'Cimentación', estr:'Estructura', mamp:'Mampostería', redes:'Redes', acab:'Acabados', urb:'Urbanismo', entr:'Entrega' };
+
+function formatCOP(n) {
+  if (n >= 1000000000) return '$' + (n/1000000000).toFixed(2) + 'B';
+  if (n >= 1000000) return '$' + (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return '$' + (n/1000).toFixed(0) + 'K';
+  return '$' + Math.round(n).toLocaleString('es-CO');
+}
+
 async function cargarProyectos() {
-  const { data } = await db.from('proyectos').select('id, nombre').eq('estado', 'activo').order('nombre');
+  const { data } = await db.from('proyectos').select('id, nombre').eq('estado','activo').order('nombre');
   const sel = document.getElementById('proyectoSelect');
-  if (!data || data.length === 0) {
-    sel.innerHTML = '<option value="">Sin proyectos activos</option>';
-    return;
-  }
+  if (!data?.length) { sel.innerHTML = '<option>Sin proyectos</option>'; return; }
   sel.innerHTML = data.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
-  // Seleccionar proy_test_001 por defecto si existe
-  const prueba = data.find(p => p.id === 'proy_test_001');
-  proyectoActual = prueba ? prueba.id : data[0].id;
+  const def = data.find(p => p.id === 'proy_test_001');
+  proyectoActual = def ? def.id : data[0].id;
   sel.value = proyectoActual;
   cargarDatos();
 }
@@ -433,138 +221,122 @@ async function cargarProyectos() {
 async function cargarDatos() {
   proyectoActual = document.getElementById('proyectoSelect').value;
   if (!proyectoActual) return;
-  await Promise.all([cargarStats(), cargarFeed(), cargarDesviaciones()]);
+  await Promise.all([cargarStats(), cargarFinanciero(), cargarFeed()]);
 }
 
 async function cargarStats() {
-  const hoy = new Date();
-  hoy.setHours(0,0,0,0);
-  const hoyISO = hoy.toISOString();
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const { data: av } = await db.from('avances').select('id,trabajador_id,desviacion_detectada,confianza').eq('proyecto_id', proyectoActual).gte('timestamp_mensaje', hoy.toISOString());
+  const { data: desv } = await db.from('desviaciones').select('id,nivel').eq('proyecto_id', proyectoActual).eq('resuelto', false);
 
-  // Avances del día
-  const { data: avancesHoy } = await db
-    .from('avances')
-    .select('id, trabajador_id, desviacion_detectada, confianza')
-    .eq('proyecto_id', proyectoActual)
-    .gte('timestamp_mensaje', hoyISO);
-
-  // ← CAMBIO CLAVE: desviaciones desde tabla desviaciones, no desde avances
-  const { data: desviacionesAbiertas } = await db
-    .from('desviaciones')
-    .select('id, nivel')
-    .eq('proyecto_id', proyectoActual)
-    .eq('resuelto', false);
-
-  const total = avancesHoy?.length || 0;
-  const workers = new Set(avancesHoy?.map(a => a.trabajador_id)).size;
-  const totalDesv = desviacionesAbiertas?.length || 0;
-  const confianzas = avancesHoy?.map(a => a.confianza) || [];
-  const pctAlta = confianzas.length > 0
-    ? Math.round((confianzas.filter(c => c === 'alta').length / confianzas.length) * 100)
-    : 0;
+  const total = av?.length || 0;
+  const workers = new Set(av?.map(a=>a.trabajador_id)).size;
+  const totalDesv = desv?.length || 0;
+  const conf = av?.map(a=>a.confianza) || [];
+  const pctAlta = conf.length ? Math.round(conf.filter(c=>c==='alta').length/conf.length*100) : 0;
 
   document.getElementById('stat-avances-hoy').textContent = total;
-  document.getElementById('stat-avances-sub').textContent = `registros desde las 00:00`;
+  document.getElementById('stat-avances-sub').textContent = 'registros desde las 00:00';
   document.getElementById('stat-workers').textContent = workers;
-
-  const statDesv = document.getElementById('stat-desviaciones');
-  statDesv.textContent = totalDesv;
-  statDesv.style.color = totalDesv > 0 ? 'var(--rojo)' : 'var(--verde)';
-
-  const altas = desviacionesAbiertas?.filter(d => d.nivel === 'alto').length || 0;
-  document.getElementById('stat-desviaciones-sub').textContent =
-    altas > 0 ? `${altas} de nivel alto` : 'requieren atención';
-
+  const sd = document.getElementById('stat-desviaciones');
+  sd.textContent = totalDesv;
+  sd.style.color = totalDesv > 0 ? 'var(--rojo)' : 'var(--verde)';
+  document.getElementById('stat-desviaciones-sub').textContent = (desv?.filter(d=>d.nivel==='alto').length||0) > 0 ? `${desv.filter(d=>d.nivel==='alto').length} de nivel alto` : 'requieren atención';
   document.getElementById('stat-confianza').textContent = pctAlta + '%';
 }
 
+async function cargarFinanciero() {
+  const { data: res } = await db.from('v_financiero_resumen').select('*').eq('proyecto_id', proyectoActual).single();
+  const { data: etapas } = await db.from('v_financiero_proyecto').select('*').eq('proyecto_id', proyectoActual).order('sobrecosto_etapa', { ascending: false });
+
+  if (!res) { document.getElementById('financiero-container').innerHTML = '<div class="empty">Sin datos de presupuesto aún</div>'; return; }
+
+  // Semáforo
+  const banner = document.getElementById('semaforo-banner');
+  banner.className = 'semaforo-banner ' + res.semaforo_costo;
+  const cfgs = {
+    ganando:   { icon:'✅', titulo:'LA OBRA VA BIEN — DENTRO DE PRESUPUESTO' },
+    en_riesgo: { icon:'⚠️', titulo:'ATENCIÓN — MATERIALES MÁS CAROS DE LO PRESUPUESTADO' },
+    perdiendo: { icon:'🔴', titulo:'ALERTA — PÉRDIDA CONFIRMADA POR COSTOS DE MATERIALES' }
+  };
+  const cfg = cfgs[res.semaforo_costo] || cfgs.en_riesgo;
+  document.getElementById('semaforo-icon').textContent = cfg.icon;
+  document.getElementById('semaforo-titulo').textContent = cfg.titulo;
+  document.getElementById('semaforo-sub').textContent = `Cronograma: ${(res.pct_avance_real||0).toFixed(0)}% ejecutado — Los materiales subieron ${(res.pct_sobrecosto_total||0).toFixed(2)}% desde el presupuesto original (oct 2025)`;
+
+  document.getElementById('sem-avance').textContent = (res.pct_avance_real||0).toFixed(1) + '%';
+  document.getElementById('sem-presupuesto').textContent = formatCOP(res.presupuesto_total||0);
+
+  const sob = res.sobrecosto_total || 0;
+  const semSob = document.getElementById('sem-sobrecosto');
+  semSob.textContent = formatCOP(Math.abs(sob));
+  semSob.className = 'semaforo-dato-val ' + (sob > 0 ? 'rojo' : 'verde');
+
+  const pct = res.pct_sobrecosto_total || 0;
+  const semPct = document.getElementById('sem-pct');
+  semPct.textContent = (pct > 0 ? '+' : '') + pct.toFixed(2) + '%';
+  semPct.className = 'semaforo-dato-val ' + (pct > 2 ? 'rojo' : pct > 0 ? 'naranja' : 'verde');
+
+  // Barras
+  document.getElementById('bar-avance').style.width = Math.min(res.pct_avance_real||0, 100) + '%';
+  document.getElementById('pct-avance').textContent = (res.pct_avance_real||0).toFixed(0) + '%';
+  document.getElementById('bar-sobrecosto').style.width = Math.min(Math.abs(pct)*15, 100) + '%';
+  document.getElementById('pct-sobrecosto').textContent = (pct>0?'+':'') + pct.toFixed(1) + '%';
+
+  // Tabla etapas — solo las que tienen sobrecosto
+  const etapasConSob = (etapas||[]).filter(e => (e.sobrecosto_etapa||0) > 0);
+  if (!etapasConSob.length) { document.getElementById('financiero-container').innerHTML = '<div class="empty">Sin sobrecostos detectados</div>'; return; }
+
+  document.getElementById('financiero-container').innerHTML = `
+    <table class="fin-table">
+      <thead><tr>
+        <th>Etapa</th><th>Presupuesto</th><th>Real hoy</th><th>Diferencia</th>
+      </tr></thead>
+      <tbody>
+        ${etapasConSob.map(e => {
+          const s = e.sobrecosto_etapa||0;
+          return `<tr>
+            <td><span class="etapa-tag">${e.etapa_id?.toUpperCase()}</span><span style="font-size:11px;color:var(--gris-texto)">${ETAPA_NOMBRES[e.etapa_id]||e.etapa_id}</span></td>
+            <td>${formatCOP(e.presupuesto_etapa||0)}</td>
+            <td>${formatCOP(e.costo_real_etapa||0)}</td>
+            <td style="color:var(--rojo);font-weight:500">+${formatCOP(s)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
 async function cargarFeed() {
-  const { data } = await db
-    .from('avances')
-    .select('etapa_id, mision_id, nivel, cantidad_primaria_valor, cantidad_primaria_unidad, desviacion_detectada, desviacion_motivo, confianza, timestamp_mensaje, trabajador_id')
-    .eq('proyecto_id', proyectoActual)
-    .order('timestamp_mensaje', { ascending: false })
-    .limit(15);
+  const { data } = await db.from('avances')
+    .select('etapa_id,mision_id,nivel,cantidad_primaria_valor,cantidad_primaria_unidad,desviacion_detectada,confianza,timestamp_mensaje,trabajador_id')
+    .eq('proyecto_id', proyectoActual).order('timestamp_mensaje',{ascending:false}).limit(12);
 
-  if (!data || data.length === 0) {
-    document.getElementById('feed-container').innerHTML =
-      '<div class="empty">Sin avances registrados aún.<br>Envía un mensaje al bot de Telegram.</div>';
-    return;
-  }
+  if (!data?.length) { document.getElementById('feed-container').innerHTML = '<div class="empty">Sin avances aún.<br>Envía un mensaje al bot de Telegram.</div>'; return; }
 
-  const { data: workers } = await db.from('workers').select('id, nombre').eq('proyecto_id', proyectoActual);
-  const workerMap = {};
-  workers?.forEach(w => { workerMap[w.id] = w.nombre; });
+  const { data: ws } = await db.from('workers').select('id,nombre').eq('proyecto_id', proyectoActual);
+  const wm = {}; ws?.forEach(w => wm[w.id]=w.nombre);
 
-  const html = data.map(a => {
+  document.getElementById('feed-container').innerHTML = data.map(a => {
     const ts = new Date(a.timestamp_mensaje);
-    const ahora = new Date();
-    const diff = Math.round((ahora - ts) / 60000);
-    const fecha = ts.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
-    const tiempoStr = diff < 60 ? `hace ${diff}m` : diff < 1440 ? `hace ${Math.round(diff/60)}h` : fecha;
-
-    const nombreWorker = workerMap[a.trabajador_id] || a.trabajador_id;
-    const cantidad = a.cantidad_primaria_valor
-      ? `${a.cantidad_primaria_valor} ${a.cantidad_primaria_unidad || ''}`
-      : '';
-    const misionLabel = a.mision_id ? a.mision_id.replace(/_/g, ' ') : a.etapa_id;
-
-    return `
-      <div class="avance-item">
-        <div class="avance-dot ${a.desviacion_detectada ? 'desviacion' : ''}"></div>
-        <div class="avance-body">
-          <div class="avance-top">
-            <div class="avance-mision">${misionLabel}${a.nivel ? ' · ' + a.nivel : ''}
-              ${a.desviacion_detectada ? '<span class="badge-desviacion">⚠ desviación</span>' : ''}
-            </div>
-            <div class="avance-time">${tiempoStr}</div>
-          </div>
-          <div class="avance-meta">${nombreWorker}</div>
-          ${cantidad ? `<div class="avance-cantidad">${cantidad}</div>` : ''}
+    const diff = Math.round((new Date()-ts)/60000);
+    const t = diff<60?`hace ${diff}m`:diff<1440?`hace ${Math.round(diff/60)}h`:ts.toLocaleDateString('es-CO',{day:'numeric',month:'short'});
+    const ml = a.mision_id?a.mision_id.replace(/_/g,' '):a.etapa_id;
+    const cant = a.cantidad_primaria_valor?`${a.cantidad_primaria_valor} ${a.cantidad_primaria_unidad||''}`:'';
+    return `<div class="avance-item">
+      <div class="avance-dot ${a.desviacion_detectada?'desviacion':''}"></div>
+      <div class="avance-body">
+        <div class="avance-top">
+          <div class="avance-mision">${ml}${a.nivel?' · '+a.nivel:''}${a.desviacion_detectada?'<span class="badge-desviacion">⚠ desviación</span>':''}</div>
+          <div class="avance-time">${t}</div>
         </div>
-      </div>`;
+        <div class="avance-meta">${wm[a.trabajador_id]||a.trabajador_id}</div>
+        ${cant?`<div class="avance-cantidad">${cant}</div>`:''}
+      </div>
+    </div>`;
   }).join('');
-
-  document.getElementById('feed-container').innerHTML = html;
 }
 
-async function cargarDesviaciones() {
-  const { data } = await db
-    .from('desviaciones')
-    .select('id, mision_id, nivel, motivo, tipo, impacto_estimado_dias, timestamp_evento')
-    .eq('proyecto_id', proyectoActual)
-    .eq('resuelto', false)
-    .order('timestamp_evento', { ascending: false })
-    .limit(10);
-
-  if (!data || data.length === 0) {
-    document.getElementById('desviaciones-container').innerHTML =
-      '<div class="empty">✓ Sin desviaciones abiertas</div>';
-    return;
-  }
-
-  const html = data.map(d => {
-    const ts = new Date(d.timestamp_evento);
-    const fecha = ts.toLocaleDateString('es-CO', { day: 'numeric', month: 'short' });
-    const mision = d.mision_id ? d.mision_id.replace(/_/g, ' ') : '—';
-    const impacto = d.impacto_estimado_dias > 0 ? `+${d.impacto_estimado_dias}d de impacto · ` : '';
-
-    return `
-      <div class="desv-item">
-        <span class="desv-nivel ${d.nivel || 'medio'}">${d.nivel || 'medio'}</span>
-        <div>
-          <div class="desv-motivo">${d.motivo || '—'}</div>
-          <div class="desv-meta">${mision} · ${impacto}${d.tipo || ''} · ${fecha}</div>
-        </div>
-      </div>`;
-  }).join('');
-
-  document.getElementById('desviaciones-container').innerHTML = html;
-}
-
-// Auto-refresh cada 30 segundos
 setInterval(cargarDatos, 30000);
-
 cargarProyectos();
 </script>
 </body>
