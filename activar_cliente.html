@@ -213,11 +213,9 @@ body{max-width:860px;margin:0 auto;padding:2rem 1.5rem 4rem}
       <label>Uso principal *</label>
       <select id="uso">
         <option value="">Seleccionar...</option>
-        <option value="vivienda">Vivienda</option>
-        <option value="comercio">Comercio</option>
-        <option value="mixto">Mixto vivienda + comercio</option>
-        <option value="oficinas">Oficinas</option>
-        <option value="bodega">Bodega / industrial</option>
+        <option value="residencial">Residencial / Vivienda</option>
+        <option value="comercial">Comercial</option>
+        <option value="mixto">Mixto</option>
       </select>
     </div>
     <div class="field">
@@ -510,7 +508,7 @@ INSERT INTO proyectos (
   ${d.pisos||8},
   ${d.m2_por_piso||Math.round((d.frente||12)*(d.fondo||24)*0.65)},
   '${d.sistema||'porticos'}',
-  '${d.uso||'vivienda'}',
+  '${d.uso||'residencial'}',
   '${d.fecha_inicio||hoy}',
   '${d.fecha_fin||''}',
   'activo',
