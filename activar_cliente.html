@@ -562,7 +562,7 @@ SELECT
   p.nombre,
   p.id AS proyecto_id,
   pt.token,
-  'https://goobradashboardrepository-production.up.railway.app/alfa.html?token=' || pt.token AS link_cliente
+  'https://goobradashboardrepository-production.up.railway.app/alfa.html#token=' || pt.token AS link_cliente
 FROM proyectos p
 JOIN proyecto_tokens pt ON pt.proyecto_id = p.id
 WHERE p.id = '${pid}';`;
