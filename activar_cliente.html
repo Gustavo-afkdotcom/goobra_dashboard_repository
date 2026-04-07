@@ -65,7 +65,7 @@ body{max-width:860px;margin:0 auto;padding:2rem 1.5rem 4rem}
 /* WORKERS */
 .worker-list{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem}
 .worker-row{
-  display:grid;grid-template-columns:1fr 1fr 140px 36px;gap:.6rem;
+  display:grid;grid-template-columns:1fr 1fr 1fr 120px 36px;gap:.6rem;
   align-items:center;
   background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:.6rem .8rem;
 }
@@ -181,11 +181,16 @@ body{max-width:860px;margin:0 auto;padding:2rem 1.5rem 4rem}
   <div class="sec-title">Datos del proyecto</div>
   <div class="sec-sub">Información básica de la obra y del dueño. Estos datos van a la tabla <code>proyectos</code>.</div>
 
-  <div class="fg g1">
+  <div class="fg">
     <div class="field">
       <label>Nombre de la obra *</label>
       <input type="text" id="nombre" placeholder="Ej: Edificio Los Pinos — Carrera 42"/>
       <div class="field-hint">Como lo conoce el dueño — nombre informal está bien</div>
+    </div>
+    <div class="field">
+      <label>Código de obra (3 letras) *</label>
+      <input type="text" id="codigo_obra" placeholder="CAS" maxlength="3" oninput="this.value=this.value.toUpperCase()" style="font-family:'DM Mono',monospace;font-size:18px;letter-spacing:6px;text-transform:uppercase"/>
+      <div class="field-hint">El residente pone este código al inicio de cada mensaje — identifica la obra en Telegram</div>
     </div>
   </div>
 
@@ -435,16 +440,17 @@ function addWorker(){
   row.className='worker-row';
   row.id='wr-'+workerCount;
   row.innerHTML=`
-    <input type="text" placeholder="Nombre completo" id="wn-${workerCount}"/>
-    <input type="text" placeholder="Telegram ID (número)" id="wt-${workerCount}"/>
-    <select id="wr2-${workerCount}">
+    <input type="text" placeholder="Nombre" id="wn-\${workerCount}"/>
+    <input type="text" placeholder="Telegram ID (solo números)" id="wt-\${workerCount}"/>
+    <input type="text" placeholder="WhatsApp 57..." id="wwa-\${workerCount}"/>
+    <select id="wr2-\${workerCount}">
       <option value="residente">Residente</option>
       <option value="maestro">Maestro</option>
       <option value="oficial">Oficial</option>
       <option value="ayudante">Ayudante</option>
       <option value="topografo">Topógrafo</option>
     </select>
-    <button class="rm-btn" onclick="document.getElementById('wr-${workerCount}').remove()">×</button>
+    <button class="rm-btn" onclick="document.getElementById('wr-\${workerCount}').remove()">×</button>
   `;
   list.appendChild(row);
 }
@@ -484,7 +490,8 @@ function generarSQL(){
     const wn=document.getElementById('wn-'+i)?.value?.trim();
     const wt=document.getElementById('wt-'+i)?.value?.trim();
     const wr=document.getElementById('wr2-'+i)?.value;
-    if(wn) workers.push({nombre:wn,telegram_id:wt||'',rol:wr,id:`wrk_${slugify(wn)}_${Date.now()}`});
+    const wwa=document.getElementById('wwa-'+i)?.value?.trim()||'';
+    if(wn) workers.push({nombre:wn,telegram_id:wt||'',wa:wwa,rol:wr,id:`wrk_${slugify(wn)}_${Date.now()}`});
   }
 
   const hoy=new Date().toISOString().split('T')[0];
@@ -524,8 +531,8 @@ INSERT INTO proyectos (
 );
 
 -- 2. CREAR WORKERS${workers.length===0?'\n-- (ningún worker registrado)':''}
-${workers.map(w=>`INSERT INTO workers (id, proyecto_id, nombre, rol, telegram_id, activo, estado_hoy)
-VALUES ('${w.id}', '${pid}', '${w.nombre.replace(/'/g,"''")}', '${w.rol}', '${w.telegram_id}', true, 'disponible');`).join('\n')}
+${workers.map(w=>`INSERT INTO workers (id, proyecto_id, nombre, rol, telegram_id, numero_wa, activo, estado_hoy)
+VALUES ('${w.id}', '${pid}', '${w.nombre.replace(/'/g,"''")}', '${w.rol}', '${w.telegram_id}', '${w.wa||w.telegram_id}', true, 'disponible');`).join('\n')}
 
 -- 3. GENERAR TOKEN DE ACCESO
 INSERT INTO proyecto_tokens (proyecto_id)
@@ -571,6 +578,7 @@ WHERE p.id = '${pid}';`;
     <div class="res-row"><span class="res-k">Dueño</span><span class="res-v">${d.dueno_nombre||'—'} · ${waSafe}</span></div>
     <div class="res-row"><span class="res-k">Geometría</span><span class="res-v">${d.frente||12}m × ${d.fondo||24}m · ${d.pisos||8} pisos · ${d.sotanos||1} sótano(s)</span></div>
     <div class="res-row"><span class="res-k">Workers</span><span class="res-v">${workers.length} registrados</span></div>
+    <div class="res-row"><span class="res-k">Código Telegram</span><span class="res-v" style="font-family:'DM Mono',monospace;font-size:20px;letter-spacing:4px;color:var(--yellow)">${d.codigo_obra||'—'}</span></div>
     <div class="res-row"><span class="res-k">ID proyecto</span><span class="res-v" style="font-family:'DM Mono',monospace;font-size:10px">${pid}</span></div>
   `;
 
@@ -618,6 +626,7 @@ WHERE p.id = '${pid}';`;
 // ── VALIDACIÓN ──
 function collect(){
   const nombre=document.getElementById('nombre').value.trim();
+  const codigo_obra=(document.getElementById('codigo_obra').value||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);
   const dueno_wa=document.getElementById('dueno_wa').value.trim();
   const frente=parseFloat(document.getElementById('frente').value);
   const fondo=parseFloat(document.getElementById('fondo').value);
@@ -633,6 +642,7 @@ function collect(){
     errors,
     data:{
       nombre,
+      codigo_obra,
       direccion:document.getElementById('direccion').value.trim(),
       sistema:document.getElementById('sistema').value,
       uso:document.getElementById('uso').value,
