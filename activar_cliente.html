@@ -198,11 +198,12 @@ body{max-width:860px;margin:0 auto;padding:2rem 1.5rem 4rem}
       <label>Sistema constructivo *</label>
       <select id="sistema">
         <option value="">Seleccionar...</option>
-        <option value="portico_concreto">Pórtico en concreto</option>
+        <option value="porticos">Pórticos en concreto</option>
         <option value="muros_vaciados">Muros vaciados</option>
         <option value="mamposteria_estructural">Mampostería estructural</option>
+        <option value="ipe">IPE / Metálica</option>
         <option value="metalica">Estructura metálica</option>
-        <option value="mixta">Mixta</option>
+        <option value="mixto">Mixta</option>
       </select>
     </div>
   </div>
@@ -508,7 +509,7 @@ INSERT INTO proyectos (
   '${(d.direccion||'').replace(/'/g,"''")}',
   ${d.pisos||8},
   ${d.m2_por_piso||Math.round((d.frente||12)*(d.fondo||24)*0.65)},
-  '${d.sistema||'portico_concreto'}',
+  '${d.sistema||'porticos'}',
   '${d.uso||'vivienda'}',
   '${d.fecha_inicio||hoy}',
   '${d.fecha_fin||''}',
