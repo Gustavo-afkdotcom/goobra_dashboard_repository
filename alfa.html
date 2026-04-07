@@ -443,9 +443,15 @@ const SB='https://muyezsssnzlxavchabum.supabase.co';
 const SK_ADMIN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
 const SK_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
 
-// MODO cliente (token en URL) vs admin (sin token)
+// MODO cliente (token en URL o hash) vs admin (sin token)
+// Railway elimina query strings en redirects — usamos hash como fallback
 const urlParams=new URLSearchParams(location.search);
-const TOKEN=urlParams.get('token');
+let TOKEN=urlParams.get('token');
+if(!TOKEN && location.hash){
+  // Leer desde hash: #token=XXX
+  const hashParams=new URLSearchParams(location.hash.replace(/^#/,''));
+  TOKEN=hashParams.get('token');
+}
 const MODO_CLIENTE=!!TOKEN;
 // Siempre service_role para queries — el token resuelve el PID y actúa como autenticación
 const db=supabase.createClient(SB, SK_ADMIN);
