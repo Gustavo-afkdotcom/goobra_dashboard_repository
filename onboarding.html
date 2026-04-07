@@ -397,6 +397,11 @@ h1 em{font-style:normal;color:var(--amber)}
       <h2>¡Obra activada!</h2>
       <p>Tu simulador está listo. El bot de Telegram enviará las primeras misiones esta mañana.<br>Guarda el link del simulador — es tu dashboard en vivo.</p>
       <a id="btn-ir-sim" href="#" class="btn-sim">Abrir simulador →</a>
+      <div id="sim-codigo-wrap" style="display:none;margin-bottom:1.5rem">
+        <div style="font-size:12px;color:#999;margin-bottom:6px">Código de tu obra para el bot:</div>
+        <div style="font-family:'DM Mono',monospace;font-size:2.5rem;font-weight:700;color:#c8720a;letter-spacing:4px" id="sim-codigo">—</div>
+        <div style="font-size:12px;color:#999;margin-top:4px">El residente responde así: <strong id="sim-ejemplo">001 2: hice 25 m²</strong></div>
+      </div>
       <div id="sim-url-display" style="display:none;margin-top:1.5rem;padding:10px 14px;background:#f5f2ed;border:1px solid #ddd8ce;border-radius:8px;font-family:'DM Mono',monospace;font-size:12px;color:#555;word-break:break-all"></div>
       <p style="margin-top:1rem;font-size:12px;color:#999">Guarda este link — es el acceso permanente a tu simulador.</p>
     </div>
@@ -541,7 +546,8 @@ async function activar(){
     const etapasSelec=getChips('chips-etapa');
     const misionesSelec=getChips('chips-misiones');
 
-    const codigo='OBR'+Math.floor(1000+Math.random()*9000);
+    const codigoNum = String(Math.floor(100+Math.random()*900)); // 3 dígitos: 100-999
+    const codigo = 'OBR'+codigoNum;
     const pid=codigo.toLowerCase()+'_'+Date.now();
 
     // Crear proyecto
@@ -556,7 +562,8 @@ async function activar(){
       fecha_inicio: new Date().toISOString().split('T')[0],
       fecha_fin_estimada: fecha?fecha+'-01':null,
       estado: 'activo',
-      dueno_wa: telegram
+      dueno_wa: telegram,
+      codigo_corto: codigoNum
     }).select().single();
     if(eProj) throw eProj;
 
@@ -699,6 +706,10 @@ async function activar(){
     document.querySelectorAll('.step-body').forEach(s=>s.style.display='none');
     document.getElementById('success').style.display='block';
     document.getElementById('btn-ir-sim').href=simURL;
+    // Show codigo prominently
+    document.getElementById('sim-codigo').textContent = codigoNum;
+    document.getElementById('sim-codigo-wrap').style.display='block';
+    document.getElementById('sim-ejemplo').textContent = codigoNum + ' 2: hice 25 m²';
     document.getElementById('sim-url-display').textContent=window.location.origin+simURL;
     document.getElementById('sim-url-display').style.display='block';
 
