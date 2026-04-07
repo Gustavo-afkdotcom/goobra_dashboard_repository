@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>GO Obra — Alfa</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#080808; --bg2:#0f0f0f; --bg3:#161616; --bg4:#1c1c1c;
+  --border:#1f1f1f; --border2:#282828; --border3:#333;
+  --text:#ede9e3; --text2:#666; --text3:#333;
+  --yellow:#F5C800; --yellow-d:rgba(245,200,0,.08); --yellow-b:rgba(245,200,0,.2);
+  --green:#22c55e; --green-d:rgba(34,197,94,.08);
+  --red:#ef4444; --red-d:rgba(239,68,68,.08);
+  --orange:#f97316; --orange-d:rgba(249,115,22,.08);
+  --blue:#3b82f6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden}
+
+/* ── HEADER ── */
+#hdr{
+  height:52px;background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 1.5rem;gap:14px;
+  position:fixed;top:0;left:0;right:0;z-index:300;
+}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:4px;color:var(--yellow)}
+.logo span{color:var(--text)}
+.sep{width:1px;height:18px;background:var(--border2)}
+#proj-sel{
+  background:var(--bg3);border:1px solid var(--border2);color:var(--text);
+  padding:4px 10px;border-radius:4px;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;
+  max-width:220px;
+}
+.hdr-r{margin-left:auto;display:flex;align-items:center;gap:10px}
+.live{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hdr-btn{
+  background:none;border:1px solid var(--border2);color:var(--text2);
+  padding:4px 10px;border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;
+  transition:all .15s;
+}
+.hdr-btn:hover{border-color:var(--yellow);color:var(--yellow)}
+
+/* ── SEMÁFORO FINANCIERO ── */
+#banner{
+  position:fixed;top:52px;left:0;right:0;z-index:299;
+  padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);transition:background .4s;
+}
+#banner.ganando{background:rgba(34,197,94,.06)}
+#banner.en_riesgo{background:rgba(249,115,22,.06)}
+#banner.perdiendo{background:rgba(239,68,68,.06)}
+#banner::before{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+}
+#banner.ganando::before{background:var(--green)}
+#banner.en_riesgo::before{background:var(--orange)}
+#banner.perdiendo::before{background:var(--red)}
+.bn-l{display:flex;align-items:center;gap:12px}
+.bn-icon{font-size:20px;line-height:1}
+.bn-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:1px}
+.bn-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.bn-r{display:flex;gap:2rem}
+.bn-stat{text-align:right}
+.bn-val{font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1}
+.bn-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text2)}
+.c-yellow{color:var(--yellow)} .c-green{color:var(--green)} .c-red{color:var(--red)} .c-orange{color:var(--orange)}
+
+/* ── TABS ── */
+#tabs{
+  position:fixed;top:103px;left:0;right:0;z-index:298;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;padding:0 1.5rem;overflow-x:auto;
+}
+#tabs::-webkit-scrollbar{display:none}
+.tab{
+  padding:10px 14px;font-size:11px;font-weight:500;letter-spacing:.5px;
+  color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;
+  white-space:nowrap;display:flex;align-items:center;gap:6px;transition:all .15s;
+}
+.tab:hover{color:var(--text2)}
+.tab.on{color:var(--yellow);border-bottom-color:var(--yellow)}
+.tbdg{
+  background:var(--red);color:#fff;font-size:9px;
+  padding:1px 5px;border-radius:10px;font-weight:700;
+}
+
+/* ── MAIN ── */
+.main{
+  padding:1rem 1.5rem 2rem;max-width:1440px;margin:155px auto 0;
+  height:calc(100vh - 155px);overflow-y:auto;
+}
+.main::-webkit-scrollbar{width:3px}
+.main::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.tp{display:none}
+.tp.on{display:block}
+
+/* ── CARDS ── */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1rem}
+.sc{
+  background:var(--bg2);border:1px solid var(--border);border-radius:6px;
+  padding:1rem 1.25rem;position:relative;overflow:hidden;
+}
+.sc::before{content:'';position:absolute;top:0;left:0;width:2px;height:100%;background:var(--yellow)}
+.sc.g::before{background:var(--green)}
+.sc.r::before{background:var(--red)}
+.sc.o::before{background:var(--orange)}
+.sc.b::before{background:var(--blue)}
+.sl{font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;color:var(--text2);margin-bottom:.3rem}
+.sv{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1;color:var(--text)}
+.ss{font-size:10px;color:var(--text3);margin-top:2px}
+
+/* ── PANELS ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.ph{
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.ph-t{font-size:10px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2)}
+.pb{padding:1rem}
+
+/* ── PROGRESS BARS ── */
+.ptrack{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin:.75rem 0 .25rem}
+.pfill{height:100%;border-radius:3px;transition:width .6s ease}
+
+/* ── ETAPA ROW ── */
+.er{display:grid;grid-template-columns:90px 1fr 44px 52px;align-items:center;gap:.75rem;padding:6px 0;border-bottom:1px solid var(--border)}
+.er:last-child{border:none}
+.en{font-size:11px;font-weight:500;color:var(--text)}
+.ep{font-family:'Bebas Neue',sans-serif;font-size:16px;text-align:right}
+.bdg{font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;text-align:center;letter-spacing:.3px}
+.bdg-c{background:var(--green-d);color:var(--green)}
+.bdg-a{background:var(--yellow-d);color:var(--yellow)}
+.bdg-p{background:var(--bg4);color:var(--text3)}
+
+/* ── FEED ── */
+.fi{display:flex;gap:.75rem;padding:7px 0;border-bottom:1px solid var(--border)}
+.fi:last-child{border:none}
+.fdot{width:6px;height:6px;border-radius:50%;background:var(--yellow);flex-shrink:0;margin-top:5px}
+.fdot.d{background:var(--red)}
+.fb{flex:1}
+.fm{font-size:12px;font-weight:500;margin-bottom:2px}
+.ft{font-size:10px;color:var(--text3)}
+.fc{display:inline-block;background:var(--yellow-d);color:var(--yellow);font-size:10px;padding:1px 6px;border-radius:3px;margin-top:2px;border:1px solid var(--yellow-b)}
+.badge-d{display:inline-block;background:var(--red-d);color:var(--red);font-size:9px;padding:1px 5px;border-radius:3px;margin-left:5px}
+
+/* ── ALERTAS ── */
+.al{display:flex;gap:10px;padding:10px;border-radius:5px;margin-bottom:6px;border:1px solid transparent}
+.al:last-child{margin:0}
+.al.r{background:var(--red-d);border-color:rgba(239,68,68,.15)}
+.al.o{background:var(--orange-d);border-color:rgba(249,115,22,.15)}
+.al.g{background:var(--green-d);border-color:rgba(34,197,94,.15)}
+.al-ico{font-size:14px;flex-shrink:0;margin-top:1px}
+.al-t{font-size:12px;font-weight:500;margin-bottom:2px}
+.al.r .al-t{color:var(--red)}
+.al.o .al-t{color:var(--orange)}
+.al.g .al-t{color:var(--green)}
+.al-d{font-size:11px;color:var(--text2);line-height:1.5}
+
+/* ── MISIONES ── */
+.mr{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.mr:last-child{border:none}
+.mi-i{flex:1;min-width:0}
+.mi-n{font-size:12px;font-weight:500;margin-bottom:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi-m{font-size:10px;color:var(--text3)}
+.mi-bar{width:90px;flex-shrink:0}
+.mi-pct{font-family:'Bebas Neue',sans-serif;font-size:15px;min-width:36px;text-align:right}
+.comp-hd{
+  display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;
+  color:var(--text3);font-size:11px;border-top:1px solid var(--border);margin-top:2px;
+}
+.comp-hd:hover{color:var(--text2)}
+.comp-body{overflow:hidden;transition:max-height .25s ease}
+
+/* ── FINANCIERO TABLE ── */
+.fin-t{width:100%;border-collapse:collapse;font-size:12px}
+.fin-t th{
+  text-align:right;padding:6px 8px;font-size:9px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text3);
+  border-bottom:1px solid var(--border);
+}
+.fin-t th:first-child{text-align:left}
+.fin-t td{padding:7px 8px;border-bottom:1px solid var(--border);text-align:right}
+.fin-t td:first-child{text-align:left}
+.fin-t tr:last-child td{border:none}
+.fin-t tr:hover td{background:rgba(255,255,255,.015)}
+.etag{
+  display:inline-block;padding:1px 6px;border-radius:3px;
+  font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  background:var(--yellow-d);color:var(--yellow);margin-right:4px;
+}
+
+/* ── MATERIALES TABLE ── */
+.mat-t{width:100%;border-collapse:collapse;font-size:12px}
+.mat-t th{
+  text-align:right;padding:6px 8px;font-size:9px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;color:var(--text3);
+  border-bottom:1px solid var(--border);
+}
+.mat-t th:first-child{text-align:left}
+.mat-t td{padding:8px;border-bottom:1px solid var(--border);text-align:right;color:var(--text)}
+.mat-t td:first-child{text-align:left}
+.mat-t tr:last-child td{border:none}
+.mat-t tr:hover td{background:rgba(255,255,255,.015)}
+.stock-crit{color:var(--red);font-weight:600}
+.stock-ok{color:var(--green)}
+.stock-warn{color:var(--orange)}
+.precio-up{color:var(--red);font-weight:500}
+.precio-down{color:var(--green);font-weight:500}
+.stock-badge{
+  font-size:9px;font-weight:600;padding:2px 6px;border-radius:3px;
+  display:inline-block;
+}
+.stock-badge.crit{background:var(--red-d);color:var(--red)}
+.stock-badge.warn{background:var(--orange-d);color:var(--orange)}
+.stock-badge.ok{background:var(--green-d);color:var(--green)}
+
+/* ── EQUIPO ── */
+.wr{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.wr:last-child{border:none}
+.wrank{font-size:10px;color:var(--text3);min-width:20px}
+.wav{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--yellow-d);border:1px solid var(--yellow-b);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:11px;color:var(--yellow);flex-shrink:0;
+}
+.wi{flex:1;min-width:0}
+.wn{font-size:12px;font-weight:500;margin-bottom:1px}
+.wm{font-size:10px;color:var(--text3)}
+.wbar{flex:2}
+.wval{font-family:'Bebas Neue',sans-serif;font-size:16px;min-width:28px;text-align:right}
+.est-badge{
+  font-size:9px;font-weight:600;padding:1px 6px;border-radius:3px;
+  display:inline-block;margin-left:4px;
+}
+.est-badge.en_obra{background:var(--green-d);color:var(--green)}
+.est-badge.disponible{background:var(--yellow-d);color:var(--yellow)}
+.est-badge.ausente{background:var(--red-d);color:var(--red)}
+
+/* ── GANTT ── */
+.gantt-wrap{overflow-x:auto}
+.gantt-wrap::-webkit-scrollbar{height:3px}
+.gantt-wrap::-webkit-scrollbar-thumb{background:var(--border2)}
+.gantt{min-width:900px}
+.gantt-hd{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+.gantt-wk{flex:1;text-align:center;font-size:9px;color:var(--text3);padding:4px 0;border-right:1px solid var(--border)}
+.gantt-wk.cur{color:var(--yellow);font-weight:600}
+.gantt-row{display:flex;align-items:center;border-bottom:1px solid var(--border);min-height:32px}
+.gantt-row:hover{background:rgba(255,255,255,.015)}
+.gantt-lbl{width:160px;flex-shrink:0;padding:4px 10px;border-right:1px solid var(--border);font-size:10px;color:var(--text2)}
+.gantt-cells{flex:1;display:flex;position:relative;height:32px}
+.gantt-cell{flex:1;border-right:1px solid var(--border);height:100%}
+.gantt-cell.cur{background:rgba(245,200,0,.03)}
+.gantt-bar{
+  position:absolute;top:50%;transform:translateY(-50%);
+  height:14px;border-radius:2px;
+  display:flex;align-items:center;padding:0 5px;
+  font-size:9px;font-weight:600;white-space:nowrap;overflow:hidden;z-index:2;
+}
+.gantt-today{position:absolute;top:0;bottom:0;width:1px;background:rgba(245,200,0,.4);z-index:10}
+.gantt-etp{
+  background:var(--bg3);padding:5px 10px;border-bottom:1px solid var(--border);
+  font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:1px;color:var(--text2);
+}
+
+/* ── FILTER SELECT ── */
+.fsel{
+  background:var(--bg3);border:1px solid var(--border2);color:var(--text);
+  padding:3px 8px;border-radius:4px;font-size:10px;font-family:'DM Sans',sans-serif;
+}
+
+/* ── BARRAS FINANCIERO ── */
+.fin-bar-wrap{display:flex;align-items:center;gap:10px;margin-bottom:.75rem}
+.fin-bar-lbl{font-size:10px;color:var(--text2);white-space:nowrap;width:110px}
+.fin-bar-track{flex:1;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden}
+.fin-bar-fill{height:100%;border-radius:3px;transition:width .7s ease}
+.fin-bar-val{font-family:'Bebas Neue',sans-serif;font-size:16px;min-width:52px;text-align:right}
+
+/* ── EMPTY / LOADING ── */
+.empty{text-align:center;padding:2rem;color:var(--text3);font-size:12px}
+.spin{
+  width:18px;height:18px;border:2px solid var(--border2);
+  border-top-color:var(--yellow);border-radius:50%;
+  animation:sp .8s linear infinite;margin:0 auto .75rem;
+}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+@media(max-width:900px){
+  .sg{grid-template-columns:repeat(2,1fr)}
+  .g2{grid-template-columns:1fr}
+  .bn-r{gap:1rem}
+  .main{padding:.75rem}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hdr">
+  <div class="logo">GO<span> OBRA</span></div>
+  <div class="sep"></div>
+  <select id="proj-sel" onchange="init()"></select>
+  <div style="font-family:'DM Mono',monospace;font-size:9px;color:var(--yellow);background:var(--yellow-d);border:1px solid var(--yellow-b);padding:2px 8px;border-radius:3px;letter-spacing:1px">ALFA</div>
+  <div class="hdr-r">
+    <div class="live"><div class="ldot"></div><span id="last-upd" style="font-size:10px">En vivo</span></div>
+    <button class="hdr-btn" onclick="loadAll()">↻</button>
+  </div>
+</div>
+
+<!-- BANNER FINANCIERO -->
+<div id="banner" class="en_riesgo">
+  <div class="bn-l">
+    <div class="bn-icon" id="bn-icon">⏳</div>
+    <div>
+      <div class="bn-title" id="bn-title">Analizando presupuesto...</div>
+      <div class="bn-sub" id="bn-sub">cruzando datos de campo vs presupuesto original</div>
+    </div>
+  </div>
+  <div class="bn-r">
+    <div class="bn-stat"><div class="bn-val c-yellow" id="bn-avance">—</div><div class="bn-lbl">avance real</div></div>
+    <div class="bn-stat"><div class="bn-val" id="bn-presup">—</div><div class="bn-lbl">presupuesto</div></div>
+    <div class="bn-stat"><div class="bn-val c-red" id="bn-sob">—</div><div class="bn-lbl">sobrecosto</div></div>
+    <div class="bn-stat"><div class="bn-val" id="bn-pct">—</div><div class="bn-lbl">% desviación</div></div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div id="tabs">
+  <div class="tab on" onclick="sw('dashboard',this)">📊 Dashboard</div>
+  <div class="tab" onclick="sw('alertas',this)">🔔 Alertas <span class="tbdg" id="al-cnt" style="display:none">0</span></div>
+  <div class="tab" onclick="sw('misiones',this)">✅ Misiones</div>
+  <div class="tab" onclick="sw('cronograma',this)">📅 Plan de obra</div>
+  <div class="tab" onclick="sw('materiales',this)">📦 Materiales</div>
+  <div class="tab" onclick="sw('equipo',this)">👷 Equipo</div>
+</div>
+
+<!-- CONTENIDO -->
+<div class="main">
+
+<!-- ── DASHBOARD ── -->
+<div class="tp on" id="tp-dashboard">
+  <div class="sg">
+    <div class="sc"><div class="sl">Avances hoy</div><div class="sv" id="s-hoy">—</div><div class="ss">desde las 00:00</div></div>
+    <div class="sc b"><div class="sl">Workers activos</div><div class="sv" id="s-wrk">—</div><div class="ss">reportaron hoy</div></div>
+    <div class="sc r"><div class="sl">Desviaciones abiertas</div><div class="sv" id="s-desv">—</div><div class="ss" id="s-desv-sub">requieren atención</div></div>
+    <div class="sc g"><div class="sl">Avance global</div><div class="sv" id="s-glob">—</div><div class="ss">del proyecto</div></div>
+  </div>
+  <div class="g2">
+    <div class="panel">
+      <div class="ph"><div class="ph-t">Presupuesto vs Realidad</div></div>
+      <div class="pb">
+        <div class="fin-bar-wrap">
+          <div class="fin-bar-lbl">Avance obra</div>
+          <div class="fin-bar-track"><div class="fin-bar-fill" id="bar-av" style="width:0%;background:var(--yellow)"></div></div>
+          <div class="fin-bar-val c-yellow" id="pct-av">—</div>
+        </div>
+        <div class="fin-bar-wrap">
+          <div class="fin-bar-lbl">Sobrecosto mat.</div>
+          <div class="fin-bar-track"><div class="fin-bar-fill" id="bar-sob" style="width:0%;background:var(--red)"></div></div>
+          <div class="fin-bar-val c-red" id="pct-sob">—</div>
+        </div>
+        <div id="fin-etapas"><div class="empty"><div class="spin"></div></div></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="ph-t">Últimos avances de campo</div></div>
+      <div class="pb" id="feed-l"><div class="empty"><div class="spin"></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ALERTAS ── -->
+<div class="tp" id="tp-alertas">
+  <div class="panel">
+    <div class="ph"><div class="ph-t">Alertas activas</div><div id="al-resumen" style="font-size:10px;color:var(--text3)"></div></div>
+    <div class="pb" id="alertas-l"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- ── MISIONES ── -->
+<div class="tp" id="tp-misiones">
+  <div class="sg">
+    <div class="sc g"><div class="sl">Completadas</div><div class="sv" id="m-c">—</div></div>
+    <div class="sc"><div class="sl">En curso</div><div class="sv" id="m-e">—</div></div>
+    <div class="sc"><div class="sl">Pendientes</div><div class="sv" id="m-p">—</div></div>
+    <div class="sc b"><div class="sl">Avance global</div><div class="sv" id="m-g">—</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph">
+      <div class="ph-t">Misiones activas</div>
+      <select class="fsel" id="f-etapa" onchange="renderMis()"><option value="">Todas las etapas</option></select>
+    </div>
+    <div class="pb" id="mis-l"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- ── CRONOGRAMA ── -->
+<div class="tp" id="tp-cronograma">
+  <div class="panel">
+    <div class="ph"><div class="ph-t">Plan de obra — Gantt</div></div>
+    <div class="gantt-wrap"><div id="gantt-c"><div class="empty"><div class="spin"></div></div></div></div>
+  </div>
+</div>
+
+<!-- ── MATERIALES ── -->
+<div class="tp" id="tp-materiales">
+  <div class="sg">
+    <div class="sc r"><div class="sl">Stock crítico</div><div class="sv" id="mat-crit">—</div><div class="ss">bajo mínimo</div></div>
+    <div class="sc o"><div class="sl">Precio mayor presup.</div><div class="sv" id="mat-caros">—</div><div class="ss">materiales más caros</div></div>
+    <div class="sc g"><div class="sl">Precio menor presup.</div><div class="sv" id="mat-baratos">—</div><div class="ss">materiales más baratos</div></div>
+    <div class="sc"><div class="sl">Items en bodega</div><div class="sv" id="mat-tot">—</div><div class="ss">productos registrados</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><div class="ph-t">Precios reales vs presupuesto · Stock actual</div></div>
+    <div class="pb" id="mat-l"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- ── EQUIPO ── -->
+<div class="tp" id="tp-equipo">
+  <div class="sg">
+    <div class="sc"><div class="sl">Workers totales</div><div class="sv" id="e-tot">—</div></div>
+    <div class="sc g"><div class="sl">En obra hoy</div><div class="sv" id="e-act">—</div></div>
+    <div class="sc b"><div class="sl">Avances esta semana</div><div class="sv" id="e-sem">—</div></div>
+    <div class="sc"><div class="sl">Top worker</div><div class="sv" id="e-top" style="font-size:18px">—</div></div>
+  </div>
+  <div class="panel">
+    <div class="ph"><div class="ph-t">Equipo de obra — ranking</div></div>
+    <div class="pb" id="eq-l"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+const SB='https://muyezsssnzlxavchabum.supabase.co';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
+const db=supabase.createClient(SB,SK);
+
+const EN={prel:'Preliminares',mvt:'Mov. Tierras',cim:'Cimentación',estr:'Estructura',mamp:'Mampostería',redes:'Redes',acab:'Acabados',urb:'Urbanismo',entr:'Entrega'};
+const EO=['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
+
+let PID='proy_test_001', MDATA=[], WMAP={}, curTab='dashboard';
+
+function $(id){return document.getElementById(id)}
+function fCOP(n){
+  if(n===null||n===undefined)return'—';
+  if(Math.abs(n)>=1e9) return'$'+(n/1e9).toFixed(2)+'B';
+  if(Math.abs(n)>=1e6) return'$'+(n/1e6).toFixed(1)+'M';
+  if(Math.abs(n)>=1e3) return'$'+(n/1e3).toFixed(0)+'K';
+  return'$'+Math.round(n).toLocaleString('es-CO');
+}
+function timeAgo(ts){
+  const d=Math.round((Date.now()-new Date(ts))/60000);
+  return d<60?`hace ${d}m`:d<1440?`hace ${Math.round(d/60)}h`:new Date(ts).toLocaleDateString('es-CO',{day:'numeric',month:'short'});
+}
+
+function sw(name,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('on'));
+  btn.classList.add('on');
+  $('tp-'+name).classList.add('on');
+  curTab=name;
+  if(name==='cronograma') renderGantt();
+}
+
+async function cargarProyectos(){
+  const {data}=await db.from('proyectos').select('id,nombre').eq('estado','activo').order('nombre');
+  const sel=$('proj-sel');
+  if(!data?.length){sel.innerHTML='<option>Sin proyectos</option>';return;}
+  sel.innerHTML=data.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  const def=data.find(p=>p.id==='proy_test_001');
+  PID=def?def.id:data[0].id;
+  sel.value=PID;
+}
+
+async function init(){
+  PID=$('proj-sel').value;
+  if(!PID)return;
+  await loadAll();
+}
+
+async function loadAll(){
+  await Promise.all([loadWorkers(),loadMisiones(),loadDash(),loadAlertas(),loadMateriales(),loadEquipo(),loadFinanciero()]);
+  $('last-upd').textContent='Actualizado '+new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+  if(curTab==='cronograma') renderGantt();
+}
+
+// ── WORKERS ──
+async function loadWorkers(){
+  const {data}=await db.from('workers').select('id,nombre,rol,especialidad,estado_hoy').eq('proyecto_id',PID);
+  WMAP={};(data||[]).forEach(w=>WMAP[w.id]=w);
+}
+
+// ── FINANCIERO (banner + panel dashboard) ──
+async function loadFinanciero(){
+  const {data:res}=await db.from('v_financiero_resumen').select('*').eq('proyecto_id',PID).single();
+  const {data:etapas}=await db.from('v_financiero_proyecto').select('*').eq('proyecto_id',PID).order('sobrecosto_etapa',{ascending:false});
+
+  if(!res){$('bn-title').textContent='Sin datos de presupuesto';return;}
+
+  // Banner
+  const bn=$('banner');
+  bn.className=res.semaforo_costo||'en_riesgo';
+  const cfgs={
+    ganando:{icon:'✅',title:'LA OBRA VA BIEN — DENTRO DE PRESUPUESTO'},
+    en_riesgo:{icon:'⚠️',title:'ATENCIÓN — MATERIALES MÁS CAROS DE LO PRESUPUESTADO'},
+    perdiendo:{icon:'🔴',title:'ALERTA — PÉRDIDA CONFIRMADA POR COSTOS'}
+  };
+  const cfg=cfgs[res.semaforo_costo]||cfgs.en_riesgo;
+  $('bn-icon').textContent=cfg.icon;
+  $('bn-title').textContent=cfg.title;
+  $('bn-sub').textContent=`Cronograma: ${(res.pct_avance_real||0).toFixed(0)}% ejecutado — materiales ${(res.pct_sobrecosto_total||0).toFixed(2)}% sobre presupuesto original`;
+  $('bn-avance').textContent=(res.pct_avance_real||0).toFixed(1)+'%';
+  $('bn-presup').textContent=fCOP(res.presupuesto_total||0);
+  const sob=res.sobrecosto_total||0;
+  $('bn-sob').textContent=fCOP(Math.abs(sob));
+  $('bn-sob').className='bn-val '+(sob>0?'c-red':'c-green');
+  const pct=res.pct_sobrecosto_total||0;
+  $('bn-pct').textContent=(pct>0?'+':'')+pct.toFixed(2)+'%';
+  $('bn-pct').className='bn-val '+(pct>2?'c-red':pct>0?'c-orange':'c-green');
+
+  // Barras dashboard
+  $('bar-av').style.width=Math.min(res.pct_avance_real||0,100)+'%';
+  $('pct-av').textContent=(res.pct_avance_real||0).toFixed(0)+'%';
+  $('bar-sob').style.width=Math.min(Math.abs(pct)*12,100)+'%';
+  $('pct-sob').textContent=(pct>0?'+':'')+pct.toFixed(1)+'%';
+
+  // Tabla etapas con sobrecosto
+  const conSob=(etapas||[]).filter(e=>(e.sobrecosto_etapa||0)>0);
+  if(!conSob.length){$('fin-etapas').innerHTML='<div class="empty" style="padding:1rem">Sin sobrecostos por etapa</div>';return;}
+  $('fin-etapas').innerHTML=`
+    <table class="fin-t" style="margin-top:.75rem">
+      <thead><tr>
+        <th>Etapa</th><th>Presupuesto</th><th>Real hoy</th><th>Diferencia</th>
+      </tr></thead>
+      <tbody>${conSob.map(e=>`
+        <tr>
+          <td><span class="etag">${e.etapa_id?.toUpperCase()}</span><span style="font-size:10px;color:var(--text2)">${EN[e.etapa_id]||e.etapa_id}</span></td>
+          <td>${fCOP(e.presupuesto_etapa||0)}</td>
+          <td>${fCOP(e.costo_real_etapa||0)}</td>
+          <td style="color:var(--red);font-weight:500">+${fCOP(e.sobrecosto_etapa||0)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── DASHBOARD ──
+async function loadDash(){
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const {data:av}=await db.from('avances').select('id,trabajador_id,desviacion_detectada,confianza').eq('proyecto_id',PID).gte('timestamp_mensaje',hoy.toISOString());
+  const {data:desv}=await db.from('desviaciones').select('id,nivel').eq('proyecto_id',PID).eq('resuelto',false);
+
+  $('s-hoy').textContent=av?.length||0;
+  $('s-wrk').textContent=new Set(av?.map(a=>a.trabajador_id)).size;
+
+  const td=desv?.length||0;
+  $('s-desv').textContent=td;
+  $('s-desv').style.color=td>0?'var(--red)':'var(--green)';
+  const altas=desv?.filter(d=>d.nivel==='alto').length||0;
+  $('s-desv-sub').textContent=altas>0?`${altas} de nivel alto`:'requieren atención';
+
+  const g=MDATA.length?Math.round(MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length):0;
+  $('s-glob').textContent=g+'%';
+
+  // Feed
+  const {data:feed}=await db.from('avances')
+    .select('etapa_id,mision_id,nivel,cantidad_primaria_valor,cantidad_primaria_unidad,desviacion_detectada,confianza,timestamp_mensaje,trabajador_id')
+    .eq('proyecto_id',PID).order('timestamp_mensaje',{ascending:false}).limit(12);
+
+  if(!feed?.length){$('feed-l').innerHTML='<div class="empty">Sin avances aún.<br>Envía un mensaje al bot de Telegram.</div>';return;}
+  $('feed-l').innerHTML=feed.map(a=>{
+    const w=WMAP[a.trabajador_id];
+    const ml=(a.mision_id||a.etapa_id||'').replace(/_/g,' ');
+    const cant=a.cantidad_primaria_valor?`${a.cantidad_primaria_valor} ${a.cantidad_primaria_unidad||''}`:'';
+    return`<div class="fi">
+      <div class="fdot ${a.desviacion_detectada?'d':''}"></div>
+      <div class="fb">
+        <div class="fm">${ml}${a.nivel?' · '+a.nivel:''}${a.desviacion_detectada?'<span class="badge-d">⚠</span>':''}</div>
+        <div class="ft">${w?.nombre||a.trabajador_id} · ${timeAgo(a.timestamp_mensaje)}</div>
+        ${cant?`<span class="fc">${cant}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── MISIONES ──
+async function loadMisiones(){
+  const {data}=await db.from('proyecto_misiones').select('*').eq('proyecto_id',PID).order('etapa_id');
+  MDATA=data||[];
+  const c=MDATA.filter(m=>m.estado==='completada').length;
+  const e=MDATA.filter(m=>m.estado==='en_curso').length;
+  const p=MDATA.filter(m=>m.estado==='pendiente').length;
+  const g=MDATA.length?Math.round(MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length):0;
+  $('m-c').textContent=c;$('m-e').textContent=e;$('m-p').textContent=p;$('m-g').textContent=g+'%';
+  const etps=[...new Set(MDATA.map(m=>m.etapa_id))];
+  $('f-etapa').innerHTML='<option value="">Todas las etapas</option>'+etps.map(e=>`<option value="${e}">${EN[e]||e}</option>`).join('');
+  renderMis();
+}
+
+function renderMis(){
+  const f=$('f-etapa').value;
+  const activas=MDATA.filter(m=>m.estado!=='completada'&&(f?m.etapa_id===f:true));
+  const comp=MDATA.filter(m=>m.estado==='completada'&&(f?m.etapa_id===f:true));
+  const row=m=>{
+    const pct=parseFloat(m.pct_avance||0);
+    const col=pct===100?'var(--green)':pct>0?'var(--yellow)':'var(--bg4)';
+    const est=m.estado==='completada'?'bdg-c':m.estado==='en_curso'?'bdg-a':'bdg-p';
+    const estTxt=m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—';
+    return`<div class="mr">
+      <div class="mi-i">
+        <div class="mi-n">${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}</div>
+        <div class="mi-m">Meta: ${m.cantidad_meta} ${m.unidad_primaria||''} · Ejecutado: ${m.cantidad_ejecutada||0}</div>
+      </div>
+      <div class="mi-bar"><div class="ptrack" style="margin:0"><div class="pfill" style="width:${pct}%;background:${col}"></div></div></div>
+      <div class="mi-pct" style="color:${col}">${pct.toFixed(0)}%</div>
+      <div class="bdg ${est}">${estTxt}</div>
+    </div>`;
+  };
+  let html=activas.map(row).join('')||'<div class="empty">Sin misiones activas</div>';
+  if(comp.length){
+    html+=`<div class="comp-hd" onclick="this.nextElementSibling.style.maxHeight=this.nextElementSibling.style.maxHeight?'':this.nextElementSibling.scrollHeight+'px'">✓ ${comp.length} completadas ▾</div>
+    <div class="comp-body">${comp.map(row).join('')}</div>`;
+  }
+  $('mis-l').innerHTML=html;
+}
+
+// ── ALERTAS ──
+async function loadAlertas(){
+  const {data:als}=await db.from('v_alertas_activas').select('*').eq('proyecto_id',PID);
+  if(!als?.length){
+    $('alertas-l').innerHTML='<div class="empty">✓ Sin alertas activas. Todo en orden.</div>';
+    $('al-cnt').style.display='none';
+    return;
+  }
+  const crits=als.filter(a=>a.nivel==='critico').length;
+  const warns=als.filter(a=>a.nivel==='advertencia').length;
+  const cnt=crits+warns;
+  $('al-cnt').textContent=cnt;
+  $('al-cnt').style.display=cnt?'inline':'none';
+  $('al-resumen').textContent=`${crits} críticas · ${warns} advertencias · ${als.filter(a=>a.nivel==='info').length} informativas`;
+
+  const icoMap={critico:'🔴',advertencia:'⚠️',info:'✓'};
+  const clsMap={critico:'r',advertencia:'o',info:'g'};
+  $('alertas-l').innerHTML=als.map(a=>`
+    <div class="al ${clsMap[a.nivel]||'o'}">
+      <div class="al-ico">${icoMap[a.nivel]||'◆'}</div>
+      <div>
+        <div class="al-t">${a.titulo}</div>
+        <div class="al-d">${a.descripcion||''}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── MATERIALES ──
+async function loadMateriales(){
+  const {data}=await db.from('v_materiales_proyecto').select('*').eq('proyecto_id',PID);
+  if(!data?.length){$('mat-l').innerHTML='<div class="empty">Sin datos de materiales</div>';return;}
+
+  const crits=data.filter(m=>m.stock_critico).length;
+  const caros=data.filter(m=>(m.diferencia||0)>0).length;
+  const baratos=data.filter(m=>(m.diferencia||0)<0).length;
+  $('mat-crit').textContent=crits;
+  $('mat-caros').textContent=caros;
+  $('mat-baratos').textContent=baratos;
+  $('mat-tot').textContent=data.length;
+
+  $('mat-l').innerHTML=`
+    <table class="mat-t">
+      <thead><tr>
+        <th>Material</th><th>Unidad</th><th>Pres. original</th><th>Precio real</th><th>Diferencia</th><th>Stock actual</th><th>Mínimo</th><th>Estado</th>
+      </tr></thead>
+      <tbody>${data.map(m=>{
+        const dif=m.diferencia||0;
+        const difCls=dif>0?'precio-up':'precio-down';
+        const difTxt=(dif>0?'+':'')+fCOP(dif);
+        const stCls=m.stock_critico?'stock-crit':m.stock_actual<=m.stock_minimo*1.2?'stock-warn':'stock-ok';
+        const badge=m.stock_critico?'crit':m.stock_actual<=m.stock_minimo*1.2?'warn':'ok';
+        const badgeTxt=m.stock_critico?'⚡ Crítico':m.stock_actual<=m.stock_minimo*1.2?'⚠ Bajo':'✓ OK';
+        return`<tr>
+          <td style="font-weight:500">${m.nombre}</td>
+          <td style="color:var(--text2)">${m.unidad}</td>
+          <td>${fCOP(m.precio_presupuesto)}</td>
+          <td>${fCOP(m.precio_real)}</td>
+          <td class="${difCls}">${difTxt}</td>
+          <td class="${stCls}">${m.stock_actual} ${m.unidad}</td>
+          <td style="color:var(--text2)">${m.stock_minimo}</td>
+          <td><span class="stock-badge ${badge}">${badgeTxt}</span></td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table>
+    ${data.filter(m=>m.nota).length?`<div style="margin-top:.75rem;padding:.75rem;background:var(--bg3);border-radius:5px;border:1px solid var(--border)">
+      ${data.filter(m=>m.nota).map(m=>`<div style="font-size:11px;color:var(--text2);margin-bottom:3px">📝 <strong style="color:var(--text)">${m.nombre}</strong>: ${m.nota}</div>`).join('')}
+    </div>`:''}`;
+}
+
+// ── EQUIPO ──
+async function loadEquipo(){
+  const {data:ws}=await db.from('workers').select('id,nombre,rol,especialidad,estado_hoy').eq('proyecto_id',PID);
+  const {data:av}=await db.from('avances').select('trabajador_id,timestamp_mensaje').eq('proyecto_id',PID);
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const sem=new Date();sem.setDate(sem.getDate()-7);
+  const cnt={},hoySet=new Set();let semC=0;
+  (av||[]).forEach(a=>{
+    cnt[a.trabajador_id]=(cnt[a.trabajador_id]||0)+1;
+    const ts=new Date(a.timestamp_mensaje);
+    if(ts>=hoy)hoySet.add(a.trabajador_id);
+    if(ts>=sem)semC++;
+  });
+  const rank=(ws||[]).map(w=>({...w,n:cnt[w.id]||0})).sort((a,b)=>b.n-a.n);
+  $('e-tot').textContent=ws?.length||0;
+  $('e-act').textContent=hoySet.size;
+  $('e-sem').textContent=semC;
+  $('e-top').textContent=rank[0]?.nombre?.split(' ')[0]||'—';
+  const mx=Math.max(rank[0]?.n||1,1);
+  const ROLES={oficial:'Oficial',ayudante:'Ayudante',residente:'Residente',maestro:'Maestro',arquitecto:'Arquitecto'};
+  $('eq-l').innerHTML=rank.length?rank.map((w,i)=>{
+    const col=i===0?'var(--yellow)':i===1?'var(--blue)':'var(--text2)';
+    const ini=w.nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    const est=w.estado_hoy||'disponible';
+    return`<div class="wr">
+      <div class="wrank">#${i+1}</div>
+      <div class="wav">${ini}</div>
+      <div class="wi">
+        <div class="wn">${w.nombre}<span class="est-badge ${est}">${est==='en_obra'?'En obra':est==='ausente'?'Ausente':'Disponible'}</span></div>
+        <div class="wm">${w.especialidad||ROLES[w.rol]||w.rol||'—'} · ${w.n} avances</div>
+      </div>
+      <div class="wbar"><div class="ptrack" style="margin:.25rem 0 0"><div class="pfill" style="width:${Math.round(w.n/mx*100)}%;background:${col}"></div></div></div>
+      <div class="wval" style="color:${col}">${w.n}</div>
+    </div>`;
+  }).join(''):'<div class="empty">Sin workers registrados</div>';
+}
+
+// ── GANTT ──
+function renderGantt(){
+  const dates=MDATA.flatMap(m=>[m.fecha_inicio_plan,m.fecha_fin_plan].filter(Boolean).map(d=>new Date(d)));
+  if(!dates.length){$('gantt-c').innerHTML='<div class="empty">Sin fechas planificadas en las misiones</div>';return;}
+  const minD=new Date(Math.min(...dates));minD.setDate(1);
+  const maxD=new Date(Math.max(...dates));maxD.setMonth(maxD.getMonth()+1);maxD.setDate(1);
+  const today=new Date();
+  const totalDays=(maxD-minD)/86400000;
+  const pct=d=>Math.max(0,Math.min(100,(new Date(d)-minD)/86400000/totalDays*100));
+  const weeks=[];let cur=new Date(minD);
+  while(cur<maxD){weeks.push(new Date(cur));cur.setDate(cur.getDate()+7);}
+  const todayPct=pct(today);
+  const months={};
+  weeks.forEach(w=>{
+    const k=w.toLocaleDateString('es-CO',{month:'short',year:'2-digit'}).toUpperCase();
+    if(!months[k])months[k]=0;months[k]++;
+  });
+  const mCols=Object.entries(months).map(([n,c])=>`<div style="flex:${c};text-align:center;font-family:'Bebas Neue',sans-serif;font-size:10px;letter-spacing:1px;color:var(--yellow);padding:5px 0;border-right:1px solid var(--border)">${n}</div>`).join('');
+  const wCols=weeks.map(w=>{
+    const isCur=today>=w&&today<new Date(w.getTime()+7*864e5);
+    return`<div class="gantt-wk ${isCur?'cur':''}">${w.getDate()}</div>`;
+  }).join('');
+  let rows='';
+  EO.forEach(eid=>{
+    const ms=MDATA.filter(m=>m.etapa_id===eid&&m.fecha_inicio_plan&&m.fecha_fin_plan);
+    if(!ms.length)return;
+    rows+=`<div class="gantt-etp">${EN[eid]||eid}</div>`;
+    ms.forEach(m=>{
+      const l=pct(m.fecha_inicio_plan);
+      const w=Math.max(pct(m.fecha_fin_plan)-l,.5);
+      const col=m.estado==='completada'?'#166534':m.estado==='en_curso'?'#854d0e':'#1f1f1f';
+      const tc=m.estado==='completada'?'#86efac':m.estado==='en_curso'?'#fde68a':'#444';
+      const brd=m.estado==='pendiente'?'border:1px solid #333;':'';
+      rows+=`<div class="gantt-row">
+        <div class="gantt-lbl">${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}<br><span style="font-size:9px;color:var(--text3)">${parseFloat(m.pct_avance||0).toFixed(0)}%</span></div>
+        <div class="gantt-cells">
+          ${weeks.map(w=>{const isCur=today>=w&&today<new Date(w.getTime()+7*864e5);return`<div class="gantt-cell ${isCur?'cur':''}"></div>`;}).join('')}
+          <div class="gantt-bar" style="left:${l}%;width:${w}%;background:${col};color:${tc};${brd}">${parseFloat(m.pct_avance||0).toFixed(0)}%</div>
+          ${todayPct>0&&todayPct<100?`<div class="gantt-today" style="left:${todayPct}%"></div>`:''}
+        </div>
+      </div>`;
+    });
+  });
+  $('gantt-c').innerHTML=`<div class="gantt">
+    <div class="gantt-hd" style="display:flex">
+      <div style="width:160px;flex-shrink:0;border-right:1px solid var(--border);padding:5px 10px;font-size:9px;color:var(--text3)">HOY ${today.toLocaleDateString('es-CO',{day:'numeric',month:'short'})}</div>
+      <div style="flex:1;display:flex">${mCols}</div>
+    </div>
+    <div class="gantt-hd" style="display:flex">
+      <div style="width:160px;flex-shrink:0;border-right:1px solid var(--border)"></div>
+      <div style="flex:1;display:flex">${wCols}</div>
+    </div>
+    ${rows}
+  </div>`;
+  const wrap=document.querySelector('.gantt-wrap');
+  if(wrap&&todayPct>0)setTimeout(()=>{wrap.scrollLeft=(wrap.scrollWidth*todayPct/100)-wrap.clientWidth/2;},100);
+}
+
+// ── REALTIME ──
+db.channel('alfa-avances').on('postgres_changes',{event:'INSERT',schema:'public',table:'avances',filter:`proyecto_id=eq.${PID}`},()=>loadAll()).subscribe();
+db.channel('alfa-misiones').on('postgres_changes',{event:'UPDATE',schema:'public',table:'proyecto_misiones',filter:`proyecto_id=eq.${PID}`},()=>loadAll()).subscribe();
+
+setInterval(loadAll,30000);
+cargarProyectos().then(()=>init());
+</script>
+</body>
+</html>
