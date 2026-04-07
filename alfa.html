@@ -440,8 +440,14 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 <script>
 const SB='https://muyezsssnzlxavchabum.supabase.co';
-const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
-const db=supabase.createClient(SB,SK);
+const SK_ADMIN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
+const SK_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
+
+// MODO cliente (token en URL) vs admin (sin token)
+const urlParams=new URLSearchParams(location.search);
+const TOKEN=urlParams.get('token');
+const MODO_CLIENTE=!!TOKEN;
+const db=supabase.createClient(SB, MODO_CLIENTE ? SK_ANON : SK_ADMIN);
 
 const EN={prel:'Preliminares',mvt:'Mov. Tierras',cim:'Cimentación',estr:'Estructura',mamp:'Mampostería',redes:'Redes',acab:'Acabados',urb:'Urbanismo',entr:'Entrega'};
 const EO=['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
@@ -471,8 +477,34 @@ function sw(name,btn){
 }
 
 async function cargarProyectos(){
-  const {data}=await db.from('proyectos').select('id,nombre').eq('estado','activo').order('nombre');
   const sel=$('proj-sel');
+
+  if(MODO_CLIENTE){
+    // Modo cliente: resolver proyecto desde token via RLS
+    // Pasamos el token como header custom que la función get_proyecto_id() lee
+    const {data:tok}=await db
+      .from('proyecto_tokens')
+      .select('proyecto_id, proyectos(id,nombre)')
+      .eq('token',TOKEN)
+      .eq('activo',true)
+      .single();
+    if(!tok?.proyecto_id){
+      document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060608;color:#555;font-family:DM Sans,sans-serif;font-size:13px">Link inválido o expirado.</div>';
+      return;
+    }
+    PID=tok.proyecto_id;
+    // Ocultar selector en modo cliente
+    sel.style.display='none';
+    // Mostrar nombre del proyecto
+    const nomEl=document.createElement('span');
+    nomEl.style.cssText='font-size:12px;color:var(--text2)';
+    nomEl.textContent=tok.proyectos?.nombre||PID;
+    sel.parentNode.insertBefore(nomEl,sel);
+    return;
+  }
+
+  // Modo admin: mostrar todos los proyectos
+  const {data}=await db.from('proyectos').select('id,nombre').eq('estado','activo').order('nombre');
   if(!data?.length){sel.innerHTML='<option>Sin proyectos</option>';return;}
   sel.innerHTML=data.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
   const def=data.find(p=>p.id==='proy_test_001');
@@ -801,6 +833,13 @@ db.channel('alfa-avances').on('postgres_changes',{event:'INSERT',schema:'public'
 db.channel('alfa-misiones').on('postgres_changes',{event:'UPDATE',schema:'public',table:'proyecto_misiones',filter:`proyecto_id=eq.${PID}`},()=>loadAll()).subscribe();
 
 setInterval(loadAll,30000);
+
+// En modo cliente ocultar tag ALFA y ajustar header
+if(MODO_CLIENTE){
+  const tag=document.querySelector('.hdr-tag');
+  if(tag) tag.style.display='none';
+}
+
 cargarProyectos().then(()=>init());
 </script>
 </body>
