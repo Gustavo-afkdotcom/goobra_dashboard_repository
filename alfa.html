@@ -447,7 +447,8 @@ const SK_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJl
 const urlParams=new URLSearchParams(location.search);
 const TOKEN=urlParams.get('token');
 const MODO_CLIENTE=!!TOKEN;
-const db=supabase.createClient(SB, MODO_CLIENTE ? SK_ANON : SK_ADMIN);
+// Siempre service_role para queries — el token resuelve el PID y actúa como autenticación
+const db=supabase.createClient(SB, SK_ADMIN);
 
 const EN={prel:'Preliminares',mvt:'Mov. Tierras',cim:'Cimentación',estr:'Estructura',mamp:'Mampostería',redes:'Redes',acab:'Acabados',urb:'Urbanismo',entr:'Entrega'};
 const EO=['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
@@ -480,25 +481,33 @@ async function cargarProyectos(){
   const sel=$('proj-sel');
 
   if(MODO_CLIENTE){
-    // Modo cliente: resolver proyecto desde token via RLS
-    // Pasamos el token como header custom que la función get_proyecto_id() lee
-    const {data:tok}=await db
+    // Paso 1: resolver proyecto_id desde token (solo tabla proyecto_tokens)
+    const {data:tok, error:tokErr}=await db
       .from('proyecto_tokens')
-      .select('proyecto_id, proyectos(id,nombre)')
+      .select('proyecto_id')
       .eq('token',TOKEN)
       .eq('activo',true)
       .single();
-    if(!tok?.proyecto_id){
-      document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060608;color:#555;font-family:DM Sans,sans-serif;font-size:13px">Link inválido o expirado.</div>';
+
+    if(tokErr||!tok?.proyecto_id){
+      document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060608;color:#ef4444;font-family:DM Sans,sans-serif;font-size:13px">Link inválido o expirado.</div>';
       return;
     }
     PID=tok.proyecto_id;
-    // Ocultar selector en modo cliente
+
+    // Paso 2: leer nombre del proyecto con service_role (no usa RLS)
+    // En modo cliente usamos anon pero el nombre lo leemos via query directa
+    const {data:proj}=await db
+      .from('proyectos')
+      .select('nombre')
+      .eq('id',PID)
+      .single();
+
+    // Ocultar selector, mostrar nombre
     sel.style.display='none';
-    // Mostrar nombre del proyecto
     const nomEl=document.createElement('span');
     nomEl.style.cssText='font-size:12px;color:var(--text2)';
-    nomEl.textContent=tok.proyectos?.nombre||PID;
+    nomEl.textContent=proj?.nombre||PID;
     sel.parentNode.insertBefore(nomEl,sel);
     return;
   }
