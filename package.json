@@ -2,7 +2,7 @@
   "name": "goobra-dashboard",
   "version": "1.0.0",
   "scripts": {
-    "start": "npx serve . -p $PORT"
+    "start": "npx serve . -p $PORT -c serve.json"
   },
   "dependencies": {
     "serve": "^14.2.0"
