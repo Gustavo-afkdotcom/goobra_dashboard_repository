@@ -214,10 +214,20 @@ const EN={'prel':'Preliminares','mvt':'Mov. tierras','cim':'Cimentación','estr'
 const EO=['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
 const SIST={'porticos':'Pórticos concreto','ipe':'Acero / IPE','mixto':'Mixto'};
 
-// CRITICAL: Read PID from URL first, never override with localStorage
-const params=new URLSearchParams(location.search);
-const PID_URL=params.get('proyecto');
-const CODIGO=params.get('codigo')||'—';
+// Read from hash (#proyecto=...&codigo=...) OR query params (?proyecto=...)
+// Hash is never modified by servers - safest approach
+function getParam(key) {
+  // Try hash first
+  const hash = location.hash.replace('#','');
+  const hashParams = new URLSearchParams(hash);
+  if(hashParams.get(key)) return hashParams.get(key);
+  // Fall back to query string
+  const queryParams = new URLSearchParams(location.search);
+  return queryParams.get(key);
+}
+
+const PID_URL = getParam('proyecto');
+const CODIGO = getParam('codigo')||'—';
 
 let PID = PID_URL; // URL always wins
 
