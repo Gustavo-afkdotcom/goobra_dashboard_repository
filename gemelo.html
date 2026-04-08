@@ -15,12 +15,9 @@
   --green:#27ae60;--green-d:rgba(39,174,96,.12);
   --red:#c0392b;--red-d:rgba(192,57,43,.12);
   --blue:#2980b9;
-  --locked:rgba(255,255,255,.03);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow:hidden}
-
-/* HEADER */
 #hdr{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.25rem;gap:10px;position:fixed;top:0;left:0;right:0;z-index:200}
 .logo{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--amber);letter-spacing:3px}
 .logo span{color:var(--text)}
@@ -33,45 +30,29 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .hdr-btn{font-size:10px;padding:4px 9px;border-radius:5px;border:1px solid var(--border2);color:var(--text3);background:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
 .hdr-btn:hover{border-color:var(--amber);color:var(--amber)}
-
-/* TABS */
 .tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 1.25rem;display:flex;position:fixed;top:48px;left:0;right:0;z-index:199;overflow-x:auto}
 .tabs::-webkit-scrollbar{display:none}
-.tab{padding:11px 13px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:5px;transition:all .15s;position:relative}
+.tab{padding:11px 13px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:5px;transition:all .15s}
 .tab:hover:not(.locked){color:var(--text2)}
 .tab.on{color:var(--amber);border-bottom-color:var(--amber)}
 .tab.locked{cursor:default;opacity:.5}
-.tab .lock-ico{font-size:9px;opacity:.6}
-
-/* MAIN */
 .main{padding:1rem 1.25rem;max-width:1400px;margin:88px auto 0;height:calc(100vh - 88px);overflow-y:auto}
 .main::-webkit-scrollbar{width:2px}
 .main::-webkit-scrollbar-thumb{background:var(--border2)}
-.tp{display:none}
-.tp.on{display:block}
-
-/* STAT CARDS */
+.tp{display:none}.tp.on{display:block}
 .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;margin-bottom:.875rem}
 .sc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.875rem 1rem;position:relative;overflow:hidden}
 .sc::before{content:'';position:absolute;top:0;left:0;width:2px;height:100%;background:var(--amber)}
-.sc.g::before{background:var(--green)}
-.sc.r::before{background:var(--red)}
-.sc.b::before{background:var(--blue)}
+.sc.g::before{background:var(--green)}.sc.r::before{background:var(--red)}.sc.b::before{background:var(--blue)}
 .sl{font-size:9px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:.3rem}
 .sv{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;line-height:1;color:var(--text)}
 .ss{font-size:10px;color:var(--text3);margin-top:2px}
-
-/* GRID */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
 .ch{padding:9px 13px;border-bottom:1px solid var(--border);font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);display:flex;justify-content:space-between;align-items:center}
 .cb{padding:.875rem}
-
-/* BARS */
 .bt{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden}
 .bf{height:100%;border-radius:2px;transition:width .5s}
-
-/* ETAPA ROW */
 .er{display:grid;grid-template-columns:90px 1fr 44px 58px;align-items:center;gap:.65rem;padding:6px 0;border-bottom:1px solid var(--border)}
 .er:last-child{border:none}
 .en{font-size:11px;font-weight:500}
@@ -80,8 +61,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .bdg-c{background:var(--green-d);color:var(--green);border:1px solid rgba(39,174,96,.2)}
 .bdg-e{background:var(--amber-d);color:var(--amber);border:1px solid var(--amber-b)}
 .bdg-p{background:var(--bg4);color:var(--text3);border:1px solid var(--border2)}
-
-/* FEED */
 .fi{display:flex;gap:.65rem;padding:7px 0;border-bottom:1px solid var(--border)}
 .fi:last-child{border:none}
 .fd{width:5px;height:5px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:5px}
@@ -90,8 +69,6 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .fm{font-size:11px;font-weight:500;color:var(--text);margin-bottom:1px}
 .fti{font-size:10px;color:var(--text3)}
 .fc{display:inline-block;background:var(--amber-d);color:var(--amber);font-size:9px;padding:1px 5px;border-radius:3px;margin-top:2px;border:1px solid var(--amber-b)}
-
-/* ALERTAS */
 .al{display:flex;gap:9px;padding:10px;border-radius:7px;margin-bottom:6px}
 .al:last-child{margin:0}
 .al.r{background:var(--red-d);border:1px solid rgba(192,57,43,.2)}
@@ -99,12 +76,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .al.g{background:var(--green-d);border:1px solid rgba(39,174,96,.2)}
 .al-ico{font-size:12px;flex-shrink:0;margin-top:1px}
 .al-t{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;margin-bottom:2px}
-.al.r .al-t{color:var(--red)}
-.al.a .al-t{color:var(--amber)}
-.al.g .al-t{color:var(--green)}
+.al.r .al-t{color:var(--red)}.al.a .al-t{color:var(--amber)}.al.g .al-t{color:var(--green)}
 .al-d{font-size:11px;color:var(--text2);line-height:1.5}
-
-/* MISIONES */
 .mr{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border)}
 .mr:last-child{border:none}
 .mi-i{flex:1}
@@ -112,36 +85,38 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .mi-m{font-size:10px;color:var(--text3)}
 .mi-p{width:90px}
 .mi-pct{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;min-width:32px;text-align:right}
-
-/* COMPLETADAS COLLAPSIBLE */
 .mis-comp-hd{display:flex;align-items:center;gap:7px;padding:7px 0;cursor:pointer;color:var(--text3);font-size:11px;border-top:1px solid var(--border);margin-top:4px}
 .mis-comp-hd:hover{color:var(--text2)}
 .mis-comp-body{overflow:hidden;max-height:0;transition:max-height .3s ease}
-
-/* LOCKED TAB CONTENT */
+/* OBRA TAB */
+.obra-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.obra-block{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem}
+.obra-block-title{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:1rem}
+.obra-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
+.obra-row:last-child{border:none}
+.obra-label{color:var(--text2)}
+.obra-val{color:var(--text);font-weight:500;text-align:right}
+/* LOTE VISUAL */
+.lote-wrap{display:flex;justify-content:center;align-items:center;padding:1.5rem}
+.lote-svg{max-width:280px;width:100%}
+/* LOCKED */
 .locked-content{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;text-align:center;min-height:300px}
 .locked-icon{font-size:2.5rem;margin-bottom:1rem;opacity:.4}
 .locked-title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:.75rem}
 .locked-desc{font-size:13px;color:var(--text2);line-height:1.8;max-width:380px;margin-bottom:1.5rem}
 .locked-features{display:flex;flex-direction:column;gap:6px;margin-bottom:2rem;width:100%;max-width:340px}
 .lf{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;font-size:12px;color:var(--text2);text-align:left}
-.lf-ico{font-size:14px;flex-shrink:0}
 .btn-upgrade{display:inline-flex;align-items:center;gap:8px;background:var(--amber);color:#000;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .15s;text-decoration:none}
 .btn-upgrade:hover{background:#cf8f1a}
 .plan-tag{font-size:10px;color:var(--text3);margin-top:.75rem}
-
-/* EMPTY/LOAD */
 .empty{text-align:center;padding:2rem;color:var(--text3);font-size:12px}
 .spin{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto .5rem}
 @keyframes sp{to{transform:rotate(360deg)}}
-
 .fsel{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:3px 6px;border-radius:4px;font-size:10px;font-family:'DM Sans',sans-serif}
-
-@media(max-width:700px){.sg{grid-template-columns:repeat(2,1fr)}.g2{grid-template-columns:1fr}}
+@media(max-width:700px){.sg{grid-template-columns:repeat(2,1fr)}.g2,.obra-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-
 <div id="hdr">
   <div class="logo">GO<span> OBRA</span></div>
   <div class="hdr-sep"></div>
@@ -152,18 +127,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <button class="hdr-btn" onclick="loadAll()">↻</button>
   </div>
 </div>
-
 <nav class="tabs">
-  <div class="tab on"  onclick="sw('dashboard',this)">📊 Dashboard</div>
-  <div class="tab"     onclick="sw('alertas',this)">🔔 Alertas</div>
-  <div class="tab"     onclick="sw('misiones',this)">✅ Misiones</div>
-  <div class="tab locked" onclick="showLocked('cronograma')">📅 Cronograma <span class="lock-ico">🔒</span></div>
-  <div class="tab locked" onclick="showLocked('materiales')">📦 Materiales <span class="lock-ico">🔒</span></div>
-  <div class="tab locked" onclick="showLocked('equipo')">👷 Equipo <span class="lock-ico">🔒</span></div>
-  <div class="tab locked" onclick="showLocked('modelo')">🏗 Modelo 3D <span class="lock-ico">🔒</span></div>
-  <div class="tab locked" onclick="showLocked('visita')">👁 Visita <span class="lock-ico">✨</span></div>
+  <div class="tab on"     onclick="sw('dashboard',this)">📊 Dashboard</div>
+  <div class="tab"        onclick="sw('alertas',this)">🔔 Alertas</div>
+  <div class="tab"        onclick="sw('misiones',this)">✅ Misiones</div>
+  <div class="tab"        onclick="sw('obra',this)">🏢 Obra</div>
+  <div class="tab locked" onclick="showLocked('cronograma')">📅 Cronograma 🔒</div>
+  <div class="tab locked" onclick="showLocked('materiales')">📦 Materiales 🔒</div>
+  <div class="tab locked" onclick="showLocked('equipo')">👷 Equipo 🔒</div>
+  <div class="tab locked" onclick="showLocked('modelo')">🏗 Modelo 3D 🔒</div>
+  <div class="tab locked" onclick="showLocked('visita')">👁 Visita ✨</div>
 </nav>
-
 <div class="main">
 
 <!-- DASHBOARD -->
@@ -199,34 +173,68 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   </div>
 </div>
 
-<!-- LOCKED TABS -->
-<div class="tp" id="tp-locked">
-  <div class="card">
-    <div class="locked-content" id="locked-inner"></div>
+<!-- OBRA -->
+<div class="tp" id="tp-obra">
+  <div class="obra-grid">
+    <div class="obra-block">
+      <div class="obra-block-title">Información general</div>
+      <div id="obra-info"><div class="empty"><div class="spin"></div></div></div>
+    </div>
+    <div class="obra-block">
+      <div class="obra-block-title">Geometría del lote</div>
+      <div id="obra-geo"><div class="empty"><div class="spin"></div></div></div>
+      <div class="lote-wrap"><svg id="lote-svg" class="lote-svg" viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    </div>
+    <div class="obra-block">
+      <div class="obra-block-title">Residente asignado</div>
+      <div id="obra-worker"><div class="empty"><div class="spin"></div></div></div>
+    </div>
+    <div class="obra-block">
+      <div class="obra-block-title">Código de obra</div>
+      <div id="obra-codigo" style="text-align:center;padding:1rem 0">
+        <div style="font-family:'DM Mono',monospace;font-size:3rem;font-weight:700;color:var(--amber);letter-spacing:8px" id="obra-cod-big">—</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px">El residente reporta así:</div>
+        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--amber);margin-top:4px" id="obra-ejemplo">— 1: hice 25 m²</div>
+      </div>
+    </div>
   </div>
 </div>
 
+<!-- LOCKED -->
+<div class="tp" id="tp-locked">
+  <div class="card"><div class="locked-content" id="locked-inner"></div></div>
 </div>
 
+</div>
 <script>
 const SB='https://muyezsssnzlxavchabum.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
 const db=supabase.createClient(SB,SK);
-
 const EN={'prel':'Preliminares','mvt':'Mov. tierras','cim':'Cimentación','estr':'Estructura','mamp':'Mampostería','redes':'Redes','acab':'Acabados','urb':'Urbanismo','entr':'Entrega'};
 const EO=['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
+const SIST={'porticos':'Pórticos concreto','ipe':'Acero / IPE','mixto':'Mixto'};
 
+// CRITICAL: Read PID from URL first, never override with localStorage
 const params=new URLSearchParams(location.search);
-let PID=params.get('proyecto');
+const PID_URL=params.get('proyecto');
 const CODIGO=params.get('codigo')||'—';
 
+let PID = PID_URL; // URL always wins
+
 if(!PID){
+  // Only use localStorage if NO proyecto param in URL
   const saved=localStorage.getItem('goobra_last_proj');
-  if(saved) PID=saved;
-  else { document.body.innerHTML='<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0a;font-family:DM Sans,sans-serif;flex-direction:column;gap:1rem"><div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:#e8a020;letter-spacing:3px">GO OBRA</div><a href="/onboarding.html" style="background:#e8a020;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500">Activar mi obra →</a></div>'; throw new Error('no pid'); }
+  if(saved){ PID=saved; }
+  else{
+    document.body.innerHTML='<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0a;font-family:DM Sans,sans-serif;flex-direction:column;gap:1rem"><div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:#e8a020;letter-spacing:3px">GO OBRA</div><p style="color:#555;font-size:13px">No hay proyecto activo</p><a href="/onboarding.html" style="background:#e8a020;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500">Activar mi obra →</a></div>';
+    throw new Error('no pid');
+  }
 }
 
-let MDATA=[], WMAPS={}, currentTab='dashboard';
+// Save current project to localStorage
+if(PID) localStorage.setItem('goobra_last_proj', PID);
+
+let MDATA=[], WMAPS={}, PROJ={}, currentTab='dashboard';
 
 function sw(name,btn){
   if(btn.classList.contains('locked')) return;
@@ -237,38 +245,12 @@ function sw(name,btn){
   currentTab=name;
 }
 
-// Locked tab content
 const LOCKED_DATA={
-  cronograma:{
-    ico:'📅',
-    title:'Cronograma de obra',
-    desc:'Ve exactamente cuántos días lleva tu obra de retraso o adelanto. Semana a semana, misión a misión. Detecta a tiempo antes de que el costo se dispare.',
-    features:['Gantt interactivo por semanas','Línea de hoy vs plan original','Alertas de retraso por etapa','Proyección de fecha de entrega real']
-  },
-  materiales:{
-    ico:'📦',
-    title:'Control de materiales',
-    desc:'Nunca más pare una obra por falta de cemento. El sistema avisa cuándo pedir y cuánto, con días de anticipación, basado en el avance real.',
-    features:['Proyección por misión activa','Alertas de pedido anticipado','Consumo real vs CAMACOL','Historial de materiales gastados']
-  },
-  equipo:{
-    ico:'👷',
-    title:'Gestión del equipo',
-    desc:'Sepa quién trabaja y quién no. Ranking de workers por avance real registrado, no por lo que dicen en la reunión del lunes.',
-    features:['Ranking por avances registrados','Días activos vs inactivos','Comparativo entre workers','Historial de reportes por persona']
-  },
-  modelo:{
-    ico:'🏗',
-    title:'Modelo 3D en vivo',
-    desc:'Su edificio en pantalla, coloreado por avance real. Vea el piso 5 en amber y el 3 en verde sin necesidad de ir a la obra.',
-    features:['Edificio 3D con dimensiones reales','Colores por estado: verde/amber/gris','Capas: estructura · redes · usos','Se actualiza con cada reporte']
-  },
-  visita:{
-    ico:'👁',
-    title:'Modo visita — próximamente',
-    desc:'Llegue a la obra, abra GO Obra, y confirme con un tap lo que el residente reportó. Aprobado, en revisión o rechazado. Sin medir, sin anotar.',
-    features:['Lista por piso y sector (ejes)','Tap: ✅ Aprobado · 🔄 Revisión · ❌ Rechazado','Desviaciones automáticas al rechazar','Historial de visitas del dueño']
-  }
+  cronograma:{ico:'📅',title:'Cronograma de obra',desc:'Ve exactamente cuántos días lleva tu obra de retraso o adelanto. Semana a semana, misión a misión.',features:['Gantt interactivo por semanas','Línea de hoy vs plan original','Alertas de retraso por etapa','Proyección de fecha de entrega real']},
+  materiales:{ico:'📦',title:'Control de materiales',desc:'Nunca más pare una obra por falta de cemento. El sistema avisa cuándo pedir y cuánto, con días de anticipación.',features:['Proyección por misión activa','Alertas de pedido anticipado','Consumo real vs CAMACOL','Historial de materiales gastados']},
+  equipo:{ico:'👷',title:'Gestión del equipo',desc:'Sepa quién trabaja y quién no. Ranking de workers por avance real, no por lo que dicen.',features:['Ranking por avances registrados','Días activos vs inactivos','Comparativo entre workers','Historial de reportes por persona']},
+  modelo:{ico:'🏗',title:'Modelo 3D en vivo',desc:'Su edificio en pantalla, coloreado por avance real. Vea el piso 5 en amber y el 3 en verde.',features:['Edificio 3D con dimensiones reales','Colores por estado: verde/amber/gris','Capas: estructura · redes · usos','Se actualiza con cada reporte']},
+  visita:{ico:'👁',title:'Modo visita — próximamente',desc:'Llegue a la obra, abra GO Obra, y confirme con un tap lo que el residente reportó.',features:['Lista por piso y sector (ejes)','Tap: ✅ Aprobado · 🔄 Revisión · ❌ Rechazado','Desviaciones automáticas al rechazar','Historial de visitas del dueño']}
 };
 
 function showLocked(name){
@@ -277,34 +259,31 @@ function showLocked(name){
   document.getElementById('tp-locked').classList.add('on');
   const d=LOCKED_DATA[name];
   const isProximo=name==='visita';
-  const waNum='573219210310';
-  const waMsg=encodeURIComponent('Hola, quiero activar el plan completo de GO Obra para mi proyecto '+PID);
+  const waMsg=encodeURIComponent('Hola, quiero activar el plan completo de GO Obra para mi proyecto');
   document.getElementById('locked-inner').innerHTML=`
     <div class="locked-icon">${d.ico}</div>
     <div class="locked-title">${d.title}</div>
     <div class="locked-desc">${d.desc}</div>
-    <div class="locked-features">
-      ${d.features.map(f=>`<div class="lf"><span class="lf-ico">→</span>${f}</div>`).join('')}
-    </div>
+    <div class="locked-features">${d.features.map(f=>`<div class="lf"><span>→</span>${f}</div>`).join('')}</div>
     ${isProximo
-      ? `<div style="font-size:12px;color:var(--amber);font-weight:500">En desarrollo — disponible próximamente</div>`
-      : `<a class="btn-upgrade" href="https://wa.me/${waNum}?text=${waMsg}" target="_blank">Activar plan completo →</a>
-         <div class="plan-tag">Plan completo · $1.500.000/mes · Cancela cuando quieras</div>`
-    }`;
+      ?`<div style="font-size:12px;color:var(--amber);font-weight:500">En desarrollo — disponible próximamente</div>`
+      :`<a class="btn-upgrade" href="https://wa.me/573219210310?text=${waMsg}" target="_blank">Activar plan completo →</a>
+        <div class="plan-tag">Plan completo · $1.500.000/mes · Cancela cuando quieras</div>`}`;
 }
 
 async function loadAll(){
   if(!PID) return;
-  const {data:proj}=await db.from('proyectos').select('nombre,codigo_corto').eq('id',PID).single();
+  const {data:proj}=await db.from('proyectos').select('*').eq('id',PID).single();
   if(proj){
+    PROJ=proj;
     document.getElementById('proj-name').textContent=proj.nombre||'—';
     document.getElementById('cod-tag').textContent=proj.codigo_corto||CODIGO;
   }
-  await Promise.all([loadWorkers(),loadDash(),loadMisiones(),loadAlertas()]);
+  await Promise.all([loadWorkers(),loadDash(),loadMisiones(),loadAlertas(),loadObra()]);
 }
 
 async function loadWorkers(){
-  const {data}=await db.from('workers').select('id,nombre,rol').eq('proyecto_id',PID);
+  const {data}=await db.from('workers').select('id,nombre,rol,telegram_id').eq('proyecto_id',PID);
   WMAPS={};(data||[]).forEach(w=>WMAPS[w.id]=w);
 }
 
@@ -314,25 +293,17 @@ async function loadDash(){
   document.getElementById('s-hoy').textContent=av?.length||0;
   document.getElementById('s-wrk').textContent=new Set(av?.map(a=>a.trabajador_id)).size;
   document.getElementById('s-desv').textContent=av?.filter(a=>a.desviacion_detectada).length||0;
-
   const {data:mis}=await db.from('proyecto_misiones').select('etapa_id,cantidad_meta,cantidad_ejecutada,estado,pct_avance').eq('proyecto_id',PID);
   MDATA=mis||[];
   const glb=MDATA.length?Math.round(MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length):0;
   document.getElementById('s-global').textContent=glb+'%';
-
   const em={};
-  MDATA.forEach(m=>{
-    if(!em[m.etapa_id])em[m.etapa_id]={meta:0,exec:0};
-    em[m.etapa_id].meta+=parseFloat(m.cantidad_meta||0);
-    em[m.etapa_id].exec+=parseFloat(m.cantidad_ejecutada||0);
-  });
-  const eh=EO.filter(e=>em[e]).map(e=>{
+  MDATA.forEach(m=>{if(!em[m.etapa_id])em[m.etapa_id]={meta:0,exec:0};em[m.etapa_id].meta+=parseFloat(m.cantidad_meta||0);em[m.etapa_id].exec+=parseFloat(m.cantidad_ejecutada||0);});
+  document.getElementById('etapas-l').innerHTML=EO.filter(e=>em[e]).map(e=>{
     const p=em[e].meta>0?Math.min(Math.round(em[e].exec/em[e].meta*100),100):0;
     const col=p===100?'var(--green)':p>0?'var(--amber)':'var(--bg4)';
     return`<div class="er"><div class="en">${EN[e]||e}</div><div class="bt"><div class="bf" style="width:${p}%;background:${col}"></div></div><div class="ep" style="color:${col}">${p}%</div><div class="bdg ${p===100?'bdg-c':p>0?'bdg-e':'bdg-p'}">${p===100?'✓':p>0?'↗':'—'}</div></div>`;
   }).join('')||'<div class="empty">Sin datos de etapas aún</div>';
-  document.getElementById('etapas-l').innerHTML=eh;
-
   const {data:feed}=await db.from('avances').select('etapa_id,mision_id,nivel,cantidad_primaria_valor,cantidad_primaria_unidad,desviacion_detectada,timestamp_mensaje,trabajador_id').eq('proyecto_id',PID).order('timestamp_mensaje',{ascending:false}).limit(10);
   if(!feed?.length){document.getElementById('feed-l').innerHTML='<div class="empty">Sin avances aún.<br>El residente reporta con el código de obra.</div>';return;}
   document.getElementById('feed-l').innerHTML=feed.map(a=>{
@@ -347,8 +318,7 @@ async function loadDash(){
 }
 
 async function loadAlertas(){
-  const als=[];
-  const hoy=new Date();
+  const als=[];const hoy=new Date();
   MDATA.forEach(m=>{
     const pct=parseFloat(m.pct_avance||0);
     const fin=m.fecha_fin_plan?new Date(m.fecha_fin_plan):null;
@@ -361,11 +331,8 @@ async function loadAlertas(){
   const {data:dv}=await db.from('avances').select('mision_id,desviacion_motivo,timestamp_mensaje,trabajador_id').eq('proyecto_id',PID).eq('desviacion_detectada',true).order('timestamp_mensaje',{ascending:false}).limit(5);
   (dv||[]).forEach(d=>{als.push({t:'r',i:'⚠',ti:`Desviación: ${(d.mision_id||'').replace(/_/g,' ')}`,d:`${WMAPS[d.trabajador_id]?.nombre||'Worker'}: ${d.desviacion_motivo||'sin detalle'}`});});
   const cnt=als.filter(a=>a.t==='r').length;
-  const el=document.getElementById('al-cnt');
-  el.textContent=cnt?`· ${cnt}`:'';
-  document.getElementById('alertas-l').innerHTML=als.length
-    ?als.map(a=>`<div class="al ${a.t}"><span class="al-ico">${a.i}</span><div><div class="al-t">${a.ti}</div><div class="al-d">${a.d}</div></div></div>`).join('')
-    :'<div class="empty">Sin alertas. Todo en orden.</div>';
+  document.getElementById('al-cnt').textContent=cnt?`· ${cnt}`:'';
+  document.getElementById('alertas-l').innerHTML=als.length?als.map(a=>`<div class="al ${a.t}"><span class="al-ico">${a.i}</span><div><div class="al-t">${a.ti}</div><div class="al-d">${a.d}</div></div></div>`).join(''):'<div class="empty">Sin alertas. Todo en orden.</div>';
 }
 
 async function loadMisiones(){
@@ -394,13 +361,59 @@ function renderMis(){
     return`<div class="mr"><div class="mi-i"><div class="mi-n">${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}</div><div class="mi-m">Meta: ${m.cantidad_meta} ${m.unidad_primaria||''} · Ej: ${m.cantidad_ejecutada||0}</div></div><div class="mi-p"><div class="bt"><div class="bf" style="width:${pct}%;background:${col}"></div></div></div><div class="mi-pct" style="color:${col}">${pct.toFixed(0)}%</div><div class="bdg ${m.estado==='completada'?'bdg-c':m.estado==='en_curso'?'bdg-e':'bdg-p'}">${m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—'}</div></div>`;
   };
   let html=activas.map(row).join('')||'<div class="empty">Sin misiones activas</div>';
-  if(comp.length){
-    html+=`<div class="mis-comp-hd" onclick="this.nextElementSibling.style.maxHeight=this.nextElementSibling.style.maxHeight?'':this.nextElementSibling.scrollHeight+'px'">✓ ${comp.length} completadas ▾</div><div class="mis-comp-body">${comp.map(row).join('')}</div>`;
-  }
+  if(comp.length) html+=`<div class="mis-comp-hd" onclick="this.nextElementSibling.style.maxHeight=this.nextElementSibling.style.maxHeight?'':this.nextElementSibling.scrollHeight+'px'">✓ ${comp.length} completadas ▾</div><div class="mis-comp-body">${comp.map(row).join('')}</div>`;
   document.getElementById('mis-l').innerHTML=html;
 }
 
-// Realtime
+async function loadObra(){
+  const p=PROJ;
+  if(!p.id) return;
+  const cod=p.codigo_corto||CODIGO;
+  // Info general
+  document.getElementById('obra-info').innerHTML=`
+    <div class="obra-row"><span class="obra-label">Nombre</span><span class="obra-val">${p.nombre||'—'}</span></div>
+    <div class="obra-row"><span class="obra-label">Dirección</span><span class="obra-val">${p.direccion||'—'}</span></div>
+    <div class="obra-row"><span class="obra-label">Sistema</span><span class="obra-val">${SIST[p.sistema_constructivo]||p.sistema_constructivo||'—'}</span></div>
+    <div class="obra-row"><span class="obra-label">Inicio</span><span class="obra-val">${p.fecha_inicio||'—'}</span></div>
+    <div class="obra-row"><span class="obra-label">Entrega est.</span><span class="obra-val">${p.fecha_fin_estimada||'—'}</span></div>
+    <div class="obra-row"><span class="obra-label">Estado</span><span class="obra-val" style="color:var(--green)">${p.estado||'—'}</span></div>`;
+  // Geometría
+  const fr=parseFloat(p.frente)||12;
+  const fo=parseFloat(p.fondo)||24;
+  const pi=parseInt(p.numero_pisos)||8;
+  const so=parseInt(p.sotanos)||0;
+  const m2=parseInt(p.m2_por_piso)||Math.round(fr*fo*0.72);
+  document.getElementById('obra-geo').innerHTML=`
+    <div class="obra-row"><span class="obra-label">Frente</span><span class="obra-val">${fr} m</span></div>
+    <div class="obra-row"><span class="obra-label">Fondo</span><span class="obra-val">${fo} m</span></div>
+    <div class="obra-row"><span class="obra-label">Pisos</span><span class="obra-val">${pi}${so?' + '+so+' sótano(s)':''}</span></div>
+    <div class="obra-row"><span class="obra-label">M² útil/piso</span><span class="obra-val">${m2} m²</span></div>
+    <div class="obra-row"><span class="obra-label">M² totales</span><span class="obra-val">${m2*pi} m²</span></div>`;
+  // Lote SVG
+  const maxD=Math.max(fr,fo);
+  const scl=160/maxD;
+  const w=Math.round(fr*scl);
+  const h=Math.round(fo*scl);
+  const ox=(200-w)/2; const oy=(160-h)/2;
+  const glb=MDATA.length?Math.round(MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length):0;
+  const fillH=Math.round(h*glb/100);
+  document.getElementById('lote-svg').innerHTML=`
+    <rect x="${ox}" y="${oy}" width="${w}" height="${h}" fill="none" stroke="#333" stroke-width="1"/>
+    <rect x="${ox}" y="${oy+h-fillH}" width="${w}" height="${fillH}" fill="rgba(232,160,32,.15)" stroke="none"/>
+    <text x="${ox+w/2}" y="${oy-6}" text-anchor="middle" font-size="9" fill="#555">${fr}m</text>
+    <text x="${ox+w+6}" y="${oy+h/2}" text-anchor="start" font-size="9" fill="#555">${fo}m</text>
+    <text x="${ox+w/2}" y="${oy+h/2+4}" text-anchor="middle" font-size="14" fill="#e8a020" font-weight="bold">${glb}%</text>
+    <text x="${ox+w/2}" y="${oy+h/2+18}" text-anchor="middle" font-size="9" fill="#555">avance</text>`;
+  // Worker
+  const workers=Object.values(WMAPS);
+  document.getElementById('obra-worker').innerHTML=workers.length
+    ?workers.map(w=>`<div class="obra-row"><span class="obra-label">${w.rol==='res'?'Residente':'Worker'}</span><span class="obra-val">${w.nombre}</span></div>`).join('')
+    :'<div class="obra-row"><span class="obra-label" style="color:var(--text3)">Sin residente vinculado</span></div>';
+  // Código
+  document.getElementById('obra-cod-big').textContent=cod;
+  document.getElementById('obra-ejemplo').textContent=cod+' 1: hice 25 m², 3 bultos cemento';
+}
+
 db.channel('av-'+PID).on('postgres_changes',{event:'INSERT',schema:'public',table:'avances',filter:'proyecto_id=eq.'+PID},()=>loadAll()).subscribe();
 db.channel('mis-'+PID).on('postgres_changes',{event:'UPDATE',schema:'public',table:'proyecto_misiones',filter:'proyecto_id=eq.'+PID},()=>loadAll()).subscribe();
 setInterval(loadAll,30000);
