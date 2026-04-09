@@ -286,7 +286,7 @@ h1 em{font-style:normal;color:var(--amber)}
           <input type="text" id="f-telegram" placeholder="+573100000000">
           <div class="tg-info" style="margin-top:.5rem">
             <div class="tg-step"><div class="tg-step-n">1</div><div class="tg-step-t">El residente debe escribirle <strong>/start</strong> al bot <strong>@Goobra_avance_bot</strong> primero.</div></div>
-            <div class="tg-step"><div class="tg-step-n">2</div><div class="tg-step-t">Ingresa su número con indicativo. Cada mañana recibirá las misiones del día.</div></div>
+            <div class="tg-step"><div class="tg-step-n">2</div><div class="tg-step-t">Ingresa su número con indicativo. El sistema lo usa como referencia.</div></div>
             <div class="tg-step"><div class="tg-step-n">3</div><div class="tg-step-t">Responde con el código de obra + número de misión: <strong>CAS 1: hice 25 m²</strong></div></div>
           </div>
         </div>
@@ -520,13 +520,13 @@ async function activar(){
     }
 
     // Crear worker (residente)
-    const tgNum=tg.replace(/\D/g,'');
+    // telegram_id stays NULL — the /start workflow fills it
     await db.from('workers').insert({
       proyecto_id:pid,
       nombre:residente,
       rol:'res',
       numero_wa:tg,
-      telegram_id:tgNum||null,
+      telegram_id:null,
       activo:true,
       mision_activa:misionesSelec[0]?(etapa+'.'+misionesSelec[0]):null
     });
