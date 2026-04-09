@@ -142,11 +142,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 <!-- DASHBOARD -->
 <div class="tp on" id="tp-dashboard">
-  <div class="sg">
+  <div class="sg" style="grid-template-columns:repeat(5,1fr)">
     <div class="sc"><div class="sl">Avances hoy</div><div class="sv" id="s-hoy">—</div><div class="ss">desde las 00:00</div></div>
     <div class="sc b"><div class="sl">Workers activos</div><div class="sv" id="s-wrk">—</div><div class="ss">reportaron hoy</div></div>
     <div class="sc r"><div class="sl">Desviaciones</div><div class="sv" id="s-desv">—</div><div class="ss">requieren atención</div></div>
     <div class="sc g"><div class="sl">Avance global</div><div class="sv" id="s-global">—</div><div class="ss">del proyecto</div></div>
+    <div class="sc" id="sc-semaforo"><div class="sl">Estado financiero</div><div class="sv" id="s-semaforo" style="font-size:1.8rem">—</div><div class="ss" id="s-semaforo-txt">calculando...</div></div>
+  </div>
+  <div id="alerta-datos" style="display:none;background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.2);border-radius:8px;padding:10px 14px;margin-bottom:.75rem;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px">
+    <span style="font-size:14px">⚠️</span>
+    <span>El residente no está reportando cantidades. El semáforo financiero necesita esos datos. <span style="color:var(--amber);cursor:pointer" onclick="sw('misiones',document.querySelectorAll('.tab')[2])">Ver misiones →</span></span>
   </div>
   <div class="g2">
     <div class="card"><div class="ch">Progreso por etapa</div><div class="cb" id="etapas-l"><div class="empty"><div class="spin"></div></div></div></div>
@@ -307,6 +312,65 @@ async function loadDash(){
   MDATA=mis||[];
   const glb=MDATA.length?Math.round(MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length):0;
   document.getElementById('s-global').textContent=glb+'%';
+
+  // SEMÁFORO FINANCIERO
+  const PCTS_CAMACOL={prel:0.03,mvt:0.05,cim:0.12,estr:0.35,mamp:0.18,redes:0.10,acab:0.12,urb:0.03,entr:0.02};
+  const presupuesto=parseFloat(PROJ.presupuesto_total)||0;
+  const semEl=document.getElementById('sc-semaforo');
+  const semVal=document.getElementById('s-semaforo');
+  const semTxt=document.getElementById('s-semaforo-txt');
+  const alertaDatos=document.getElementById('alerta-datos');
+
+  // Check if residente is reporting quantities
+  const {data:avRecent}=await db.from('avances').select('cantidad_primaria_valor').eq('proyecto_id',PID).order('timestamp_mensaje',{ascending:false}).limit(10);
+  const sinCantidades=(avRecent||[]).filter(a=>!a.cantidad_primaria_valor||a.cantidad_primaria_valor===0).length;
+  const hayDatos=(avRecent||[]).length>0;
+  if(hayDatos && sinCantidades>(avRecent||[]).length*0.5){
+    alertaDatos.style.display='flex';
+  } else {
+    alertaDatos.style.display='none';
+  }
+
+  if(!presupuesto){
+    semVal.textContent='—';
+    semTxt.textContent='Ingresa el presupuesto';
+    semEl.style.borderLeft='2px solid var(--text3)';
+  } else {
+    // Calculate expected spend vs actual progress
+    let presupuestoEjecutado=0;
+    let presupuestoEsperado=0;
+    const diasTotales=PROJ.fecha_fin_estimada&&PROJ.fecha_inicio?Math.round((new Date(PROJ.fecha_fin_estimada)-new Date(PROJ.fecha_inicio))/86400000):365;
+    const diasTranscurridos=PROJ.fecha_inicio?Math.round((new Date()-new Date(PROJ.fecha_inicio))/86400000):0;
+    const pctTiempo=Math.min(diasTranscurridos/Math.max(diasTotales,1),1);
+
+    // Actual spend estimate: sum of pct_avance × budget per etapa
+    const em2={};
+    MDATA.forEach(m=>{if(!em2[m.etapa_id])em2[m.etapa_id]={pct:0,cnt:0};em2[m.etapa_id].pct+=parseFloat(m.pct_avance||0);em2[m.etapa_id].cnt++;});
+    Object.entries(em2).forEach(([e,v])=>{
+      const pctEtapa=v.cnt>0?v.pct/v.cnt/100:0;
+      const budgetEtapa=(PCTS_CAMACOL[e]||0)*presupuesto;
+      presupuestoEjecutado+=pctEtapa*budgetEtapa;
+    });
+    // Expected spend based on time
+    presupuestoEsperado=pctTiempo*presupuesto;
+
+    const ratio=presupuestoEsperado>0?presupuestoEjecutado/presupuestoEsperado:1;
+    const fmt=v=>v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?Math.round(v/1e6)+'M':Math.round(v/1e3)+'K';
+
+    if(ratio>=0.9){
+      semVal.textContent='🟢';
+      semTxt.textContent='En presupuesto · '+fmt(presupuestoEjecutado)+' ejecutado';
+      semEl.style.borderLeft='2px solid var(--green)';
+    } else if(ratio>=0.7){
+      semVal.textContent='🟡';
+      semTxt.textContent='Atención · Retraso vs tiempo';
+      semEl.style.borderLeft='2px solid var(--amber)';
+    } else {
+      semVal.textContent='🔴';
+      semTxt.textContent='Fuera de plan · Revisar avance';
+      semEl.style.borderLeft='2px solid var(--red)';
+    }
+  }
   const em={};
   MDATA.forEach(m=>{if(!em[m.etapa_id])em[m.etapa_id]={meta:0,exec:0};em[m.etapa_id].meta+=parseFloat(m.cantidad_meta||0);em[m.etapa_id].exec+=parseFloat(m.cantidad_ejecutada||0);});
   document.getElementById('etapas-l').innerHTML=EO.filter(e=>em[e]).map(e=>{

@@ -167,6 +167,21 @@ h1 em{font-style:normal;color:var(--amber)}
           </div>
         </div>
 
+        <div class="fg fg2">
+          <div class="field">
+            <label>Presupuesto total de la obra</label>
+            <input type="number" id="f-presupuesto" placeholder="800000000" step="1000000" min="0">
+            <div class="field-hint">Opcional. Se usa para el semáforo financiero. Ej: 800000000 = $800 millones</div>
+          </div>
+          <div class="field">
+            <label>Moneda</label>
+            <select id="f-moneda">
+              <option value="COP">Cesos colombianos (COP)</option>
+              <option value="USD">Dólares (USD)</option>
+            </select>
+          </div>
+        </div>
+
         <div class="field" style="margin-bottom:.75rem">
           <label>Etapa más avanzada activa *</label>
           <div class="chips" id="chips-etapa">
@@ -517,7 +532,7 @@ async function activar(){
     });
 
     // SUCCESS
-    const simURL=`/gemelo.html?proyecto=${pid}&codigo=${codigoNum}&frente=${fr}&fondo=${fo}&pisos=${pisos}&sotanos=${sotanos}&altura=${altura}`;
+    const simURL=`/gemelo.html#proyecto=${pid}&codigo=${codigoNum}&frente=${fr}&fondo=${fo}&pisos=${pisos}&sotanos=${sotanos}&altura=${altura}`;
     localStorage.setItem('goobra_sim_url',simURL);
     localStorage.setItem('goobra_last_proj',pid);
 
