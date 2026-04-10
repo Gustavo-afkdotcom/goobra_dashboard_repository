@@ -113,6 +113,55 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .spin{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto .5rem}
 @keyframes sp{to{transform:rotate(360deg)}}
 .fsel{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:3px 6px;border-radius:4px;font-size:10px;font-family:'DM Sans',sans-serif}
+
+/* GANTT */
+.gantt-wrap-inner{min-width:700px}
+.gantt-hd-row{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+.gantt-lbl-hd{width:160px;flex-shrink:0;border-right:1px solid var(--border);padding:5px 8px;font-size:9px;color:var(--text3)}
+.gantt-col{flex:1;text-align:center;font-size:9px;color:var(--text3);padding:4px 0;border-right:1px solid var(--border)}
+.gantt-col.cur{color:var(--amber);font-weight:700}
+.gantt-row-g{display:flex;align-items:center;border-bottom:1px solid var(--border);min-height:32px}
+.gantt-row-g:hover{background:rgba(255,255,255,.015)}
+.gantt-lbl-r{width:160px;flex-shrink:0;padding:4px 8px;border-right:1px solid var(--border);font-size:10px;color:var(--text2)}
+.gantt-cells{flex:1;display:flex;position:relative;height:32px}
+.gantt-cell-g{flex:1;border-right:1px solid var(--border);height:100%}
+.gantt-cell-g.cur{background:rgba(232,160,32,.04)}
+.gantt-bar{position:absolute;top:50%;transform:translateY(-50%);height:14px;border-radius:2px;padding:0 4px;font-size:9px;font-weight:600;display:flex;align-items:center;overflow:hidden;white-space:nowrap;z-index:2}
+.gantt-today-line{position:absolute;top:0;bottom:0;width:1px;background:rgba(232,160,32,.6);z-index:10}
+.gantt-etapa-hd{background:var(--bg3);padding:4px 8px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)}
+
+/* MATERIALES */
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)}
+td{padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border:none}
+tr:hover td{background:rgba(255,255,255,.01)}
+.mat-alert{font-size:9px;color:var(--amber);font-weight:700}
+
+/* EQUIPO */
+.eq-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border)}
+.eq-row:last-child{border:none}
+.eq-av{width:26px;height:26px;border-radius:50%;background:var(--amber-d);border:1px solid var(--amber-b);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:10px;font-weight:800;color:var(--amber);flex-shrink:0}
+.eq-info{flex:1}
+.eq-nom{font-size:11px;font-weight:500;color:var(--text);margin-bottom:1px}
+.eq-sub{font-size:10px;color:var(--text3)}
+.eq-bar-wrap{width:80px}
+.eq-cnt{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;min-width:24px;text-align:right}
+
+/* VISITA */
+.vis-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.vis-item:last-child{border:none}
+.vis-piso-hd{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:8px 0 4px;border-top:1px solid var(--border);margin-top:4px}
+.vis-mision-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.vis-mision-row:last-child{border:none}
+.vis-nombre{flex:1;font-size:11px;color:var(--text)}
+.vis-btns{display:flex;gap:5px}
+.vis-btn{padding:5px 10px;border-radius:5px;border:1px solid var(--border2);font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;background:none;color:var(--text2);transition:all .15s}
+.vis-btn:hover{opacity:.8}
+.vis-btn.ok{background:var(--green-d);border-color:rgba(39,174,96,.3);color:var(--green)}
+.vis-btn.rev{background:var(--amber-d);border-color:var(--amber-b);color:var(--amber)}
+.vis-btn.rej{background:var(--red-d);border-color:rgba(192,57,43,.3);color:var(--red)}
+
 @media(max-width:700px){.sg{grid-template-columns:repeat(2,1fr)}.g2,.obra-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -132,11 +181,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   <div class="tab"        onclick="sw('alertas',this)">🔔 Alertas</div>
   <div class="tab"        onclick="sw('misiones',this)">✅ Misiones</div>
   <div class="tab"        onclick="sw('obra',this)">🏢 Obra</div>
-  <div class="tab locked" onclick="showLocked('cronograma')">📅 Cronograma 🔒</div>
-  <div class="tab locked" onclick="showLocked('materiales')">📦 Materiales 🔒</div>
-  <div class="tab locked" onclick="showLocked('equipo')">👷 Equipo 🔒</div>
-  <div class="tab locked" onclick="showLocked('modelo')">🏗 Modelo 3D 🔒</div>
-  <div class="tab locked" onclick="showLocked('visita')">👁 Visita ✨</div>
+  <div class="tab" onclick="sw('cronograma',this)">📅 Cronograma</div>
+  <div class="tab" onclick="sw('materiales',this)">📦 Materiales</div>
+  <div class="tab" onclick="sw('equipo',this)">👷 Equipo</div>
+  <div class="tab" onclick="sw('modelo',this)">🏗 Modelo 3D</div>
+  <div class="tab" onclick="sw('visita',this)">👁 Visita</div>
 </nav>
 <div class="main">
 
@@ -205,9 +254,60 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   </div>
 </div>
 
-<!-- LOCKED -->
-<div class="tp" id="tp-locked">
-  <div class="card"><div class="locked-content" id="locked-inner"></div></div>
+<!-- CRONOGRAMA -->
+<div class="tp" id="tp-cronograma">
+  <div class="card">
+    <div class="ch">Plan de obra <span id="gantt-hoy-lbl" style="color:var(--amber);font-size:9px"></span></div>
+    <div style="overflow-x:auto" id="gantt-wrap"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- MATERIALES -->
+<div class="tp" id="tp-materiales">
+  <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+    <div class="sc r"><div class="sl">Pedir urgente</div><div class="sv" id="mat-urgente">—</div><div class="ss">materiales</div></div>
+    <div class="sc"><div class="sl">Este mes</div><div class="sv" id="mat-mes">—</div><div class="ss">misiones activas</div></div>
+    <div class="sc g"><div class="sl">M² pendientes</div><div class="sv" id="mat-m2">—</div></div>
+    <div class="sc b"><div class="sl">Materiales críticos</div><div class="sv" id="mat-crit">—</div></div>
+  </div>
+  <div class="card">
+    <div class="ch">Proyección de materiales por misión</div>
+    <div class="cb" id="mat-tabla"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- EQUIPO -->
+<div class="tp" id="tp-equipo">
+  <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+    <div class="sc"><div class="sl">Workers</div><div class="sv" id="eq-tot">—</div></div>
+    <div class="sc g"><div class="sl">Activos hoy</div><div class="sv" id="eq-hoy">—</div></div>
+    <div class="sc b"><div class="sl">Avances semana</div><div class="sv" id="eq-sem">—</div></div>
+    <div class="sc"><div class="sl">Top worker</div><div class="sv" id="eq-top" style="font-size:14px">—</div></div>
+  </div>
+  <div class="card">
+    <div class="ch">Ranking del equipo</div>
+    <div class="cb" id="eq-lista"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- MODELO 3D -->
+<div class="tp" id="tp-modelo">
+  <div id="modelo-iframe-wrap" style="width:100%;height:calc(100vh - 130px)"></div>
+</div>
+
+<!-- VISITA -->
+<div class="tp" id="tp-visita">
+  <div class="sg" style="grid-template-columns:repeat(3,1fr);margin-bottom:.875rem">
+    <div class="sc g"><div class="sl">Aprobadas</div><div class="sv" id="vis-ok">0</div></div>
+    <div class="sc"><div class="sl">En revisión</div><div class="sv" id="vis-rev">0</div></div>
+    <div class="sc r"><div class="sl">Rechazadas</div><div class="sv" id="vis-rej">0</div></div>
+  </div>
+  <div class="card">
+    <div class="ch">Checklist de visita <span id="vis-fecha" style="color:var(--text3)"></span>
+      <button onclick="iniciarVisita()" style="background:var(--amber);color:#000;border:none;padding:4px 12px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Nueva visita</button>
+    </div>
+    <div class="cb" id="vis-lista"><div class="empty">Presiona "Nueva visita" para iniciar el recorrido.</div></div>
+  </div>
 </div>
 
 </div>
