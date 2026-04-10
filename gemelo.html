@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>GO Obra — Gemelo Digital</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
@@ -22,7 +22,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .logo{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--amber);letter-spacing:3px}
 .logo span{color:var(--text)}
 .hdr-sep{width:1px;height:18px;background:var(--border2)}
-#proj-name{font-size:12px;color:var(--text2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#proj-name{font-size:12px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #cod-tag{font-family:'DM Mono',monospace;font-size:9px;color:var(--amber);background:var(--amber-d);border:1px solid var(--amber-b);padding:2px 7px;border-radius:20px}
 .hdr-r{margin-left:auto;display:flex;gap:8px;align-items:center}
 .live{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)}
@@ -32,27 +32,30 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .hdr-btn:hover{border-color:var(--amber);color:var(--amber)}
 .tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 1.25rem;display:flex;position:fixed;top:48px;left:0;right:0;z-index:199;overflow-x:auto}
 .tabs::-webkit-scrollbar{display:none}
-.tab{padding:11px 13px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:5px;transition:all .15s}
-.tab:hover:not(.locked){color:var(--text2)}
+.tab{padding:11px 13px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
+.tab:hover{color:var(--text2)}
 .tab.on{color:var(--amber);border-bottom-color:var(--amber)}
-.tab.locked{cursor:default;opacity:.5}
-.main{padding:1rem 1.25rem;max-width:1400px;margin:88px auto 0;height:calc(100vh - 88px);overflow-y:auto}
+.main{padding:1rem 1.25rem 2rem;max-width:1400px;margin:88px auto 0;height:calc(100vh - 88px);overflow-y:auto}
 .main::-webkit-scrollbar{width:2px}
 .main::-webkit-scrollbar-thumb{background:var(--border2)}
 .tp{display:none}.tp.on{display:block}
+/* STAT CARDS */
 .sg{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;margin-bottom:.875rem}
 .sc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.875rem 1rem;position:relative;overflow:hidden}
 .sc::before{content:'';position:absolute;top:0;left:0;width:2px;height:100%;background:var(--amber)}
 .sc.g::before{background:var(--green)}.sc.r::before{background:var(--red)}.sc.b::before{background:var(--blue)}
 .sl{font-size:9px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:.3rem}
-.sv{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;line-height:1;color:var(--text)}
+.sv{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;line-height:1}
 .ss{font-size:10px;color:var(--text3);margin-top:2px}
+/* GRID & CARD */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
 .ch{padding:9px 13px;border-bottom:1px solid var(--border);font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);display:flex;justify-content:space-between;align-items:center}
 .cb{padding:.875rem}
+/* BARS */
 .bt{height:3px;background:var(--bg4);border-radius:2px;overflow:hidden}
 .bf{height:100%;border-radius:2px;transition:width .5s}
+/* ETAPA ROW */
 .er{display:grid;grid-template-columns:90px 1fr 44px 58px;align-items:center;gap:.65rem;padding:6px 0;border-bottom:1px solid var(--border)}
 .er:last-child{border:none}
 .en{font-size:11px;font-weight:500}
@@ -61,14 +64,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .bdg-c{background:var(--green-d);color:var(--green);border:1px solid rgba(39,174,96,.2)}
 .bdg-e{background:var(--amber-d);color:var(--amber);border:1px solid var(--amber-b)}
 .bdg-p{background:var(--bg4);color:var(--text3);border:1px solid var(--border2)}
+/* FEED */
 .fi{display:flex;gap:.65rem;padding:7px 0;border-bottom:1px solid var(--border)}
 .fi:last-child{border:none}
 .fd{width:5px;height:5px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:5px}
 .fd.d{background:var(--red)}
 .fb{flex:1}
-.fm{font-size:11px;font-weight:500;color:var(--text);margin-bottom:1px}
+.fm{font-size:11px;font-weight:500;margin-bottom:1px}
 .fti{font-size:10px;color:var(--text3)}
 .fc{display:inline-block;background:var(--amber-d);color:var(--amber);font-size:9px;padding:1px 5px;border-radius:3px;margin-top:2px;border:1px solid var(--amber-b)}
+/* ALERTAS */
 .al{display:flex;gap:9px;padding:10px;border-radius:7px;margin-bottom:6px}
 .al:last-child{margin:0}
 .al.r{background:var(--red-d);border:1px solid rgba(192,57,43,.2)}
@@ -78,90 +83,78 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .al-t{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;margin-bottom:2px}
 .al.r .al-t{color:var(--red)}.al.a .al-t{color:var(--amber)}.al.g .al-t{color:var(--green)}
 .al-d{font-size:11px;color:var(--text2);line-height:1.5}
+/* MISIONES */
 .mr{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border)}
 .mr:last-child{border:none}
 .mi-i{flex:1}
-.mi-n{font-size:11px;font-weight:500;color:var(--text);margin-bottom:1px}
+.mi-n{font-size:11px;font-weight:500;margin-bottom:1px}
 .mi-m{font-size:10px;color:var(--text3)}
+.mi-urg{font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:5px}
 .mi-p{width:90px}
 .mi-pct{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;min-width:32px;text-align:right}
+.mis-sec-hd{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-top:8px}
 .mis-comp-hd{display:flex;align-items:center;gap:7px;padding:7px 0;cursor:pointer;color:var(--text3);font-size:11px;border-top:1px solid var(--border);margin-top:4px}
 .mis-comp-hd:hover{color:var(--text2)}
 .mis-comp-body{overflow:hidden;max-height:0;transition:max-height .3s ease}
-/* OBRA TAB */
+/* OBRA */
 .obra-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 .obra-block{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem}
 .obra-block-title{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:1rem}
 .obra-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px}
 .obra-row:last-child{border:none}
-.obra-label{color:var(--text2)}
-.obra-val{color:var(--text);font-weight:500;text-align:right}
-/* LOTE VISUAL */
+.obra-label{color:var(--text2)}.obra-val{color:var(--text);font-weight:500;text-align:right}
 .lote-wrap{display:flex;justify-content:center;align-items:center;padding:1.5rem}
 .lote-svg{max-width:280px;width:100%}
-/* LOCKED */
-.locked-content{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 2rem;text-align:center;min-height:300px}
-.locked-icon{font-size:2.5rem;margin-bottom:1rem;opacity:.4}
-.locked-title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--text);margin-bottom:.75rem}
-.locked-desc{font-size:13px;color:var(--text2);line-height:1.8;max-width:380px;margin-bottom:1.5rem}
-.locked-features{display:flex;flex-direction:column;gap:6px;margin-bottom:2rem;width:100%;max-width:340px}
-.lf{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;font-size:12px;color:var(--text2);text-align:left}
-.btn-upgrade{display:inline-flex;align-items:center;gap:8px;background:var(--amber);color:#000;padding:11px 22px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .15s;text-decoration:none}
-.btn-upgrade:hover{background:#cf8f1a}
-.plan-tag{font-size:10px;color:var(--text3);margin-top:.75rem}
-.empty{text-align:center;padding:2rem;color:var(--text3);font-size:12px}
-.spin{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto .5rem}
-@keyframes sp{to{transform:rotate(360deg)}}
-.fsel{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:3px 6px;border-radius:4px;font-size:10px;font-family:'DM Sans',sans-serif}
-
 /* GANTT */
-.gantt-wrap-inner{min-width:700px}
-.gantt-hd-row{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
-.gantt-lbl-hd{width:160px;flex-shrink:0;border-right:1px solid var(--border);padding:5px 8px;font-size:9px;color:var(--text3)}
-.gantt-col{flex:1;text-align:center;font-size:9px;color:var(--text3);padding:4px 0;border-right:1px solid var(--border)}
-.gantt-col.cur{color:var(--amber);font-weight:700}
-.gantt-row-g{display:flex;align-items:center;border-bottom:1px solid var(--border);min-height:32px}
-.gantt-row-g:hover{background:rgba(255,255,255,.015)}
-.gantt-lbl-r{width:160px;flex-shrink:0;padding:4px 8px;border-right:1px solid var(--border);font-size:10px;color:var(--text2)}
+.gantt-outer{overflow-x:auto}
+.gantt-outer::-webkit-scrollbar{height:3px}
+.gantt-outer::-webkit-scrollbar-thumb{background:var(--border2)}
+.gantt-inner{min-width:900px}
+.gantt-hd{display:flex;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:5}
+.gantt-lbl{width:160px;flex-shrink:0;border-right:1px solid var(--border);padding:5px 8px;font-size:9px;color:var(--text3)}
+.gantt-wk{flex:1;text-align:center;font-size:9px;color:var(--text3);padding:4px 0;border-right:1px solid var(--border)}
+.gantt-wk.cur{color:var(--amber);font-weight:700}
+.gantt-row{display:flex;align-items:center;border-bottom:1px solid var(--border);min-height:32px}
+.gantt-row:hover{background:rgba(255,255,255,.015)}
+.gantt-rlbl{width:160px;flex-shrink:0;padding:4px 8px;border-right:1px solid var(--border);font-size:10px;color:var(--text2)}
 .gantt-cells{flex:1;display:flex;position:relative;height:32px}
-.gantt-cell-g{flex:1;border-right:1px solid var(--border);height:100%}
-.gantt-cell-g.cur{background:rgba(232,160,32,.04)}
+.gantt-cell{flex:1;border-right:1px solid var(--border);height:100%}
+.gantt-cell.cur{background:rgba(232,160,32,.03)}
 .gantt-bar{position:absolute;top:50%;transform:translateY(-50%);height:14px;border-radius:2px;padding:0 4px;font-size:9px;font-weight:600;display:flex;align-items:center;overflow:hidden;white-space:nowrap;z-index:2}
-.gantt-today-line{position:absolute;top:0;bottom:0;width:1px;background:rgba(232,160,32,.6);z-index:10}
-.gantt-etapa-hd{background:var(--bg3);padding:4px 8px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)}
-
+.gantt-today{position:absolute;top:0;bottom:0;width:1px;background:rgba(232,160,32,.5);z-index:10}
+.gantt-etapa{background:var(--bg3);padding:4px 8px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)}
 /* MATERIALES */
-table{width:100%;border-collapse:collapse;font-size:11px}
-th{text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)}
-td{padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text)}
-tr:last-child td{border:none}
-tr:hover td{background:rgba(255,255,255,.01)}
-.mat-alert{font-size:9px;color:var(--amber);font-weight:700}
-
+.mat-t{width:100%;border-collapse:collapse;font-size:11px}
+.mat-t th{text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)}
+.mat-t td{padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text)}
+.mat-t tr:last-child td{border:none}
+.mat-t tr:hover td{background:rgba(255,255,255,.01)}
+.mat-urg{color:var(--red);font-weight:700;font-size:9px}
+.mat-warn{color:var(--amber);font-size:9px}
 /* EQUIPO */
 .eq-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border)}
 .eq-row:last-child{border:none}
 .eq-av{width:26px;height:26px;border-radius:50%;background:var(--amber-d);border:1px solid var(--amber-b);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:10px;font-weight:800;color:var(--amber);flex-shrink:0}
 .eq-info{flex:1}
-.eq-nom{font-size:11px;font-weight:500;color:var(--text);margin-bottom:1px}
+.eq-nom{font-size:11px;font-weight:500;margin-bottom:1px}
 .eq-sub{font-size:10px;color:var(--text3)}
-.eq-bar-wrap{width:80px}
+.eq-bar{width:80px}
 .eq-cnt{font-family:'Syne',sans-serif;font-size:12px;font-weight:800;min-width:24px;text-align:right}
-
 /* VISITA */
-.vis-item{padding:10px 0;border-bottom:1px solid var(--border)}
-.vis-item:last-child{border:none}
-.vis-piso-hd{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:8px 0 4px;border-top:1px solid var(--border);margin-top:4px}
-.vis-mision-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
-.vis-mision-row:last-child{border:none}
-.vis-nombre{flex:1;font-size:11px;color:var(--text)}
+.vis-piso-hd{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:8px 0 4px;border-top:1px solid var(--border);margin-top:6px}
+.vis-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.vis-row:last-child{border:none}
+.vis-nom{flex:1;font-size:11px;color:var(--text)}
 .vis-btns{display:flex;gap:5px}
 .vis-btn{padding:5px 10px;border-radius:5px;border:1px solid var(--border2);font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;background:none;color:var(--text2);transition:all .15s}
-.vis-btn:hover{opacity:.8}
 .vis-btn.ok{background:var(--green-d);border-color:rgba(39,174,96,.3);color:var(--green)}
 .vis-btn.rev{background:var(--amber-d);border-color:var(--amber-b);color:var(--amber)}
 .vis-btn.rej{background:var(--red-d);border-color:rgba(192,57,43,.3);color:var(--red)}
-
+/* MISC */
+.fsel{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:3px 6px;border-radius:4px;font-size:10px;font-family:'DM Sans',sans-serif}
+.empty{text-align:center;padding:2rem;color:var(--text3);font-size:12px}
+.spin{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto .5rem}
+@keyframes sp{to{transform:rotate(360deg)}}
 @media(max-width:700px){.sg{grid-template-columns:repeat(2,1fr)}.g2,.obra-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -177,10 +170,10 @@ tr:hover td{background:rgba(255,255,255,.01)}
   </div>
 </div>
 <nav class="tabs">
-  <div class="tab on"     onclick="sw('dashboard',this)">📊 Dashboard</div>
-  <div class="tab"        onclick="sw('alertas',this)">🔔 Alertas</div>
-  <div class="tab"        onclick="sw('misiones',this)">✅ Misiones</div>
-  <div class="tab"        onclick="sw('obra',this)">🏢 Obra</div>
+  <div class="tab on" onclick="sw('dashboard',this)">📊 Dashboard</div>
+  <div class="tab" onclick="sw('alertas',this)">🔔 Alertas</div>
+  <div class="tab" onclick="sw('misiones',this)">✅ Misiones</div>
+  <div class="tab" onclick="sw('obra',this)">🏢 Obra</div>
   <div class="tab" onclick="sw('cronograma',this)">📅 Cronograma</div>
   <div class="tab" onclick="sw('materiales',this)">📦 Materiales</div>
   <div class="tab" onclick="sw('equipo',this)">👷 Equipo</div>
@@ -196,11 +189,7 @@ tr:hover td{background:rgba(255,255,255,.01)}
     <div class="sc b"><div class="sl">Workers activos</div><div class="sv" id="s-wrk">—</div><div class="ss">reportaron hoy</div></div>
     <div class="sc r"><div class="sl">Desviaciones</div><div class="sv" id="s-desv">—</div><div class="ss">requieren atención</div></div>
     <div class="sc g"><div class="sl">Avance global</div><div class="sv" id="s-global">—</div><div class="ss">del proyecto</div></div>
-    <div class="sc" id="sc-semaforo"><div class="sl">Estado financiero</div><div class="sv" id="s-semaforo" style="font-size:1.8rem">—</div><div class="ss" id="s-semaforo-txt">calculando...</div></div>
-  </div>
-  <div id="alerta-datos" style="display:none;background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.2);border-radius:8px;padding:10px 14px;margin-bottom:.75rem;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px">
-    <span style="font-size:14px">⚠️</span>
-    <span>El residente no está reportando cantidades. El semáforo financiero necesita esos datos. <span style="color:var(--amber);cursor:pointer" onclick="sw('misiones',document.querySelectorAll('.tab')[2])">Ver misiones →</span></span>
+    <div class="sc" id="sc-sem"><div class="sl">Estado financiero</div><div class="sv" id="s-sem" style="font-size:1.8rem">—</div><div class="ss" id="s-sem-txt">calculando...</div></div>
   </div>
   <div class="g2">
     <div class="card"><div class="ch">Progreso por etapa</div><div class="cb" id="etapas-l"><div class="empty"><div class="spin"></div></div></div></div>
@@ -222,7 +211,13 @@ tr:hover td{background:rgba(255,255,255,.01)}
     <div class="sc b"><div class="sl">Avance global</div><div class="sv" id="m-g">—</div></div>
   </div>
   <div class="card">
-    <div class="ch">Misiones <select class="fsel" id="f-etapa" onchange="renderMis()"><option value="">Todas</option></select></div>
+    <div class="ch">Misiones
+      <select class="fsel" id="f-orden" onchange="renderMis()">
+        <option value="urgencia">Por urgencia</option>
+        <option value="cronologico">Cronológico</option>
+        <option value="etapa">Por etapa</option>
+      </select>
+    </div>
     <div class="cb" id="mis-l"><div class="empty"><div class="spin"></div></div></div>
   </div>
 </div>
@@ -230,22 +225,16 @@ tr:hover td{background:rgba(255,255,255,.01)}
 <!-- OBRA -->
 <div class="tp" id="tp-obra">
   <div class="obra-grid">
-    <div class="obra-block">
-      <div class="obra-block-title">Información general</div>
-      <div id="obra-info"><div class="empty"><div class="spin"></div></div></div>
-    </div>
+    <div class="obra-block"><div class="obra-block-title">Información general</div><div id="obra-info"><div class="empty"><div class="spin"></div></div></div></div>
     <div class="obra-block">
       <div class="obra-block-title">Geometría del lote</div>
       <div id="obra-geo"><div class="empty"><div class="spin"></div></div></div>
       <div class="lote-wrap"><svg id="lote-svg" class="lote-svg" viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg"></svg></div>
     </div>
-    <div class="obra-block">
-      <div class="obra-block-title">Residente asignado</div>
-      <div id="obra-worker"><div class="empty"><div class="spin"></div></div></div>
-    </div>
+    <div class="obra-block"><div class="obra-block-title">Residente asignado</div><div id="obra-worker"><div class="empty"><div class="spin"></div></div></div></div>
     <div class="obra-block">
       <div class="obra-block-title">Código de obra</div>
-      <div id="obra-codigo" style="text-align:center;padding:1rem 0">
+      <div style="text-align:center;padding:1rem 0">
         <div style="font-family:'DM Mono',monospace;font-size:3rem;font-weight:700;color:var(--amber);letter-spacing:8px" id="obra-cod-big">—</div>
         <div style="font-size:11px;color:var(--text3);margin-top:8px">El residente reporta así:</div>
         <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--amber);margin-top:4px" id="obra-ejemplo">— 1: hice 25 m²</div>
@@ -257,28 +246,28 @@ tr:hover td{background:rgba(255,255,255,.01)}
 <!-- CRONOGRAMA -->
 <div class="tp" id="tp-cronograma">
   <div class="card">
-    <div class="ch">Plan de obra <span id="gantt-hoy-lbl" style="color:var(--amber);font-size:9px"></span></div>
-    <div style="overflow-x:auto" id="gantt-wrap"><div class="empty"><div class="spin"></div></div></div>
+    <div class="ch">Plan de obra — Gantt <span id="gantt-sub" style="color:var(--amber);font-size:9px;font-weight:400;text-transform:none;letter-spacing:0"></span></div>
+    <div class="gantt-outer" id="gantt-wrap"><div class="empty"><div class="spin"></div></div></div>
   </div>
 </div>
 
 <!-- MATERIALES -->
 <div class="tp" id="tp-materiales">
-  <div class="sg" style="grid-template-columns:repeat(4,1fr)">
-    <div class="sc r"><div class="sl">Pedir urgente</div><div class="sv" id="mat-urgente">—</div><div class="ss">materiales</div></div>
+  <div class="sg">
+    <div class="sc r"><div class="sl">Pedir urgente</div><div class="sv" id="mat-urg">—</div><div class="ss">vencen esta semana</div></div>
     <div class="sc"><div class="sl">Este mes</div><div class="sv" id="mat-mes">—</div><div class="ss">misiones activas</div></div>
     <div class="sc g"><div class="sl">M² pendientes</div><div class="sv" id="mat-m2">—</div></div>
-    <div class="sc b"><div class="sl">Materiales críticos</div><div class="sv" id="mat-crit">—</div></div>
+    <div class="sc b"><div class="sl">Items proyectados</div><div class="sv" id="mat-tot">—</div></div>
   </div>
   <div class="card">
-    <div class="ch">Proyección de materiales por misión</div>
+    <div class="ch">Proyección de materiales por misión activa</div>
     <div class="cb" id="mat-tabla"><div class="empty"><div class="spin"></div></div></div>
   </div>
 </div>
 
 <!-- EQUIPO -->
 <div class="tp" id="tp-equipo">
-  <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+  <div class="sg">
     <div class="sc"><div class="sl">Workers</div><div class="sv" id="eq-tot">—</div></div>
     <div class="sc g"><div class="sl">Activos hoy</div><div class="sv" id="eq-hoy">—</div></div>
     <div class="sc b"><div class="sl">Avances semana</div><div class="sv" id="eq-sem">—</div></div>
@@ -292,25 +281,26 @@ tr:hover td{background:rgba(255,255,255,.01)}
 
 <!-- MODELO 3D -->
 <div class="tp" id="tp-modelo">
-  <div id="modelo-iframe-wrap" style="width:100%;height:calc(100vh - 130px)"></div>
+  <div id="modelo-wrap" style="width:100%;height:calc(100vh - 130px)"></div>
 </div>
 
 <!-- VISITA -->
 <div class="tp" id="tp-visita">
-  <div class="sg" style="grid-template-columns:repeat(3,1fr);margin-bottom:.875rem">
+  <div class="sg" style="grid-template-columns:repeat(3,1fr)">
     <div class="sc g"><div class="sl">Aprobadas</div><div class="sv" id="vis-ok">0</div></div>
     <div class="sc"><div class="sl">En revisión</div><div class="sv" id="vis-rev">0</div></div>
     <div class="sc r"><div class="sl">Rechazadas</div><div class="sv" id="vis-rej">0</div></div>
   </div>
   <div class="card">
-    <div class="ch">Checklist de visita <span id="vis-fecha" style="color:var(--text3)"></span>
+    <div class="ch">Checklist de visita <span id="vis-fecha" style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0"></span>
       <button onclick="iniciarVisita()" style="background:var(--amber);color:#000;border:none;padding:4px 12px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Nueva visita</button>
     </div>
-    <div class="cb" id="vis-lista"><div class="empty">Presiona "Nueva visita" para iniciar el recorrido.</div></div>
+    <div class="cb" id="vis-lista"><div class="empty">Presiona "Nueva visita" para iniciar el recorrido de la obra.</div></div>
   </div>
 </div>
 
-</div>
+</div><!-- /main -->
+
 <script>
 const SB='https://muyezsssnzlxavchabum.supabase.co';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
@@ -319,170 +309,128 @@ const EN={'prel':'Preliminares','mvt':'Mov. tierras','cim':'Cimentación','estr'
 const EO=['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
 const SIST={'porticos':'Pórticos concreto','ipe':'Acero / IPE','mixto':'Mixto'};
 
-// Read from hash (#proyecto=...&codigo=...) OR query params (?proyecto=...)
-// Hash is never modified by servers - safest approach
-function getParam(key) {
-  // Try hash first
-  const hash = location.hash.replace('#','');
-  const hashParams = new URLSearchParams(hash);
-  if(hashParams.get(key)) return hashParams.get(key);
-  // Fall back to query string
-  const queryParams = new URLSearchParams(location.search);
-  return queryParams.get(key);
+// Rendimientos CAMACOL para proyección de materiales
+const REND={
+  columnas_vaciado:{mat:'Concreto 28MPa',r:.27,u:'m³'},
+  columnas_armado:{mat:'Acero 1/2"',r:18,u:'kg'},
+  placa_entrepiso:{mat:'Concreto 28MPa',r:.12,u:'m³'},
+  vigas:{mat:'Concreto 28MPa',r:.18,u:'m³'},
+  levante_muros_interiores:{mat:'Ladrillo bloque',r:32,u:'und'},
+  levante_muros_exteriores:{mat:'Ladrillo bloque',r:32,u:'und'},
+  panete_interior:{mat:'Cemento',r:.2,u:'bulto'},
+  panete_exterior:{mat:'Cemento',r:.22,u:'bulto'},
+  hidrosanitarias:{mat:'Tubería PVC',r:1,u:'ml'},
+  electricas:{mat:'Cable THHN',r:1.5,u:'ml'},
+  pisos_enchapes:{mat:'Baldosa 60x60',r:1.1,u:'m²'},
+  pintura_final:{mat:'Pintura vinilo',r:.12,u:'gl'},
+  armado_zapatas:{mat:'Acero 1/2"',r:12,u:'kg'},
+  vaciado_zapatas:{mat:'Concreto 21MPa',r:1,u:'m³'},
+  contrapiso:{mat:'Concreto 21MPa',r:.1,u:'m³'},
+  aseo_fino:{mat:'Productos limpieza',r:.05,u:'gl'},
+};
+
+function getParam(k){
+  const h=new URLSearchParams(location.hash.replace('#',''));
+  if(h.get(k)) return h.get(k);
+  return new URLSearchParams(location.search).get(k);
 }
 
-const PID_URL = getParam('proyecto');
-const CODIGO = getParam('codigo')||'—';
-
-let PID = PID_URL; // URL always wins
+const PID_URL=getParam('proyecto');
+const CODIGO=getParam('codigo')||'—';
+let PID=PID_URL;
 
 if(!PID){
-  // Only use localStorage if NO proyecto param in URL
   const saved=localStorage.getItem('goobra_last_proj');
-  if(saved){ PID=saved; }
+  if(saved){PID=saved;}
   else{
     document.body.innerHTML='<div style="height:100vh;display:flex;align-items:center;justify-content:center;background:#0a0a0a;font-family:DM Sans,sans-serif;flex-direction:column;gap:1rem"><div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:#e8a020;letter-spacing:3px">GO OBRA</div><p style="color:#555;font-size:13px">No hay proyecto activo</p><a href="/onboarding.html" style="background:#e8a020;color:#000;padding:12px 24px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500">Activar mi obra →</a></div>';
     throw new Error('no pid');
   }
 }
+if(PID) localStorage.setItem('goobra_last_proj',PID);
 
-// Save current project to localStorage
-if(PID) localStorage.setItem('goobra_last_proj', PID);
-
-let MDATA=[], WMAPS={}, PROJ={}, currentTab='dashboard';
+let MDATA=[], WMAPS={}, PROJ={}, curTab='dashboard';
 
 function sw(name,btn){
-  if(btn.classList.contains('locked')) return;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
   document.querySelectorAll('.tp').forEach(p=>p.classList.remove('on'));
   btn.classList.add('on');
   document.getElementById('tp-'+name).classList.add('on');
-  currentTab=name;
+  curTab=name;
+  if(name==='cronograma') renderGantt();
+  if(name==='materiales') renderMateriales();
+  if(name==='equipo') renderEquipo();
+  if(name==='modelo') renderModelo();
 }
 
-const LOCKED_DATA={
-  cronograma:{ico:'📅',title:'Cronograma de obra',desc:'Ve exactamente cuántos días lleva tu obra de retraso o adelanto. Semana a semana, misión a misión.',features:['Gantt interactivo por semanas','Línea de hoy vs plan original','Alertas de retraso por etapa','Proyección de fecha de entrega real']},
-  materiales:{ico:'📦',title:'Control de materiales',desc:'Nunca más pare una obra por falta de cemento. El sistema avisa cuándo pedir y cuánto, con días de anticipación.',features:['Proyección por misión activa','Alertas de pedido anticipado','Consumo real vs CAMACOL','Historial de materiales gastados']},
-  equipo:{ico:'👷',title:'Gestión del equipo',desc:'Sepa quién trabaja y quién no. Ranking de workers por avance real, no por lo que dicen.',features:['Ranking por avances registrados','Días activos vs inactivos','Comparativo entre workers','Historial de reportes por persona']},
-  modelo:{ico:'🏗',title:'Modelo 3D en vivo',desc:'Su edificio en pantalla, coloreado por avance real. Vea el piso 5 en amber y el 3 en verde.',features:['Edificio 3D con dimensiones reales','Colores por estado: verde/amber/gris','Capas: estructura · redes · usos','Se actualiza con cada reporte']},
-  visita:{ico:'👁',title:'Modo visita — próximamente',desc:'Llegue a la obra, abra GO Obra, y confirme con un tap lo que el residente reportó.',features:['Lista por piso y sector (ejes)','Tap: ✅ Aprobado · 🔄 Revisión · ❌ Rechazado','Desviaciones automáticas al rechazar','Historial de visitas del dueño']}
-};
-
-function showLocked(name){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('on'));
-  document.getElementById('tp-locked').classList.add('on');
-  const d=LOCKED_DATA[name];
-  const isProximo=name==='visita';
-  const waMsg=encodeURIComponent('Hola, quiero activar el plan completo de GO Obra para mi proyecto');
-  document.getElementById('locked-inner').innerHTML=`
-    <div class="locked-icon">${d.ico}</div>
-    <div class="locked-title">${d.title}</div>
-    <div class="locked-desc">${d.desc}</div>
-    <div class="locked-features">${d.features.map(f=>`<div class="lf"><span>→</span>${f}</div>`).join('')}</div>
-    ${isProximo
-      ?`<div style="font-size:12px;color:var(--amber);font-weight:500">En desarrollo — disponible próximamente</div>`
-      :`<a class="btn-upgrade" href="https://wa.me/573219210310?text=${waMsg}" target="_blank">Activar plan completo →</a>
-        <div class="plan-tag">Plan completo · $1.500.000/mes · Cancela cuando quieras</div>`}`;
+function timeAgo(ts){
+  const d=Math.round((Date.now()-new Date(ts))/60000);
+  return d<60?`hace ${d}m`:d<1440?`hace ${Math.round(d/60)}h`:new Date(ts).toLocaleDateString('es-CO',{day:'numeric',month:'short'});
 }
 
+// ── LOAD ALL ──
 async function loadAll(){
-  if(!PID) return;
   const {data:proj}=await db.from('proyectos').select('*').eq('id',PID).single();
-  if(proj){
-    PROJ=proj;
-    document.getElementById('proj-name').textContent=proj.nombre||'—';
-    document.getElementById('cod-tag').textContent=proj.codigo_corto||CODIGO;
-  }
+  if(proj){PROJ=proj;document.getElementById('proj-name').textContent=proj.nombre||'—';document.getElementById('cod-tag').textContent=proj.codigo_corto||CODIGO;}
   await Promise.all([loadWorkers(),loadDash(),loadMisiones(),loadAlertas(),loadObra()]);
+  if(curTab==='cronograma') renderGantt();
+  if(curTab==='materiales') renderMateriales();
+  if(curTab==='equipo') renderEquipo();
 }
 
+// ── WORKERS ──
 async function loadWorkers(){
   const {data}=await db.from('workers').select('id,nombre,rol,telegram_id').eq('proyecto_id',PID);
   WMAPS={};(data||[]).forEach(w=>WMAPS[w.id]=w);
 }
 
+// ── DASHBOARD ──
 async function loadDash(){
   const hoy=new Date();hoy.setHours(0,0,0,0);
   const {data:av}=await db.from('avances').select('trabajador_id,desviacion_detectada').eq('proyecto_id',PID).gte('timestamp_mensaje',hoy.toISOString());
   document.getElementById('s-hoy').textContent=av?.length||0;
   document.getElementById('s-wrk').textContent=new Set(av?.map(a=>a.trabajador_id)).size;
   document.getElementById('s-desv').textContent=av?.filter(a=>a.desviacion_detectada).length||0;
-  const {data:mis}=await db.from('proyecto_misiones').select('etapa_id,cantidad_meta,cantidad_ejecutada,estado,pct_avance').eq('proyecto_id',PID);
-  MDATA=mis||[];
+
   const glb=MDATA.length?Math.round(MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length):0;
   document.getElementById('s-global').textContent=glb+'%';
 
-  // SEMÁFORO FINANCIERO
-  const PCTS_CAMACOL={prel:0.03,mvt:0.05,cim:0.12,estr:0.35,mamp:0.18,redes:0.10,acab:0.12,urb:0.03,entr:0.02};
+  // Semáforo financiero simple
+  const PCTS={prel:.03,mvt:.05,cim:.12,estr:.35,mamp:.18,redes:.10,acab:.12,urb:.03,entr:.02};
   const presupuesto=parseFloat(PROJ.presupuesto_total)||0;
-  const semEl=document.getElementById('sc-semaforo');
-  const semVal=document.getElementById('s-semaforo');
-  const semTxt=document.getElementById('s-semaforo-txt');
-  const alertaDatos=document.getElementById('alerta-datos');
-
-  // Check if residente is reporting quantities
-  const {data:avRecent}=await db.from('avances').select('cantidad_primaria_valor').eq('proyecto_id',PID).order('timestamp_mensaje',{ascending:false}).limit(10);
-  const sinCantidades=(avRecent||[]).filter(a=>!a.cantidad_primaria_valor||a.cantidad_primaria_valor===0).length;
-  const hayDatos=(avRecent||[]).length>0;
-  if(hayDatos && sinCantidades>(avRecent||[]).length*0.5){
-    alertaDatos.style.display='flex';
-  } else {
-    alertaDatos.style.display='none';
-  }
-
+  const semEl=document.getElementById('sc-sem');
+  const semVal=document.getElementById('s-sem');
+  const semTxt=document.getElementById('s-sem-txt');
   if(!presupuesto){
-    semVal.textContent='—';
-    semTxt.textContent='Ingresa el presupuesto';
-    semEl.style.borderLeft='2px solid var(--text3)';
+    semVal.textContent='—';semTxt.textContent='Sin presupuesto';
   } else {
-    // Calculate expected spend vs actual progress
-    let presupuestoEjecutado=0;
-    let presupuestoEsperado=0;
-    const diasTotales=PROJ.fecha_fin_estimada&&PROJ.fecha_inicio?Math.round((new Date(PROJ.fecha_fin_estimada)-new Date(PROJ.fecha_inicio))/86400000):365;
-    const diasTranscurridos=PROJ.fecha_inicio?Math.round((new Date()-new Date(PROJ.fecha_inicio))/86400000):0;
-    const pctTiempo=Math.min(diasTranscurridos/Math.max(diasTotales,1),1);
-
-    // Actual spend estimate: sum of pct_avance × budget per etapa
-    const em2={};
-    MDATA.forEach(m=>{if(!em2[m.etapa_id])em2[m.etapa_id]={pct:0,cnt:0};em2[m.etapa_id].pct+=parseFloat(m.pct_avance||0);em2[m.etapa_id].cnt++;});
-    Object.entries(em2).forEach(([e,v])=>{
-      const pctEtapa=v.cnt>0?v.pct/v.cnt/100:0;
-      const budgetEtapa=(PCTS_CAMACOL[e]||0)*presupuesto;
-      presupuestoEjecutado+=pctEtapa*budgetEtapa;
-    });
-    // Expected spend based on time
-    presupuestoEsperado=pctTiempo*presupuesto;
-
-    const ratio=presupuestoEsperado>0?presupuestoEjecutado/presupuestoEsperado:1;
+    const diasTot=PROJ.fecha_fin_estimada&&PROJ.fecha_inicio?Math.round((new Date(PROJ.fecha_fin_estimada)-new Date(PROJ.fecha_inicio))/86400000):365;
+    const diasTrans=PROJ.fecha_inicio?Math.round((new Date()-new Date(PROJ.fecha_inicio))/86400000):0;
+    const pctTiempo=Math.min(diasTrans/Math.max(diasTot,1),1);
+    const em2={};MDATA.forEach(m=>{if(!em2[m.etapa_id])em2[m.etapa_id]={p:0,n:0};em2[m.etapa_id].p+=parseFloat(m.pct_avance||0);em2[m.etapa_id].n++;});
+    let ejec=0;
+    Object.entries(em2).forEach(([e,v])=>{ejec+=(v.n>0?v.p/v.n/100:0)*(PCTS[e]||0)*presupuesto;});
+    const esp=pctTiempo*presupuesto;
+    const ratio=esp>0?ejec/esp:1;
     const fmt=v=>v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?Math.round(v/1e6)+'M':Math.round(v/1e3)+'K';
-
-    if(ratio>=0.9){
-      semVal.textContent='🟢';
-      semTxt.textContent='En presupuesto · '+fmt(presupuestoEjecutado)+' ejecutado';
-      semEl.style.borderLeft='2px solid var(--green)';
-    } else if(ratio>=0.7){
-      semVal.textContent='🟡';
-      semTxt.textContent='Atención · Retraso vs tiempo';
-      semEl.style.borderLeft='2px solid var(--amber)';
-    } else {
-      semVal.textContent='🔴';
-      semTxt.textContent='Fuera de plan · Revisar avance';
-      semEl.style.borderLeft='2px solid var(--red)';
-    }
+    if(ratio>=0.9){semVal.textContent='🟢';semTxt.textContent='En presupuesto · '+fmt(ejec);semEl.style.setProperty('--amber','#27ae60');}
+    else if(ratio>=0.7){semVal.textContent='🟡';semTxt.textContent='Atención · Retraso vs tiempo';}
+    else{semVal.textContent='🔴';semTxt.textContent='Fuera de plan · Revisar avance';}
   }
-  const em={};
-  MDATA.forEach(m=>{if(!em[m.etapa_id])em[m.etapa_id]={meta:0,exec:0};em[m.etapa_id].meta+=parseFloat(m.cantidad_meta||0);em[m.etapa_id].exec+=parseFloat(m.cantidad_ejecutada||0);});
+
+  // Etapas
+  const em={};MDATA.forEach(m=>{if(!em[m.etapa_id])em[m.etapa_id]={meta:0,exec:0};em[m.etapa_id].meta+=parseFloat(m.cantidad_meta||0);em[m.etapa_id].exec+=parseFloat(m.cantidad_ejecutada||0);});
   document.getElementById('etapas-l').innerHTML=EO.filter(e=>em[e]).map(e=>{
     const p=em[e].meta>0?Math.min(Math.round(em[e].exec/em[e].meta*100),100):0;
     const col=p===100?'var(--green)':p>0?'var(--amber)':'var(--bg4)';
     return`<div class="er"><div class="en">${EN[e]||e}</div><div class="bt"><div class="bf" style="width:${p}%;background:${col}"></div></div><div class="ep" style="color:${col}">${p}%</div><div class="bdg ${p===100?'bdg-c':p>0?'bdg-e':'bdg-p'}">${p===100?'✓':p>0?'↗':'—'}</div></div>`;
-  }).join('')||'<div class="empty">Sin datos de etapas aún</div>';
+  }).join('')||'<div class="empty">Sin datos aún</div>';
+
+  // Feed
   const {data:feed}=await db.from('avances').select('etapa_id,mision_id,nivel,cantidad_primaria_valor,cantidad_primaria_unidad,desviacion_detectada,timestamp_mensaje,trabajador_id').eq('proyecto_id',PID).order('timestamp_mensaje',{ascending:false}).limit(10);
   if(!feed?.length){document.getElementById('feed-l').innerHTML='<div class="empty">Sin avances aún.<br>El residente reporta con el código de obra.</div>';return;}
   document.getElementById('feed-l').innerHTML=feed.map(a=>{
-    const ts=new Date(a.timestamp_mensaje);
-    const diff=Math.round((Date.now()-ts)/60000);
+    const ts=new Date(a.timestamp_mensaje);const diff=Math.round((Date.now()-ts)/60000);
     const t=diff<60?`hace ${diff}m`:diff<1440?`hace ${Math.round(diff/60)}h`:ts.toLocaleDateString('es-CO',{day:'numeric',month:'short'});
     const nom=WMAPS[a.trabajador_id]?.nombre||'Worker';
     const mis=(a.mision_id||a.etapa_id||'').replace(/_/g,' ');
@@ -491,6 +439,7 @@ async function loadDash(){
   }).join('');
 }
 
+// ── ALERTAS ──
 async function loadAlertas(){
   const als=[];const hoy=new Date();
   MDATA.forEach(m=>{
@@ -506,11 +455,12 @@ async function loadAlertas(){
   (dv||[]).forEach(d=>{als.push({t:'r',i:'⚠',ti:`Desviación: ${(d.mision_id||'').replace(/_/g,' ')}`,d:`${WMAPS[d.trabajador_id]?.nombre||'Worker'}: ${d.desviacion_motivo||'sin detalle'}`});});
   const cnt=als.filter(a=>a.t==='r').length;
   document.getElementById('al-cnt').textContent=cnt?`· ${cnt}`:'';
-  document.getElementById('alertas-l').innerHTML=als.length?als.map(a=>`<div class="al ${a.t}"><span class="al-ico">${a.i}</span><div><div class="al-t">${a.ti}</div><div class="al-d">${a.d}</div></div></div>`).join(''):'<div class="empty">Sin alertas. Todo en orden.</div>';
+  document.getElementById('alertas-l').innerHTML=als.length?als.map(a=>`<div class="al ${a.t}"><span class="al-ico">${a.i}</span><div><div class="al-t">${a.ti}</div><div class="al-d">${a.d}</div></div></div>`).join(''):'<div class="empty">✓ Sin alertas activas. Todo en orden.</div>';
 }
 
+// ── MISIONES ──
 async function loadMisiones(){
-  const {data}=await db.from('proyecto_misiones').select('*').eq('proyecto_id',PID).order('etapa_id');
+  const {data}=await db.from('proyecto_misiones').select('*').eq('proyecto_id',PID);
   MDATA=data||[];
   const c=MDATA.filter(m=>m.estado==='completada').length;
   const e=MDATA.filter(m=>m.estado==='en_curso').length;
@@ -520,30 +470,52 @@ async function loadMisiones(){
   document.getElementById('m-e').textContent=e;
   document.getElementById('m-p').textContent=p;
   document.getElementById('m-g').textContent=g+'%';
-  const etps=[...new Set(MDATA.map(m=>m.etapa_id))];
-  document.getElementById('f-etapa').innerHTML='<option value="">Todas</option>'+etps.map(e=>`<option value="${e}">${EN[e]||e}</option>`).join('');
   renderMis();
 }
 
 function renderMis(){
-  const f=document.getElementById('f-etapa').value;
-  const activas=MDATA.filter(m=>m.estado!=='completada'&&(f?m.etapa_id===f:true));
-  const comp=MDATA.filter(m=>m.estado==='completada'&&(f?m.etapa_id===f:true));
+  const orden=document.getElementById('f-orden')?.value||'urgencia';
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const activas=MDATA.filter(m=>m.estado!=='completada');
+  const comp=MDATA.filter(m=>m.estado==='completada');
+
+  // Urgency score: vencidas > en_curso por vencer > en_curso > por iniciar > pendientes
+  function urgScore(m){
+    const fin=m.fecha_fin_plan?new Date(m.fecha_fin_plan):null;
+    const dr=fin?Math.round((fin-hoy)/86400000):999;
+    if(m.estado==='en_curso'&&fin&&dr<0) return 0; // vencida en curso
+    if(m.estado==='pendiente'&&fin&&dr<0) return 1; // vencida pendiente
+    if(m.estado==='en_curso'&&dr<=3) return 2; // por vencer
+    if(m.estado==='en_curso') return 3;
+    if(m.estado==='pendiente'&&dr<=7) return 4; // pronto a iniciar
+    return 5+dr;
+  }
+
+  let sorted;
+  if(orden==='urgencia') sorted=[...activas].sort((a,b)=>urgScore(a)-urgScore(b));
+  else if(orden==='cronologico') sorted=[...activas].sort((a,b)=>(a.fecha_inicio_plan||'9999')>(b.fecha_inicio_plan||'9999')?1:-1);
+  else sorted=[...activas].sort((a,b)=>EO.indexOf(a.etapa_id)-EO.indexOf(b.etapa_id));
+
   const row=m=>{
     const pct=parseFloat(m.pct_avance||0);
     const col=pct===100?'var(--green)':pct>0?'var(--amber)':'var(--bg4)';
-    return`<div class="mr"><div class="mi-i"><div class="mi-n">${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}</div><div class="mi-m">Meta: ${m.cantidad_meta} ${m.unidad_primaria||''} · Ej: ${m.cantidad_ejecutada||0}</div></div><div class="mi-p"><div class="bt"><div class="bf" style="width:${pct}%;background:${col}"></div></div></div><div class="mi-pct" style="color:${col}">${pct.toFixed(0)}%</div><div class="bdg ${m.estado==='completada'?'bdg-c':m.estado==='en_curso'?'bdg-e':'bdg-p'}">${m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—'}</div></div>`;
+    const fin=m.fecha_fin_plan?new Date(m.fecha_fin_plan):null;
+    const dr=fin?Math.round((fin-hoy)/86400000):null;
+    let urgTag='';
+    if(fin&&dr<0&&m.estado!=='completada') urgTag=`<span class="mi-urg" style="background:var(--red-d);color:var(--red)">▲ vencida ${Math.abs(dr)}d</span>`;
+    else if(fin&&dr>=0&&dr<=3&&m.estado!=='completada') urgTag=`<span class="mi-urg" style="background:var(--amber-d);color:var(--amber)">◆ ${dr}d</span>`;
+    return`<div class="mr"><div class="mi-i"><div class="mi-n">${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}${urgTag}</div><div class="mi-m">Meta: ${m.cantidad_meta} ${m.unidad_primaria||''} · Ej: ${m.cantidad_ejecutada||0} · ${m.fecha_fin_plan||'sin fecha'}</div></div><div class="mi-p"><div class="bt"><div class="bf" style="width:${pct}%;background:${col}"></div></div></div><div class="mi-pct" style="color:${col}">${pct.toFixed(0)}%</div><div class="bdg ${m.estado==='completada'?'bdg-c':m.estado==='en_curso'?'bdg-e':'bdg-p'}">${m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—'}</div></div>`;
   };
-  let html=activas.map(row).join('')||'<div class="empty">Sin misiones activas</div>';
+
+  let html=sorted.map(row).join('')||'<div class="empty">Sin misiones activas</div>';
   if(comp.length) html+=`<div class="mis-comp-hd" onclick="this.nextElementSibling.style.maxHeight=this.nextElementSibling.style.maxHeight?'':this.nextElementSibling.scrollHeight+'px'">✓ ${comp.length} completadas ▾</div><div class="mis-comp-body">${comp.map(row).join('')}</div>`;
   document.getElementById('mis-l').innerHTML=html;
 }
 
+// ── OBRA ──
 async function loadObra(){
-  const p=PROJ;
-  if(!p.id) return;
+  const p=PROJ;if(!p.id) return;
   const cod=p.codigo_corto||CODIGO;
-  // Info general
   document.getElementById('obra-info').innerHTML=`
     <div class="obra-row"><span class="obra-label">Nombre</span><span class="obra-val">${p.nombre||'—'}</span></div>
     <div class="obra-row"><span class="obra-label">Dirección</span><span class="obra-val">${p.direccion||'—'}</span></div>
@@ -551,11 +523,7 @@ async function loadObra(){
     <div class="obra-row"><span class="obra-label">Inicio</span><span class="obra-val">${p.fecha_inicio||'—'}</span></div>
     <div class="obra-row"><span class="obra-label">Entrega est.</span><span class="obra-val">${p.fecha_fin_estimada||'—'}</span></div>
     <div class="obra-row"><span class="obra-label">Estado</span><span class="obra-val" style="color:var(--green)">${p.estado||'—'}</span></div>`;
-  // Geometría
-  const fr=parseFloat(p.frente)||12;
-  const fo=parseFloat(p.fondo)||24;
-  const pi=parseInt(p.numero_pisos)||8;
-  const so=parseInt(p.sotanos)||0;
+  const fr=parseFloat(p.frente)||12,fo=parseFloat(p.fondo)||24,pi=parseInt(p.numero_pisos)||8,so=parseInt(p.sotanos)||0;
   const m2=parseInt(p.m2_por_piso)||Math.round(fr*fo*0.72);
   document.getElementById('obra-geo').innerHTML=`
     <div class="obra-row"><span class="obra-label">Frente</span><span class="obra-val">${fr} m</span></div>
@@ -563,31 +531,207 @@ async function loadObra(){
     <div class="obra-row"><span class="obra-label">Pisos</span><span class="obra-val">${pi}${so?' + '+so+' sótano(s)':''}</span></div>
     <div class="obra-row"><span class="obra-label">M² útil/piso</span><span class="obra-val">${m2} m²</span></div>
     <div class="obra-row"><span class="obra-label">M² totales</span><span class="obra-val">${m2*pi} m²</span></div>`;
-  // Lote SVG
-  const maxD=Math.max(fr,fo);
-  const scl=160/maxD;
-  const w=Math.round(fr*scl);
-  const h=Math.round(fo*scl);
-  const ox=(200-w)/2; const oy=(160-h)/2;
+  const maxD=Math.max(fr,fo),scl=160/maxD,w=Math.round(fr*scl),h=Math.round(fo*scl),ox=(200-w)/2,oy=(160-h)/2;
   const glb=MDATA.length?Math.round(MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length):0;
   const fillH=Math.round(h*glb/100);
   document.getElementById('lote-svg').innerHTML=`
     <rect x="${ox}" y="${oy}" width="${w}" height="${h}" fill="none" stroke="#333" stroke-width="1"/>
-    <rect x="${ox}" y="${oy+h-fillH}" width="${w}" height="${fillH}" fill="rgba(232,160,32,.15)" stroke="none"/>
+    <rect x="${ox}" y="${oy+h-fillH}" width="${w}" height="${fillH}" fill="rgba(232,160,32,.15)"/>
     <text x="${ox+w/2}" y="${oy-6}" text-anchor="middle" font-size="9" fill="#555">${fr}m</text>
     <text x="${ox+w+6}" y="${oy+h/2}" text-anchor="start" font-size="9" fill="#555">${fo}m</text>
     <text x="${ox+w/2}" y="${oy+h/2+4}" text-anchor="middle" font-size="14" fill="#e8a020" font-weight="bold">${glb}%</text>
     <text x="${ox+w/2}" y="${oy+h/2+18}" text-anchor="middle" font-size="9" fill="#555">avance</text>`;
-  // Worker
   const workers=Object.values(WMAPS);
-  document.getElementById('obra-worker').innerHTML=workers.length
-    ?workers.map(w=>`<div class="obra-row"><span class="obra-label">${w.rol==='res'?'Residente':'Worker'}</span><span class="obra-val">${w.nombre}</span></div>`).join('')
-    :'<div class="obra-row"><span class="obra-label" style="color:var(--text3)">Sin residente vinculado</span></div>';
-  // Código
+  document.getElementById('obra-worker').innerHTML=workers.length?workers.map(w=>`<div class="obra-row"><span class="obra-label">${w.rol==='res'?'Residente':'Worker'}</span><span class="obra-val">${w.nombre}</span></div>`).join(''):'<div class="obra-row"><span class="obra-label" style="color:var(--text3)">Sin residente vinculado</span></div>';
   document.getElementById('obra-cod-big').textContent=cod;
   document.getElementById('obra-ejemplo').textContent=cod+' 1: hice 25 m², 3 bultos cemento';
 }
 
+// ── CRONOGRAMA (Gantt semanal) ──
+function renderGantt(){
+  const dates=MDATA.flatMap(m=>[m.fecha_inicio_plan,m.fecha_fin_plan].filter(Boolean).map(d=>new Date(d)));
+  if(!dates.length){document.getElementById('gantt-wrap').innerHTML='<div class="empty">Sin fechas planificadas en las misiones</div>';return;}
+  const minD=new Date(Math.min(...dates));minD.setDate(1);
+  const maxD=new Date(Math.max(...dates));maxD.setMonth(maxD.getMonth()+1);maxD.setDate(1);
+  const today=new Date();
+  const totalDays=(maxD-minD)/86400000;
+  const pct=d=>Math.max(0,Math.min(100,(new Date(d)-minD)/86400000/totalDays*100));
+  const weeks=[];let cur=new Date(minD);
+  while(cur<maxD){weeks.push(new Date(cur));cur.setDate(cur.getDate()+7);}
+  const todayPct=pct(today);
+  const months={};weeks.forEach(w=>{const k=w.toLocaleDateString('es-CO',{month:'short',year:'2-digit'}).toUpperCase();if(!months[k])months[k]=0;months[k]++;});
+  const mCols=Object.entries(months).map(([n,c])=>`<div style="flex:${c};text-align:center;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--amber);padding:5px 0;border-right:1px solid var(--border)">${n}</div>`).join('');
+  const wCols=weeks.map(w=>{const isCur=today>=w&&today<new Date(w.getTime()+7*864e5);return`<div class="gantt-wk ${isCur?'cur':''}">${w.getDate()}</div>`;}).join('');
+  let rows='';
+  EO.forEach(eid=>{
+    const ms=MDATA.filter(m=>m.etapa_id===eid&&m.fecha_inicio_plan&&m.fecha_fin_plan);
+    if(!ms.length) return;
+    rows+=`<div class="gantt-etapa">${EN[eid]||eid}</div>`;
+    ms.forEach(m=>{
+      const l=pct(m.fecha_inicio_plan);
+      const w=Math.max(pct(m.fecha_fin_plan)-l,.5);
+      const col=m.estado==='completada'?'#166534':m.estado==='en_curso'?'#854d0e':'#1f1f1f';
+      const tc=m.estado==='completada'?'#86efac':m.estado==='en_curso'?'#fde68a':'#444';
+      rows+=`<div class="gantt-row">
+        <div class="gantt-rlbl">${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}<br><span style="font-size:9px;color:var(--text3)">${parseFloat(m.pct_avance||0).toFixed(0)}%</span></div>
+        <div class="gantt-cells">
+          ${weeks.map(w=>{const isCur=today>=w&&today<new Date(w.getTime()+7*864e5);return`<div class="gantt-cell ${isCur?'cur':''}"></div>`;}).join('')}
+          <div class="gantt-bar" style="left:${l}%;width:${w}%;background:${col};color:${tc};${m.estado==='pendiente'?'border:1px solid #333':''}">${parseFloat(m.pct_avance||0).toFixed(0)}%</div>
+          ${todayPct>0&&todayPct<100?`<div class="gantt-today" style="left:${todayPct}%"></div>`:''}
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById('gantt-wrap').innerHTML=`<div class="gantt-inner">
+    <div class="gantt-hd"><div class="gantt-lbl">HOY ${today.toLocaleDateString('es-CO',{day:'numeric',month:'short'})}</div><div style="flex:1;display:flex">${mCols}</div></div>
+    <div class="gantt-hd"><div class="gantt-lbl"></div><div style="flex:1;display:flex">${wCols}</div></div>
+    ${rows}
+  </div>`;
+  document.getElementById('gantt-sub').textContent=today.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+  const wrap=document.getElementById('gantt-wrap');
+  if(wrap&&todayPct>0) setTimeout(()=>{wrap.scrollLeft=(wrap.scrollWidth*todayPct/100)-wrap.clientWidth/2;},100);
+}
+
+// ── MATERIALES (proyección CAMACOL) ──
+function renderMateriales(){
+  const hoy=new Date();
+  const fin30=new Date(hoy);fin30.setDate(fin30.getDate()+30);
+  let urgCnt=0,mesCnt=0,m2tot=0;
+  const rows=[];
+  MDATA.filter(m=>m.estado!=='completada').forEach(m=>{
+    const r=REND[m.mision_id];
+    const pend=Math.max(0,parseFloat(m.cantidad_meta||0)-parseFloat(m.cantidad_ejecutada||0));
+    if(!r||pend<=0) return;
+    const cant=Math.round(r.r*pend*1.05*10)/10;
+    const fin=m.fecha_fin_plan?new Date(m.fecha_fin_plan):null;
+    const dr=fin?Math.round((fin-hoy)/86400000):999;
+    const esUrg=dr<=7&&m.estado==='en_curso';
+    const esMes=fin&&fin<=fin30;
+    if(esUrg) urgCnt++;
+    if(esMes) mesCnt++;
+    if(m.unidad_primaria==='m2') m2tot+=pend;
+    const estado=esUrg?`<span class="mat-urg">⚡ URGENTE</span>`:esMes?`<span class="mat-warn">Este mes</span>`:'';
+    rows.push(`<tr>
+      <td style="font-weight:500">${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}</td>
+      <td style="color:var(--text3)">${EN[m.etapa_id]||m.etapa_id}</td>
+      <td style="color:var(--text2)">${pend} ${m.unidad_primaria||''}</td>
+      <td>${cant} ${r.u}</td>
+      <td>${r.mat}</td>
+      <td style="color:var(--text2)">${fin?fin.toLocaleDateString('es-CO',{day:'numeric',month:'short'}):'—'}</td>
+      <td>${estado}</td>
+    </tr>`);
+  });
+  document.getElementById('mat-urg').textContent=urgCnt;
+  document.getElementById('mat-mes').textContent=mesCnt;
+  document.getElementById('mat-m2').textContent=Math.round(m2tot)+'m²';
+  document.getElementById('mat-tot').textContent=rows.length;
+  document.getElementById('mat-tabla').innerHTML=rows.length
+    ?`<table class="mat-t"><thead><tr><th>Misión</th><th>Etapa</th><th>Pendiente</th><th>Cantidad</th><th>Material</th><th>Fecha fin</th><th>Alerta</th></tr></thead><tbody>${rows.join('')}</tbody></table>`
+    :'<div class="empty">Sin misiones activas con materiales proyectados</div>';
+}
+
+// ── EQUIPO ──
+async function renderEquipo(){
+  const {data:ws}=await db.from('workers').select('id,nombre,rol,especialidad,estado_hoy').eq('proyecto_id',PID);
+  const {data:av}=await db.from('avances').select('trabajador_id,timestamp_mensaje').eq('proyecto_id',PID);
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const sem=new Date();sem.setDate(sem.getDate()-7);
+  const cnt={},hoySet=new Set();let semC=0;
+  (av||[]).forEach(a=>{
+    cnt[a.trabajador_id]=(cnt[a.trabajador_id]||0)+1;
+    const ts=new Date(a.timestamp_mensaje);
+    if(ts>=hoy) hoySet.add(a.trabajador_id);
+    if(ts>=sem) semC++;
+  });
+  const rank=(ws||[]).map(w=>({...w,n:cnt[w.id]||0})).sort((a,b)=>b.n-a.n);
+  document.getElementById('eq-tot').textContent=ws?.length||0;
+  document.getElementById('eq-hoy').textContent=hoySet.size;
+  document.getElementById('eq-sem').textContent=semC;
+  document.getElementById('eq-top').textContent=rank[0]?.nombre?.split(' ')[0]||'—';
+  const mx=Math.max(rank[0]?.n||1,1);
+  const ROLES={res:'Residente',mae:'Maestro',ayu:'Ayudante',arq:'Arquitecto',of:'Oficial'};
+  const est=w=>w.estado_hoy==='en_obra'?`<span style="font-size:9px;background:var(--green-d);color:var(--green);border:1px solid rgba(39,174,96,.2);padding:1px 5px;border-radius:3px;margin-left:4px">En obra</span>`:w.estado_hoy==='ausente'?`<span style="font-size:9px;background:var(--red-d);color:var(--red);border:1px solid rgba(192,57,43,.2);padding:1px 5px;border-radius:3px;margin-left:4px">Ausente</span>`:'';
+  document.getElementById('eq-lista').innerHTML=rank.length?rank.map((w,i)=>{
+    const col=i===0?'var(--amber)':i===1?'var(--blue)':'var(--text2)';
+    const ini=w.nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+    return`<div class="eq-row">
+      <div style="font-size:10px;color:var(--text3);min-width:18px">#${i+1}</div>
+      <div class="eq-av">${ini}</div>
+      <div class="eq-info"><div class="eq-nom">${w.nombre}${est(w)}</div><div class="eq-sub">${ROLES[w.rol]||w.rol||'—'} · ${w.n} avances</div></div>
+      <div class="eq-bar"><div class="bt"><div class="bf" style="width:${Math.round(w.n/mx*100)}%;background:${col}"></div></div></div>
+      <div class="eq-cnt" style="color:${col}">${w.n}</div>
+    </div>`;
+  }).join(''):'<div class="empty">Sin workers registrados</div>';
+}
+
+// ── MODELO 3D ──
+function renderModelo(){
+  const wrap=document.getElementById('modelo-wrap');
+  if(wrap.querySelector('iframe')) return;
+  const p=PROJ;
+  const fr=parseFloat(p.frente)||12,fo=parseFloat(p.fondo)||24,pi=parseInt(p.numero_pisos)||8,so=parseInt(p.sotanos)||0,al=parseFloat(p.altura_piso)||2.8;
+  const iframe=document.createElement('iframe');
+  iframe.src=`/modelo3d.html#proyecto=${PID}&frente=${fr}&fondo=${fo}&pisos=${pi}&sotanos=${so}&altura=${al}`;
+  iframe.style.cssText='width:100%;height:calc(100vh - 130px);border:none;border-radius:8px';
+  wrap.appendChild(iframe);
+}
+
+// ── VISITA ──
+let visData=[];
+
+function iniciarVisita(){
+  visData=[];
+  const hoy=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('vis-fecha').textContent=hoy;
+  const activas=MDATA.filter(m=>m.estado!=='completada'&&(m.estado==='en_curso'||parseFloat(m.pct_avance||0)>0));
+  if(!activas.length){
+    document.getElementById('vis-lista').innerHTML='<div class="empty">Sin misiones activas para revisar en esta visita.</div>';
+    return;
+  }
+  // Agrupar por nivel/piso
+  const byPiso={};
+  activas.forEach(m=>{const key=m.nivel||'General';if(!byPiso[key])byPiso[key]=[];byPiso[key].push(m);});
+  let html='';
+  Object.entries(byPiso).sort(([a],[b])=>a.localeCompare(b,'es',{numeric:true})).forEach(([piso,misions])=>{
+    html+=`<div class="vis-piso-hd">📍 ${piso}</div>`;
+    misions.forEach(m=>{
+      const sid='v_'+m.id.replace(/[^a-z0-9]/gi,'_');
+      const nom=`${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}`;
+      const pct=parseFloat(m.pct_avance||0).toFixed(0);
+      visData.push({id:m.id,sid,estado:null});
+      html+=`<div class="vis-row" id="vrow_${sid}">
+        <div class="vis-nom"><div style="font-weight:500">${nom}</div><div style="font-size:10px;color:var(--text3)">Avance reportado: ${pct}%</div></div>
+        <div class="vis-btns">
+          <button class="vis-btn" onclick="setVisita('${sid}','ok',this)">✅ Ok</button>
+          <button class="vis-btn" onclick="setVisita('${sid}','rev',this)">🔄 Rev</button>
+          <button class="vis-btn" onclick="setVisita('${sid}','rej',this)">❌ Rej</button>
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById('vis-lista').innerHTML=html;
+  updateVisContadores();
+}
+
+function setVisita(sid,estado,btn){
+  const row=document.getElementById('vrow_'+sid);
+  if(row) row.querySelectorAll('.vis-btn').forEach(b=>b.classList.remove('ok','rev','rej'));
+  btn.classList.add(estado);
+  const item=visData.find(v=>v.sid===sid);
+  if(item) item.estado=estado;
+  updateVisContadores();
+  // Guardar en Supabase (no bloqueante)
+  const mId=visData.find(v=>v.sid===sid)?.id;
+  if(mId) db.from('visitas').upsert({proyecto_id:PID,mision_key:mId,resultado:estado,fecha:new Date().toISOString().split('T')[0],timestamp:new Date().toISOString()}).then(()=>{});
+}
+
+function updateVisContadores(){
+  document.getElementById('vis-ok').textContent=visData.filter(v=>v.estado==='ok').length;
+  document.getElementById('vis-rev').textContent=visData.filter(v=>v.estado==='rev').length;
+  document.getElementById('vis-rej').textContent=visData.filter(v=>v.estado==='rej').length;
+}
+
+// ── REALTIME ──
 db.channel('av-'+PID).on('postgres_changes',{event:'INSERT',schema:'public',table:'avances',filter:'proyecto_id=eq.'+PID},()=>loadAll()).subscribe();
 db.channel('mis-'+PID).on('postgres_changes',{event:'UPDATE',schema:'public',table:'proyecto_misiones',filter:'proyecto_id=eq.'+PID},()=>loadAll()).subscribe();
 setInterval(loadAll,30000);
