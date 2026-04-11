@@ -1659,11 +1659,17 @@ async function confirmarAjusteCronograma(){
     timestamp:new Date().toISOString()
   }).then(({error})=>{if(error)console.warn('ajustes_cronograma no existe aún:',error.message);});
 
-  // Update proyecto_misiones
-  await db.from('proyecto_misiones').update({
-    fecha_inicio_plan:nuevaIni,
-    fecha_fin_plan:nuevaFin
-  }).eq('id',m.id);
+  // Update proyecto_misiones — usar filtros compuestos en vez del ID
+  // (el ID con espacios y doble guión puede causar problemas en PostgREST)
+  let query = db.from('proyecto_misiones')
+    .update({fecha_inicio_plan:nuevaIni, fecha_fin_plan:nuevaFin})
+    .eq('proyecto_id', PID)
+    .eq('etapa_id', m.etapa_id)
+    .eq('mision_id', m.mision_id);
+  if(m.nivel) query = query.eq('nivel', m.nivel);
+  else query = query.is('nivel', null);
+  const {error:updateErr} = await query;
+  if(updateErr) console.error('Error UPDATE misión:', updateErr.message);
 
   document.getElementById('modal-cronograma').style.display='none';
   await loadMisiones();
