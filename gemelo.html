@@ -751,7 +751,6 @@ function renderModelo(){
   // Pass proyecto ID explicitly so modelo3d.html only renders THIS project
   iframe.src=`/modelo3d.html#proyecto=${encodeURIComponent(PID)}&frente=${fr}&fondo=${fo}&pisos=${pi}&sotanos=${so}&altura=${al}&solo=1`;
   iframe.style.cssText='width:100%;height:calc(100vh - 130px);border:none;border-radius:8px';
-  iframe.setAttribute('sandbox','allow-scripts allow-same-origin');
   wrap.appendChild(iframe);
 }
 
