@@ -548,6 +548,12 @@ async function loadMisiones(){
   renderMis();
 }
 
+async function cargarVisitasHoy(){
+  const hoy=new Date().toISOString().split('T')[0];
+  const {data}=await db.from('visitas').select('mision_key,resultado').eq('proyecto_id',PID).eq('fecha',hoy);
+  return new Map((data||[]).map(v=>[v.mision_key,v.resultado]));
+}
+
 function renderMis(){
   const orden=document.getElementById('f-orden')?.value||'urgencia';
   const hoy=new Date();hoy.setHours(0,0,0,0);
@@ -766,7 +772,6 @@ function iniciarVisita(){
     document.getElementById('vis-lista').innerHTML='<div class="empty">Sin misiones activas para revisar en esta visita.</div>';
     return;
   }
-  // Agrupar por nivel/piso
   const byPiso={};
   activas.forEach(m=>{const key=m.nivel||'General';if(!byPiso[key])byPiso[key]=[];byPiso[key].push(m);});
   let html='';
@@ -776,13 +781,24 @@ function iniciarVisita(){
       const sid='v_'+m.id.replace(/[^a-z0-9]/gi,'_');
       const nom=`${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}`;
       const pct=parseFloat(m.pct_avance||0).toFixed(0);
-      visData.push({id:m.id,sid,estado:null});
+      visData.push({id:m.id,sid,estado:null,estado_previo:m.estado,pct:m.pct_avance});
       html+=`<div class="vis-row" id="vrow_${sid}">
-        <div class="vis-nom"><div style="font-weight:500">${nom}</div><div style="font-size:10px;color:var(--text3)">Avance reportado: ${pct}%</div></div>
+        <div class="vis-nom">
+          <div style="font-weight:500">${nom}</div>
+          <div style="font-size:10px;color:var(--text3)">Avance reportado: ${pct}% · ${m.estado}</div>
+        </div>
         <div class="vis-btns">
-          <button class="vis-btn" onclick="setVisita('${sid}','ok',this)">✅ Ok</button>
-          <button class="vis-btn" onclick="setVisita('${sid}','rev',this)">🔄 Rev</button>
-          <button class="vis-btn" onclick="setVisita('${sid}','rej',this)">❌ Rej</button>
+          <button class="vis-btn" onclick="setVisita('${sid}','ok',this)">✅ Aprobado</button>
+          <button class="vis-btn" onclick="setVisita('${sid}','rev',this)">🔄 Revisión</button>
+          <button class="vis-btn" onclick="pedirNota('${sid}','rej',this)">❌ Rechazar</button>
+        </div>
+      </div>
+      <div id="nota_${sid}" style="display:none;padding:6px 0 10px;border-bottom:1px solid var(--border)">
+        <div style="font-size:10px;color:var(--red);margin-bottom:5px">⚠️ Rechazo requiere nota obligatoria:</div>
+        <textarea id="txt_${sid}" placeholder="Describe el motivo del rechazo..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px;font-size:11px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:60px"></textarea>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button onclick="confirmarRechazo('${sid}')" style="background:var(--red-d);color:var(--red);border:1px solid rgba(192,57,43,.3);padding:5px 12px;border-radius:5px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">Confirmar rechazo</button>
+          <button onclick="cancelarRechazo('${sid}')" style="background:none;color:var(--text3);border:1px solid var(--border2);padding:5px 12px;border-radius:5px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">Cancelar</button>
         </div>
       </div>`;
     });
@@ -791,16 +807,82 @@ function iniciarVisita(){
   updateVisContadores();
 }
 
-function setVisita(sid,estado,btn){
+function pedirNota(sid,estado,btn){
+  // Show nota field before confirming rejection
+  document.getElementById('nota_'+sid).style.display='block';
+  document.getElementById('txt_'+sid).focus();
+}
+
+function cancelarRechazo(sid){
+  document.getElementById('nota_'+sid).style.display='none';
+  document.getElementById('txt_'+sid).value='';
+}
+
+async function confirmarRechazo(sid){
+  const nota=document.getElementById('txt_'+sid).value.trim();
+  if(!nota){alert('La nota es obligatoria para rechazar.');return;}
+  const row=document.getElementById('vrow_'+sid);
+  if(row) row.querySelectorAll('.vis-btn').forEach(b=>b.classList.remove('ok','rev','rej'));
+  const btn=row?.querySelector('.vis-btn:last-child');
+  if(btn) btn.classList.add('rej');
+  document.getElementById('nota_'+sid).style.display='none';
+  const item=visData.find(v=>v.sid===sid);
+  if(item){item.estado='rej';item.nota=nota;}
+  updateVisContadores();
+  await guardarVisita(sid,'rej',nota);
+  // Revert mission to en_curso if it was marked differently
+  const mId=item?.id;
+  if(mId){
+    await db.from('proyecto_misiones').update({estado:'en_curso'}).eq('id',mId);
+  }
+  // Show confirmation
+  const notaEl=document.getElementById('nota_'+sid);
+  notaEl.style.display='block';
+  notaEl.innerHTML=`<div style="font-size:10px;color:var(--red);padding:4px 0">❌ Rechazado — "${nota}" <span style="color:var(--text3)">· guardado</span></div>`;
+}
+
+async function setVisita(sid,estado,btn){
   const row=document.getElementById('vrow_'+sid);
   if(row) row.querySelectorAll('.vis-btn').forEach(b=>b.classList.remove('ok','rev','rej'));
   btn.classList.add(estado);
+  // Hide nota if was showing
+  const notaEl=document.getElementById('nota_'+sid);
+  if(notaEl) notaEl.style.display='none';
   const item=visData.find(v=>v.sid===sid);
   if(item) item.estado=estado;
   updateVisContadores();
-  // Guardar en Supabase (no bloqueante)
-  const mId=visData.find(v=>v.sid===sid)?.id;
-  if(mId) db.from('visitas').upsert({proyecto_id:PID,mision_key:mId,resultado:estado,fecha:new Date().toISOString().split('T')[0],timestamp:new Date().toISOString()}).then(()=>{});
+  await guardarVisita(sid,estado,null);
+
+  // Apply state changes to proyecto_misiones
+  const mId=item?.id;
+  if(!mId) return;
+  if(estado==='ok'){
+    // If mission was at 100% pct_avance, mark as completada
+    if(parseFloat(item?.pct||0)>=100){
+      await db.from('proyecto_misiones').update({estado:'completada'}).eq('id',mId);
+    }
+    // Otherwise just confirm the advance — state stays en_curso
+  } else if(estado==='rev'){
+    // Add a marker — state stays as is, visible in misiones tab
+    // The badge in misiones will show "En revisión" based on visitas table
+  }
+  // Reload misiones to reflect changes
+  await loadMisiones();
+}
+
+async function guardarVisita(sid,estado,nota){
+  const item=visData.find(v=>v.sid===sid);
+  const mId=item?.id;
+  if(!mId) return;
+  await db.from('visitas').upsert({
+    proyecto_id:PID,
+    mision_key:mId,
+    resultado:estado,
+    fecha:new Date().toISOString().split('T')[0],
+    timestamp:new Date().toISOString(),
+    nota:nota||null,
+    mision_estado_previo:item?.estado_previo||null
+  },{onConflict:'proyecto_id,mision_key,fecha'});
 }
 
 function updateVisContadores(){
