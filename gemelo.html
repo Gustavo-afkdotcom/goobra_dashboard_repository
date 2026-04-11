@@ -172,6 +172,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 #lightbox{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:1000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:1rem}
 #lightbox img{max-width:90vw;max-height:80vh;border-radius:8px;object-fit:contain}
 #lightbox-close{color:#fff;font-size:14px;cursor:pointer;padding:8px 16px;border:1px solid #444;border-radius:5px;background:none;font-family:'DM Sans',sans-serif}
+/* CRONOGRAMA EDITABLE */
+.gantt-edit-btn{font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid var(--border2);background:none;color:var(--text3);cursor:pointer;font-family:'DM Sans',sans-serif;margin-left:6px}
+.gantt-edit-btn:hover{border-color:var(--amber);color:var(--amber)}
+.gantt-edit-btn.active{border-color:var(--amber);color:var(--amber);background:var(--amber-d)}
+.gantt-date-input{background:var(--bg3);border:1px solid var(--amber-b);color:var(--amber);border-radius:3px;padding:1px 4px;font-size:9px;font-family:'DM Mono',monospace;width:90px}
 @media(max-width:700px){.sg{grid-template-columns:repeat(2,1fr)}.g2,.obra-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -281,7 +286,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 <!-- CRONOGRAMA -->
 <div class="tp" id="tp-cronograma">
   <div class="card">
-    <div class="ch">Plan de obra — Gantt <span id="gantt-sub" style="color:var(--amber);font-size:9px;font-weight:400;text-transform:none;letter-spacing:0"></span></div>
+    <div class="ch">Plan de obra — Gantt <span id="gantt-sub" style="color:var(--amber);font-size:9px;font-weight:400;text-transform:none;letter-spacing:0"></span>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button id="btn-edit-gantt" class="gantt-edit-btn" onclick="toggleEditGantt()">✏️ Editar fechas</button>
+      </div>
+    </div>
     <div class="gantt-outer" id="gantt-wrap"><div class="empty"><div class="spin"></div></div></div>
   </div>
 </div>
@@ -490,6 +499,32 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 </div><!-- /main -->
 
+<!-- MODAL AJUSTE CRONOGRAMA -->
+<div id="modal-cronograma" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:500;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:1.5rem;width:90%;max-width:500px">
+    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;margin-bottom:.25rem">Ajustar fechas</div>
+    <div id="cron-mision-nombre" style="font-size:11px;color:var(--text3);margin-bottom:1rem"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Inicio</div>
+        <input id="cron-fecha-ini" type="date" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px;font-size:12px;font-family:'DM Mono',monospace"/>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Fin</div>
+        <input id="cron-fecha-fin" type="date" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px;font-size:12px;font-family:'DM Mono',monospace"/>
+      </div>
+    </div>
+    <div style="margin-bottom:.75rem">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Motivo del ajuste *</div>
+      <textarea id="cron-motivo" placeholder="Ej: Retraso por lluvia, se reprograma inicio a la próxima semana..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px;font-size:12px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:70px"></textarea>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="confirmarAjusteCronograma()" style="background:var(--amber);color:#000;border:none;padding:8px 18px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Guardar ajuste</button>
+      <button onclick="document.getElementById('modal-cronograma').style.display='none'" style="background:none;color:var(--text3);border:1px solid var(--border2);padding:8px 18px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- LIGHTBOX FOTOS -->
 <div id="lightbox" onclick="closeLightbox()">
   <img id="lightbox-img" src="" alt="Foto de visita"/>
@@ -694,23 +729,105 @@ async function loadDash(){
   }).join('');
 }
 
-// ── ALERTAS ──
+// ── ALERTAS MEJORADAS ──
 async function loadAlertas(){
-  const als=[];const hoy=new Date();
+  const als=[];
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const presupuesto=parseFloat(PROJ.presupuesto_total)||0;
+
+  // ── CRONOGRAMA ──
+  let vencidas=0,porVencer=0,inicioLento=0;
   MDATA.forEach(m=>{
     const pct=parseFloat(m.pct_avance||0);
     const fin=m.fecha_fin_plan?new Date(m.fecha_fin_plan):null;
+    const ini=m.fecha_inicio_plan?new Date(m.fecha_inicio_plan):null;
     const dr=fin?Math.round((fin-hoy)/86400000):null;
     const nm=`${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' ('+m.nivel+')':''}`;
-    if(fin&&dr<0&&m.estado!=='completada') als.push({t:'r',i:'▲',ti:`Vencida: ${nm}`,d:`Fecha límite ${fin.toLocaleDateString('es-CO')}. Avance: ${pct.toFixed(0)}%`});
-    else if(fin&&dr>=0&&dr<=3&&m.estado!=='completada') als.push({t:'a',i:'◆',ti:`Por vencer: ${nm}`,d:`Vence en ${dr} día(s). Avance: ${pct.toFixed(0)}%`});
-    else if(m.estado==='en_curso'&&pct<5) als.push({t:'a',i:'◆',ti:`Inicio lento: ${nm}`,d:`Solo ${pct.toFixed(1)}% ejecutado`});
+    if(fin&&dr<0&&m.estado!=='completada'){
+      vencidas++;
+      als.push({t:'r',i:'🚨',cat:'Cronograma',ti:`Vencida hace ${Math.abs(dr)} día(s): ${nm}`,d:`Fecha límite: ${fin.toLocaleDateString('es-CO')}. Avance actual: ${pct.toFixed(0)}%`});
+    } else if(fin&&dr>=0&&dr<=3&&m.estado!=='completada'){
+      porVencer++;
+      als.push({t:'a',i:'⏰',cat:'Cronograma',ti:`Vence en ${dr} día(s): ${nm}`,d:`Avance actual: ${pct.toFixed(0)}%. ${dr===0?'Vence HOY.':''}`});
+    } else if(m.estado==='en_curso'&&pct<5&&ini&&Math.round((hoy-ini)/86400000)>3){
+      inicioLento++;
+      als.push({t:'a',i:'🐢',cat:'Cronograma',ti:`Inicio lento: ${nm}`,d:`Lleva ${Math.round((hoy-ini)/86400000)} días iniciada con solo ${pct.toFixed(1)}% de avance`});
+    }
   });
+
+  // Retraso global
+  const diasTot=PROJ.fecha_fin_estimada&&PROJ.fecha_inicio?Math.round((new Date(PROJ.fecha_fin_estimada)-new Date(PROJ.fecha_inicio))/86400000):0;
+  const diasTrans=PROJ.fecha_inicio?Math.round((hoy-new Date(PROJ.fecha_inicio))/86400000):0;
+  const pctTiempo=diasTot>0?Math.min(diasTrans/diasTot*100,100):0;
+  const pctAvance=MDATA.length?MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length:0;
+  const retrasoGlobal=pctTiempo-pctAvance;
+  if(retrasoGlobal>10){
+    als.push({t:'r',i:'📉',cat:'Cronograma',ti:`Retraso global: ${retrasoGlobal.toFixed(0)}% vs tiempo`,d:`La obra va ${pctAvance.toFixed(0)}% pero debería ir ${pctTiempo.toFixed(0)}% según el plan original`});
+  } else if(retrasoGlobal>5){
+    als.push({t:'a',i:'📊',cat:'Cronograma',ti:`Leve retraso global: ${retrasoGlobal.toFixed(0)}%`,d:`La obra va ${pctAvance.toFixed(0)}% vs ${pctTiempo.toFixed(0)}% esperado`});
+  }
+
+  // ── FINANCIERAS ──
+  const {data:desvs}=await db.from('desviaciones').select('monto,tipo,etapa_id,created_at').eq('proyecto_id',PID).eq('resuelto',false);
+  if(desvs?.length){
+    const totalDesv=(desvs||[]).reduce((s,d)=>s+parseFloat(d.monto||0),0);
+    if(presupuesto>0){
+      const pctDesv=totalDesv/presupuesto*100;
+      if(pctDesv>10) als.push({t:'r',i:'💸',cat:'Financiero',ti:`Sobrecosto crítico: +${pctDesv.toFixed(1)}% del presupuesto`,d:`${fmt(totalDesv)} en desviaciones acumuladas sobre ${fmt(presupuesto)} presupuestados`});
+      else if(pctDesv>5) als.push({t:'a',i:'💰',cat:'Financiero',ti:`Sobrecosto moderado: +${pctDesv.toFixed(1)}% del presupuesto`,d:`${fmt(totalDesv)} en desviaciones registradas`});
+    }
+    // Tipo de desviación más frecuente
+    const porTipo={};
+    desvs.forEach(d=>{porTipo[d.tipo]=(porTipo[d.tipo]||0)+1;});
+    const topTipo=Object.entries(porTipo).sort((a,b)=>b[1]-a[1])[0];
+    const TIPOS={costo_extra:'Costos extras',negligencia:'Negligencias',cambio_diseno:'Cambios de diseño',clima:'Clima',retraso_suministro:'Retrasos de suministro',otro:'Otros'};
+    if(topTipo&&topTipo[1]>=2) als.push({t:'a',i:'🔁',cat:'Financiero',ti:`Patrón repetido: ${TIPOS[topTipo[0]]||topTipo[0]}`,d:`${topTipo[1]} desviaciones del mismo tipo. Puede indicar un problema sistémico.`});
+  }
+
+  // ── OPERATIVAS ──
+  // Residente sin reportar
+  const hace2=new Date(hoy);hace2.setDate(hace2.getDate()-2);
+  const {data:avRecientes}=await db.from('avances').select('timestamp_mensaje').eq('proyecto_id',PID).gte('timestamp_mensaje',hace2.toISOString()).limit(1);
+  if(!avRecientes?.length){
+    const {data:ultimoAv}=await db.from('avances').select('timestamp_mensaje').eq('proyecto_id',PID).order('timestamp_mensaje',{ascending:false}).limit(1);
+    const ultimoTs=ultimoAv?.[0]?.timestamp_mensaje;
+    const diasSinReporte=ultimoTs?Math.round((hoy-new Date(ultimoTs))/86400000):99;
+    if(diasSinReporte>=2) als.push({t:'r',i:'📵',cat:'Operativa',ti:`Sin reportes hace ${diasSinReporte} día(s)`,d:`El residente no ha enviado avances desde ${ultimoTs?new Date(ultimoTs).toLocaleDateString('es-CO',{day:'numeric',month:'short'}):'el inicio'}`});
+  }
+
+  // Misiones rechazadas sin desviación asociada
+  const hace7=new Date(hoy);hace7.setDate(hace7.getDate()-7);
+  const {data:rechazadas}=await db.from('visitas').select('mision_key').eq('proyecto_id',PID).eq('resultado','rej').gte('fecha',hace7.toISOString().split('T')[0]);
+  if(rechazadas?.length){
+    als.push({t:'a',i:'🔍',cat:'Calidad',ti:`${rechazadas.length} misión(es) rechazada(s) en visita`,d:`Última semana. Verifica si tienen desviación registrada en la pestaña Presupuesto.`,accion:'presupuesto'});
+  }
+
+  // ── DESVIACIONES DEL BOT ──
   const {data:dv}=await db.from('avances').select('mision_id,desviacion_motivo,timestamp_mensaje,trabajador_id').eq('proyecto_id',PID).eq('desviacion_detectada',true).order('timestamp_mensaje',{ascending:false}).limit(5);
-  (dv||[]).forEach(d=>{als.push({t:'r',i:'⚠',ti:`Desviación: ${(d.mision_id||'').replace(/_/g,' ')}`,d:`${WMAPS[d.trabajador_id]?.nombre||'Worker'}: ${d.desviacion_motivo||'sin detalle'}`});});
+  (dv||[]).forEach(d=>{als.push({t:'a',i:'⚠️',cat:'Campo',ti:`Desviación reportada: ${(d.mision_id||'').replace(/_/g,' ')}`,d:`${WMAPS[d.trabajador_id]?.nombre||'Worker'}: ${d.desviacion_motivo||'sin detalle'}`});});
+
+  // Sort: rojas primero, luego ambar
+  als.sort((a,b)=>a.t==='r'&&b.t!=='r'?-1:b.t==='r'&&a.t!=='r'?1:0);
+
   const cnt=als.filter(a=>a.t==='r').length;
   document.getElementById('al-cnt').textContent=cnt?`· ${cnt}`:'';
-  document.getElementById('alertas-l').innerHTML=als.length?als.map(a=>`<div class="al ${a.t}"><span class="al-ico">${a.i}</span><div><div class="al-t">${a.ti}</div><div class="al-d">${a.d}</div></div></div>`).join(''):'<div class="empty">✓ Sin alertas activas. Todo en orden.</div>';
+
+  // Group by category
+  const cats={};
+  als.forEach(a=>{if(!cats[a.cat])cats[a.cat]=[];cats[a.cat].push(a);});
+  const catOrder=['Cronograma','Financiero','Operativa','Calidad','Campo'];
+  const catIco={Cronograma:'📅',Financiero:'💰',Operativa:'📡',Calidad:'🔬',Campo:'👷'};
+
+  if(!als.length){
+    document.getElementById('alertas-l').innerHTML='<div class="empty">✓ Sin alertas activas. La obra va bien.</div>';
+    return;
+  }
+
+  document.getElementById('alertas-l').innerHTML=catOrder.filter(cat=>cats[cat]).map(cat=>`
+    <div style="margin-bottom:.75rem">
+      <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:6px">${catIco[cat]||''} ${cat}</div>
+      ${cats[cat].map(a=>`<div class="al ${a.t==='r'?'r':'a'}" ${a.accion?`style="cursor:pointer" onclick="sw('${a.accion}',document.querySelectorAll('.tab')[${['dashboard','alertas','misiones','obra','cronograma','materiales','equipo','modelo','visita','presupuesto'].indexOf(a.accion)}])"`:''}><span class="al-ico">${a.i}</span><div><div class="al-t">${a.ti}</div><div class="al-d">${a.d}</div></div></div>`).join('')}
+    </div>`).join('');
 }
 
 // ── MISIONES ──
@@ -833,8 +950,10 @@ function renderGantt(){
       const w=Math.max(pct(m.fecha_fin_plan)-l,.5);
       const col=m.estado==='completada'?'#166534':m.estado==='en_curso'?'#854d0e':'#1f1f1f';
       const tc=m.estado==='completada'?'#86efac':m.estado==='en_curso'?'#fde68a':'#444';
-      rows+=`<div class="gantt-row">
-        <div class="gantt-rlbl">${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}<br><span style="font-size:9px;color:var(--text3)">${parseFloat(m.pct_avance||0).toFixed(0)}%</span></div>
+      const editStyle=ganttEditMode&&m.estado!=='completada'?'cursor:pointer;':'';
+      const editHint=ganttEditMode&&m.estado!=='completada'?`<br><span style="font-size:8px;color:var(--amber)">tap para editar</span>`:'';
+      rows+=`<div class="gantt-row" ${ganttEditMode&&m.estado!=='completada'?`onclick="abrirAjusteFecha('${m.id}')" style="cursor:pointer"`:''}> 
+        <div class="gantt-rlbl" style="${editStyle}">${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}<br><span style="font-size:9px;color:var(--text3)">${parseFloat(m.pct_avance||0).toFixed(0)}%</span>${editHint}</div>
         <div class="gantt-cells">
           ${weeks.map(w=>{const isCur=today>=w&&today<new Date(w.getTime()+7*864e5);return`<div class="gantt-cell ${isCur?'cur':''}"></div>`;}).join('')}
           <div class="gantt-bar" style="left:${l}%;width:${w}%;background:${col};color:${tc};${m.estado==='pendiente'?'border:1px solid #333':''}">${parseFloat(m.pct_avance||0).toFixed(0)}%</div>
@@ -1491,6 +1610,64 @@ async function confirmarDesviacion(){
   document.getElementById('desv-desc').value='';
   await loadPresupuesto();
   await loadAll();
+}
+
+// ── CRONOGRAMA EDITABLE ──
+let ganttEditMode=false, cronMisionActual=null;
+
+function toggleEditGantt(){
+  ganttEditMode=!ganttEditMode;
+  const btn=document.getElementById('btn-edit-gantt');
+  btn.classList.toggle('active',ganttEditMode);
+  btn.textContent=ganttEditMode?'✓ Listo':'✏️ Editar fechas';
+  renderGantt();
+}
+
+function abrirAjusteFecha(misionId){
+  if(!ganttEditMode) return;
+  const m=MDATA.find(x=>x.id===misionId);
+  if(!m) return;
+  cronMisionActual=m;
+  const nom=`${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}`;
+  document.getElementById('cron-mision-nombre').textContent=nom;
+  document.getElementById('cron-fecha-ini').value=m.fecha_inicio_plan||'';
+  document.getElementById('cron-fecha-fin').value=m.fecha_fin_plan||'';
+  document.getElementById('cron-motivo').value='';
+  document.getElementById('modal-cronograma').style.display='flex';
+}
+
+async function confirmarAjusteCronograma(){
+  const motivo=document.getElementById('cron-motivo').value.trim();
+  if(!motivo){alert('El motivo del ajuste es obligatorio.');return;}
+  const nuevaIni=document.getElementById('cron-fecha-ini').value;
+  const nuevaFin=document.getElementById('cron-fecha-fin').value;
+  if(!nuevaIni||!nuevaFin){alert('Ingresa ambas fechas.');return;}
+  const m=cronMisionActual;
+
+  // Save to ajustes_cronograma
+  await db.from('ajustes_cronograma').insert({
+    proyecto_id:PID,
+    mision_id_fk:m.id,
+    etapa_id:m.etapa_id,
+    mision_id:m.mision_id,
+    nivel:m.nivel||null,
+    fecha_ini_anterior:m.fecha_inicio_plan,
+    fecha_fin_anterior:m.fecha_fin_plan,
+    fecha_ini_nueva:nuevaIni,
+    fecha_fin_nueva:nuevaFin,
+    motivo,
+    timestamp:new Date().toISOString()
+  }).then(({error})=>{if(error)console.warn('ajustes_cronograma no existe aún:',error.message);});
+
+  // Update proyecto_misiones
+  await db.from('proyecto_misiones').update({
+    fecha_inicio_plan:nuevaIni,
+    fecha_fin_plan:nuevaFin
+  }).eq('id',m.id);
+
+  document.getElementById('modal-cronograma').style.display='none';
+  await loadMisiones();
+  renderGantt();
 }
 
 // ── REALTIME ──
