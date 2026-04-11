@@ -1701,8 +1701,11 @@ async function loadCatalogo(){
 }
 
 function renderCatalogo(){
-  const tipo=document.getElementById('cat-filtro-tipo').value;
-  const cat=document.getElementById('cat-filtro-cat').value;
+  const tipoEl=document.getElementById('cat-filtro-tipo');
+  const catEl=document.getElementById('cat-filtro-cat');
+  if(!tipoEl||!catEl) return;
+  const tipo=tipoEl.value;
+  const cat=catEl.value;
   const filtered=CATALOGO.filter(m=>(!tipo||m.tipo===tipo)&&(!cat||m.categoria===cat));
   const TIPO_BADGE={consumible:'consumible',herramienta:'herramienta',equipo:'equipo',alquiler:'alquiler'};
   const TIPO_COL={consumible:'var(--text2)',herramienta:'var(--blue)',equipo:'var(--amber)',alquiler:'var(--green)'};
