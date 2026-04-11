@@ -297,16 +297,80 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 <!-- MATERIALES -->
 <div class="tp" id="tp-materiales">
-  <div class="sg">
-    <div class="sc r"><div class="sl">Pedir urgente</div><div class="sv" id="mat-urg">—</div><div class="ss">vencen esta semana</div></div>
-    <div class="sc"><div class="sl">Este mes</div><div class="sv" id="mat-mes">—</div><div class="ss">misiones activas</div></div>
-    <div class="sc g"><div class="sl">M² pendientes</div><div class="sv" id="mat-m2">—</div></div>
-    <div class="sc b"><div class="sl">Items proyectados</div><div class="sv" id="mat-tot">—</div></div>
+
+  <!-- AVISO -->
+  <div style="background:rgba(232,160,32,.06);border:1px solid rgba(232,160,32,.2);border-radius:8px;padding:12px 16px;margin-bottom:.875rem;display:flex;gap:12px">
+    <div style="font-size:18px;flex-shrink:0">📋</div>
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--amber);margin-bottom:4px">Datos de referencia — versión 1.0</div>
+      <div style="font-size:11px;color:var(--text2);line-height:1.6">Los rendimientos y cantidades son <strong style="color:var(--text)">estimaciones base</strong> tomadas de <strong style="color:var(--text)">CAMACOL 2024</strong>, NSR-10 y experiencia de campo en Bogotá. Incluyen insumos que CAMACOL no desglosa (arena, gravilla, formaletas, aditivos, equipos).<br/><br/><strong style="color:var(--amber)">⚠️ Son un punto de partida, no una especificación técnica.</strong> El profesional responsable debe revisar, rectificar y personalizar según los planos reales del proyecto. Los datos personalizados quedan guardados y mejoran la precisión con el tiempo.</div>
+    </div>
   </div>
-  <div class="card">
-    <div class="ch">Proyección de materiales por misión activa</div>
-    <div class="cb" id="mat-tabla"><div class="empty"><div class="spin"></div></div></div>
+
+  <!-- TABS -->
+  <div style="display:flex;gap:0;margin-bottom:.75rem;border-bottom:1px solid var(--border)">
+    <button id="mat-tab-proyeccion" onclick="setMatTab('proyeccion')" style="padding:8px 16px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:none;border:none;border-bottom:2px solid var(--amber);color:var(--amber);cursor:pointer;white-space:nowrap">📦 Proyección</button>
+    <button id="mat-tab-bodega" onclick="setMatTab('bodega')" style="padding:8px 16px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);cursor:pointer;white-space:nowrap">🏪 Bodega</button>
+    <button id="mat-tab-catalogo" onclick="setMatTab('catalogo')" style="padding:8px 16px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);cursor:pointer;white-space:nowrap">📚 Catálogo</button>
   </div>
+
+  <!-- PROYECCIÓN -->
+  <div id="mat-panel-proyeccion">
+    <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+      <div class="sc r"><div class="sl">Pedir urgente</div><div class="sv" id="mat-urg">—</div><div class="ss">misiones vencen pronto</div></div>
+      <div class="sc"><div class="sl">Este mes</div><div class="sv" id="mat-mes">—</div><div class="ss">misiones activas</div></div>
+      <div class="sc g"><div class="sl">M² pendientes</div><div class="sv" id="mat-m2">—</div></div>
+      <div class="sc b"><div class="sl">Items proyectados</div><div class="sv" id="mat-tot">—</div></div>
+    </div>
+    <div class="card">
+      <div class="ch">Insumos necesarios para misiones activas y próximas</div>
+      <div class="cb" id="mat-tabla"><div class="empty"><div class="spin"></div></div></div>
+    </div>
+  </div>
+
+  <!-- BODEGA -->
+  <div id="mat-panel-bodega" style="display:none">
+    <div class="card" style="margin-bottom:.75rem">
+      <div class="ch">Stock en bodega
+        <button onclick="mostrarEntradaBodega()" style="background:var(--amber);color:#000;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Entrada</button>
+      </div>
+      <div class="cb" id="bodega-lista"><div class="empty"><div class="spin"></div></div></div>
+    </div>
+    <div class="card">
+      <div class="ch">Últimos movimientos</div>
+      <div class="cb" id="bodega-movimientos"><div class="empty"><div class="spin"></div></div></div>
+    </div>
+  </div>
+
+  <!-- CATÁLOGO -->
+  <div id="mat-panel-catalogo" style="display:none">
+    <div style="display:flex;gap:8px;margin-bottom:.75rem;flex-wrap:wrap">
+      <select id="cat-filtro-tipo" onchange="renderCatalogo()" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:5px 10px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif">
+        <option value="">Todos los tipos</option>
+        <option value="consumible">Consumibles</option>
+        <option value="herramienta">Herramientas</option>
+        <option value="equipo">Equipos</option>
+        <option value="alquiler">Alquiler</option>
+      </select>
+      <select id="cat-filtro-cat" onchange="renderCatalogo()" style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:5px 10px;border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif">
+        <option value="">Todas las categorías</option>
+        <option value="cementante">Cementantes</option>
+        <option value="agregado">Agregados</option>
+        <option value="concreto">Concretos</option>
+        <option value="acero">Acero</option>
+        <option value="mamposteria">Mampostería</option>
+        <option value="formaleta">Formaletas</option>
+        <option value="aditivo">Aditivos</option>
+        <option value="hidrosanitario">Hidrosanitario</option>
+        <option value="electrico">Eléctrico</option>
+        <option value="acabado">Acabados</option>
+        <option value="manual">Herr. manuales</option>
+        <option value="seguridad">Seguridad</option>
+      </select>
+    </div>
+    <div class="card" id="catalogo-tabla"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+
 </div>
 
 <!-- EQUIPO -->
