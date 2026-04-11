@@ -593,6 +593,7 @@ function sw(name,btn){
   if(name==='modelo') renderModelo();
   if(name==='visita') loadVisitaHistorial();
   if(name==='presupuesto') loadPresupuesto();
+  if(name==='materiales'){loadCatalogo();renderMateriales();}
 }
 
 function timeAgo(ts){
@@ -1674,6 +1675,209 @@ async function confirmarAjusteCronograma(){
   document.getElementById('modal-cronograma').style.display='none';
   await loadMisiones();
   renderGantt();
+}
+
+// ── MATERIALES COMPLETO ──
+let CATALOGO=[], matTab='proyeccion';
+
+function setMatTab(tab){
+  matTab=tab;
+  ['proyeccion','bodega','catalogo'].forEach(t=>{
+    document.getElementById('mat-panel-'+t).style.display=t===tab?'block':'none';
+    const btn=document.getElementById('mat-tab-'+t);
+    btn.style.color=t===tab?'var(--amber)':'var(--text3)';
+    btn.style.borderBottom=t===tab?'2px solid var(--amber)':'2px solid transparent';
+  });
+  if(tab==='bodega') loadBodega();
+  if(tab==='catalogo') loadCatalogo();
+  if(tab==='proyeccion') renderMateriales();
+}
+
+async function loadCatalogo(){
+  if(CATALOGO.length) {renderCatalogo();return;}
+  const {data}=await db.from('materiales_catalogo').select('*').eq('activo',true).order('categoria').order('nombre');
+  CATALOGO=data||[];
+  renderCatalogo();
+}
+
+function renderCatalogo(){
+  const tipo=document.getElementById('cat-filtro-tipo').value;
+  const cat=document.getElementById('cat-filtro-cat').value;
+  const filtered=CATALOGO.filter(m=>(!tipo||m.tipo===tipo)&&(!cat||m.categoria===cat));
+  const TIPO_BADGE={consumible:'consumible',herramienta:'herramienta',equipo:'equipo',alquiler:'alquiler'};
+  const TIPO_COL={consumible:'var(--text2)',herramienta:'var(--blue)',equipo:'var(--amber)',alquiler:'var(--green)'};
+  document.getElementById('catalogo-tabla').innerHTML=filtered.length?`
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr>
+        <th style="text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Código</th>
+        <th style="text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Material / Insumo</th>
+        <th style="text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Tipo</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Precio ref.</th>
+        <th style="text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Unidad</th>
+        <th style="text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Fuente</th>
+      </tr></thead>
+      <tbody>${filtered.map(m=>`<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:6px 8px;font-family:'DM Mono',monospace;font-size:9px;color:var(--text3)">${m.codigo}</td>
+        <td style="padding:6px 8px"><div style="font-weight:500">${m.nombre}</div><div style="font-size:10px;color:var(--text3);margin-top:1px">${m.descripcion||''}</div></td>
+        <td style="padding:6px 8px"><span style="font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,.05);color:${TIPO_COL[m.tipo]||'var(--text2)'}">${m.tipo}</span></td>
+        <td style="padding:6px 8px;text-align:right;font-family:'Syne',sans-serif;font-weight:700">${fmt(m.precio_referencia)}</td>
+        <td style="padding:6px 8px;color:var(--text2)">${m.unidad}</td>
+        <td style="padding:6px 8px;font-size:9px;color:var(--text3)">${m.precio_fuente||''}</td>
+      </tr>`).join('')}
+      </tbody>
+    </table></div>`:'<div class="empty">Sin materiales con ese filtro</div>';
+}
+
+async function loadBodega(){
+  const {data:bodega}=await db.from('materiales_bodega').select('*,materiales_catalogo(nombre,unidad,tipo)').eq('proyecto_id',PID).order('stock_actual');
+  const {data:movs}=await db.from('movimientos_bodega').select('*,materiales_catalogo(nombre)').eq('proyecto_id',PID).order('timestamp_mov',{ascending:false}).limit(20);
+
+  // Bodega lista
+  if(!bodega?.length){
+    document.getElementById('bodega-lista').innerHTML='<div class="empty">Sin items en bodega. Usa "+ Entrada" para registrar materiales.</div>';
+  } else {
+    document.getElementById('bodega-lista').innerHTML=`
+      <table style="width:100%;border-collapse:collapse;font-size:11px">
+        <thead><tr>
+          <th style="text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Material</th>
+          <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Stock</th>
+          <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Mínimo</th>
+          <th style="text-align:center;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Estado</th>
+          <th style="text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Tipo</th>
+        </tr></thead>
+        <tbody>${bodega.map(b=>{
+          const ok=b.stock_actual>b.stock_minimo*1.2;
+          const warn=b.stock_actual<=b.stock_minimo*1.2&&b.stock_actual>b.stock_minimo;
+          const crit=b.stock_actual<=b.stock_minimo;
+          const badge=crit?`<span style="background:var(--red-d);color:var(--red);font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px">⚡ Crítico</span>`:
+            warn?`<span style="background:var(--amber-d);color:var(--amber);font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px">⚠ Bajo</span>`:
+            `<span style="background:var(--green-d);color:var(--green);font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px">✓ OK</span>`;
+          return`<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:7px 8px;font-weight:500">${b.materiales_catalogo?.nombre||b.material_codigo}${b.ubicacion?`<br><span style="font-size:9px;color:var(--text3)">${b.ubicacion}</span>`:''}</td>
+            <td style="padding:7px 8px;text-align:right;font-family:'Syne',sans-serif;font-weight:800;color:${crit?'var(--red)':warn?'var(--amber)':'var(--text)'}">${b.stock_actual} ${b.materiales_catalogo?.unidad||''}</td>
+            <td style="padding:7px 8px;text-align:right;color:var(--text2)">${b.stock_minimo} ${b.materiales_catalogo?.unidad||''}</td>
+            <td style="padding:7px 8px;text-align:center">${badge}</td>
+            <td style="padding:7px 8px;font-size:10px;color:var(--text3)">${b.es_propio?'Propio':'Alquilado'}${b.fecha_vencimiento_alquiler?`<br>Vence: ${b.fecha_vencimiento_alquiler}`:''}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>`;
+  }
+
+  // Movimientos
+  if(!movs?.length){
+    document.getElementById('bodega-movimientos').innerHTML='<div class="empty">Sin movimientos registrados</div>';
+  } else {
+    document.getElementById('bodega-movimientos').innerHTML=movs.map(m=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:16px">${m.tipo==='entrada'?'📥':m.tipo==='salida'?'📤':'🔄'}</div>
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:500">${m.materiales_catalogo?.nombre||m.material_codigo}</div>
+          <div style="font-size:10px;color:var(--text3)">${m.motivo||m.tipo} · ${new Date(m.timestamp_mov).toLocaleDateString('es-CO',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Syne',sans-serif;font-weight:800;color:${m.tipo==='entrada'?'var(--green)':'var(--amber)'}">${m.tipo==='entrada'?'+':'−'}${m.cantidad}</div>
+          ${m.total>0?`<div style="font-size:10px;color:var(--text3)">${fmt(m.total)}</div>`:''}
+        </div>
+      </div>`).join('');
+  }
+}
+
+// Modal entrada bodega
+function mostrarEntradaBodega(){
+  const html=`<div id="modal-bodega" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:500;display:flex;align-items:center;justify-content:center">
+    <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:1.5rem;width:90%;max-width:480px;max-height:90vh;overflow-y:auto">
+      <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;margin-bottom:1rem">Registrar entrada a bodega</div>
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Material *</div>
+          <input id="bod-mat-nombre" list="bod-mat-list" placeholder="Buscar material..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif"/>
+          <datalist id="bod-mat-list">${CATALOGO.map(m=>`<option value="${m.codigo}">${m.nombre}</option>`).join('')}</datalist>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+          <div>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Cantidad *</div>
+            <input id="bod-cantidad" type="number" placeholder="Ej: 50" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Mono',monospace"/>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Precio unitario</div>
+            <input id="bod-precio" type="number" placeholder="Ej: 28000" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Mono',monospace"/>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Proveedor</div>
+          <input id="bod-proveedor" placeholder="Ej: Ferretería El Constructor" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif"/>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Es propio o alquilado</div>
+          <select id="bod-propio" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif">
+            <option value="true">Propio (compra)</option>
+            <option value="false">Alquilado</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="confirmarEntradaBodega()" style="background:var(--amber);color:#000;border:none;padding:8px 18px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Registrar entrada</button>
+          <button onclick="document.getElementById('modal-bodega').remove()" style="background:none;color:var(--text3);border:1px solid var(--border2);padding:8px 18px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">Cancelar</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  document.body.insertAdjacentHTML('beforeend',html);
+  if(!CATALOGO.length) loadCatalogo();
+}
+
+async function confirmarEntradaBodega(){
+  const codigo=document.getElementById('bod-mat-nombre').value.trim();
+  const cantidad=parseFloat(document.getElementById('bod-cantidad').value);
+  const precio=parseFloat(document.getElementById('bod-precio').value)||null;
+  const proveedor=document.getElementById('bod-proveedor').value.trim()||null;
+  const esPropio=document.getElementById('bod-propio').value==='true';
+  if(!codigo||!cantidad){alert('Material y cantidad son obligatorios.');return;}
+
+  // Upsert bodega
+  await db.from('materiales_bodega').upsert({
+    proyecto_id:PID,
+    material_codigo:codigo,
+    stock_actual:cantidad,
+    stock_minimo:Math.round(cantidad*0.1),
+    es_propio:esPropio,
+    proveedor,
+    precio_compra:precio,
+    updated_at:new Date().toISOString()
+  },{onConflict:'proyecto_id,material_codigo',ignoreDuplicates:false});
+
+  // Movimiento
+  await db.from('movimientos_bodega').insert({
+    proyecto_id:PID,
+    material_codigo:codigo,
+    tipo:'entrada',
+    cantidad,
+    precio_unitario:precio,
+    motivo:'compra',
+    proveedor,
+    timestamp_mov:new Date().toISOString()
+  });
+
+  // Verificar si hay desviación de precio
+  const mat=CATALOGO.find(m=>m.codigo===codigo);
+  if(mat&&precio&&mat.precio_referencia>0){
+    const difPct=((precio-mat.precio_referencia)/mat.precio_referencia)*100;
+    if(Math.abs(difPct)>10){
+      const monto=(precio-mat.precio_referencia)*cantidad;
+      await db.from('desviaciones').insert({
+        proyecto_id:PID,
+        tipo:monto>0?'costo_extra':'otro',
+        monto:Math.round(monto),
+        descripcion:`${mat.nombre}: precio compra $${precio.toLocaleString()} vs referencia $${mat.precio_referencia.toLocaleString()} (${difPct>0?'+':''}${difPct.toFixed(1)}%). ${cantidad} ${mat.unidad}.`,
+        motivo:`Variación de precio en compra de ${mat.nombre}`,
+        origen:'manual',
+        timestamp_evento:new Date().toISOString()
+      });
+    }
+  }
+
+  document.getElementById('modal-bodega').remove();
+  await loadBodega();
 }
 
 // ── REALTIME ──
