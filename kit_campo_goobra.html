@@ -1,0 +1,219 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.tabs { display: flex; gap: 4px; padding: 1rem 1rem 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.tab { padding: 8px 16px; font-size: 13px; cursor: pointer; border-radius: 6px 6px 0 0; border: 0.5px solid transparent; color: var(--color-text-secondary); background: transparent; }
+.tab.active { background: var(--color-background-primary); border-color: var(--color-border-tertiary); border-bottom-color: var(--color-background-primary); color: var(--color-text-primary); font-weight: 500; margin-bottom: -1px; }
+.panel { display: none; padding: 1.25rem; }
+.panel.active { display: block; }
+.card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 12px; }
+.label { font-size: 11px; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.value { font-size: 15px; color: var(--color-text-primary); line-height: 1.5; }
+.badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+.badge-green { background: #EAF3DE; color: #3B6D11; }
+.badge-amber { background: #FAEEDA; color: #854F0B; }
+.badge-red { background: #FCEBEB; color: #A32D2D; }
+.badge-blue { background: #E6F1FB; color: #185FA5; }
+.msg-box { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 12px 14px; font-size: 14px; color: var(--color-text-primary); line-height: 1.7; border-left: 3px solid #1D9E75; margin-top: 8px; white-space: pre-line; }
+.row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.num { min-width: 22px; height: 22px; border-radius: 50%; background: #E6F1FB; color: #185FA5; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+.copy-btn { font-size: 12px; padding: 4px 10px; border: 0.5px solid var(--color-border-secondary); border-radius: 4px; background: transparent; color: var(--color-text-secondary); cursor: pointer; float: right; }
+.copy-btn:hover { background: var(--color-background-secondary); }
+.objection { border-left: 3px solid #EF9F27; background: var(--color-background-secondary); border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0; padding: 10px 12px; margin-bottom: 10px; }
+.obj-q { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 4px; }
+.obj-a { font-size: 14px; color: var(--color-text-primary); line-height: 1.6; }
+.check-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); cursor: pointer; }
+.check-item:last-child { border-bottom: none; }
+.check-box { width: 18px; height: 18px; border: 1.5px solid var(--color-border-secondary); border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.check-box.done { background: #1D9E75; border-color: #1D9E75; }
+.check-box.done::after { content: '✓'; color: white; font-size: 11px; }
+.check-label { font-size: 14px; color: var(--color-text-primary); }
+.check-label.done { color: var(--color-text-tertiary); text-decoration: line-through; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+.stat { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px; text-align: center; }
+.stat-n { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+.stat-l { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+.counter-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.counter-label { font-size: 13px; color: var(--color-text-secondary); flex: 1; }
+.counter-btns { display: flex; gap: 4px; }
+.cbtn { width: 28px; height: 28px; border: 0.5px solid var(--color-border-secondary); border-radius: 4px; background: transparent; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--color-text-primary); }
+.cbtn:hover { background: var(--color-background-secondary); }
+.counter-val { min-width: 24px; text-align: center; font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+</style>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('guion')">Guión</button>
+  <button class="tab" onclick="showTab('objeciones')">Objeciones</button>
+  <button class="tab" onclick="showTab('checklist')">Checklist</button>
+  <button class="tab" onclick="showTab('contador')">Contador</button>
+</div>
+
+<div id="guion" class="panel active">
+  <div class="card">
+    <div class="label">Pregunta de apertura</div>
+    <div class="value" style="font-size:16px; font-weight:500; color: var(--color-text-primary);">"¿Cómo sabe usted hoy en qué va exactamente su obra?"</div>
+    <div style="margin-top:8px; font-size:13px; color:var(--color-text-secondary);">Espera. No llenes el silencio. Deja que sienta la pregunta.</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Presentación (si pregunta qué haces)</div>
+    <div class="msg-box">"Soy Gustavo, arquitecto. Desarrollé una plataforma que le muestra al dueño de obra el avance real todos los días — costos, alertas y fotos — sin depender de lo que le cuente el contratista. Lo estoy instalando en obras en la zona."</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Si muestra interés → cierre de demo</div>
+    <div class="msg-box">"¿Le puedo mostrar cómo se ve en 10 minutos? Tengo el demo en el celular ahora mismo."</div>
+    <div style="margin-top:8px;" class="label">Si no puede ahora → conseguir número</div>
+    <div class="msg-box">"¿Me regala su WhatsApp para enviarle una demo en video esta tarde?"</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Precio si preguntan</div>
+    <div class="value">No mencionar precio en campo. Responder: <span style="font-style:italic; color:var(--color-text-secondary);">"Eso lo vemos en la demo, hay un plan de lanzamiento para las primeras obras."</span></div>
+  </div>
+</div>
+
+<div id="objeciones" class="panel">
+  <div class="objection">
+    <div class="obj-q">"Ya tengo al residente para eso"</div>
+    <div class="obj-a">"Claro — y esto no reemplaza al residente. Es para que usted, como dueño, no dependa de que alguien le cuente. Lo ve usted mismo, desde donde esté."</div>
+  </div>
+  <div class="objection">
+    <div class="obj-q">"No tengo tiempo para eso"</div>
+    <div class="obj-a">"Precisamente por eso existe — usted no hace nada. El sistema recibe los reportes del campo y le muestra un resumen cada mañana. Menos de 2 minutos al día."</div>
+  </div>
+  <div class="objection">
+    <div class="obj-q">"¿Cuánto vale?"</div>
+    <div class="obj-a">"Hay un plan de lanzamiento para las primeras obras — le muestro en la demo. La pregunta es si le sirve primero. ¿Le puedo mostrar?"</div>
+  </div>
+  <div class="objection">
+    <div class="obj-q">"Mi obra ya está avanzada"</div>
+    <div class="obj-a">"Mejor — es cuando más se necesita control. En estructura y acabados es donde más se va el dinero sin que el dueño se dé cuenta."</div>
+  </div>
+  <div class="objection">
+    <div class="obj-q">"Mándeme información"</div>
+    <div class="obj-a">"Con gusto. ¿Me da su WhatsApp? Le mando una demo en video de 2 minutos — más rápido que leer." <em style="font-size:12px; color:var(--color-text-tertiary)">(consigue el número)</em></div>
+  </div>
+  <div class="objection">
+    <div class="obj-q">"Ya tengo un software"</div>
+    <div class="obj-a">"¿Para el contratista o para usted como dueño? La mayoría son para quien construye. Esto es para quien paga — el dueño tiene su propia vista, independiente del contratista."</div>
+  </div>
+</div>
+
+<div id="checklist" class="panel">
+  <div class="card" style="margin-bottom:16px;">
+    <div class="label" style="margin-bottom:10px;">Antes de salir</div>
+    <div id="checks-pre"></div>
+  </div>
+  <div class="card">
+    <div class="label" style="margin-bottom:10px;">En cada obra</div>
+    <div id="checks-obra"></div>
+  </div>
+</div>
+
+<div id="contador" class="panel">
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="s-vis">0</div><div class="stat-l">Obras visitadas</div></div>
+    <div class="stat"><div class="stat-n" id="s-num">0</div><div class="stat-l">Números conseguidos</div></div>
+    <div class="stat"><div class="stat-n" id="s-dem">0</div><div class="stat-l">Demos agendadas</div></div>
+  </div>
+
+  <div class="card">
+    <div class="counter-row">
+      <div class="counter-label">Obras visitadas</div>
+      <div class="counter-btns">
+        <button class="cbtn" onclick="adj('vis',-1)">−</button>
+        <div class="counter-val" id="v-vis">0</div>
+        <button class="cbtn" onclick="adj('vis',1)">+</button>
+      </div>
+    </div>
+    <div class="counter-row">
+      <div class="counter-label">Números conseguidos</div>
+      <div class="counter-btns">
+        <button class="cbtn" onclick="adj('num',-1)">−</button>
+        <div class="counter-val" id="v-num">0</div>
+        <button class="cbtn" onclick="adj('num',1)">+</button>
+      </div>
+    </div>
+    <div class="counter-row">
+      <div class="counter-label">Demos agendadas</div>
+      <div class="counter-btns">
+        <button class="cbtn" onclick="adj('dem',-1)">−</button>
+        <div class="counter-val" id="v-dem">0</div>
+        <button class="cbtn" onclick="adj('dem',1)">+</button>
+      </div>
+    </div>
+    <div class="counter-row">
+      <div class="counter-label">Interesados (seguimiento)</div>
+      <div class="counter-btns">
+        <button class="cbtn" onclick="adj('int',-1)">−</button>
+        <div class="counter-val" id="v-int">0</div>
+        <button class="cbtn" onclick="adj('int',1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="text-align:center;">
+    <div class="label" style="margin-bottom:6px;">Meta del día</div>
+    <div style="font-size:14px; color:var(--color-text-secondary); line-height:1.7;">
+      8 obras visitadas · 4 números · 1 demo agendada<br>
+      <span style="font-size:12px; color:var(--color-text-tertiary);">Si llegas a 1 demo, el día fue exitoso.</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const preItems = [
+  "Demo abierta en el celular (simulador.html o alfa.html)",
+  "Datos del proyecto de prueba cargados",
+  "WhatsApp listo para enviar demo en video",
+  "Zonas marcadas: Ciudad Montes y Muzú",
+  "Batería cargada al 100%"
+];
+const obraItems = [
+  "¿La obra tiene más de 4 pisos? (cliente potencial)",
+  "Hiciste la pregunta de apertura",
+  "Conseguiste nombre del dueño o residente",
+  "Conseguiste número de WhatsApp",
+  "Agendaste demo o enviaste video",
+  "Anotaste dirección exacta de la obra"
+];
+
+const preState = Array(preItems.length).fill(false);
+const obraState = Array(obraItems.length).fill(false);
+const counters = { vis:0, num:0, dem:0, int:0 };
+
+function renderChecks(items, state, containerId) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = items.map((item, i) => `
+    <div class="check-item" onclick="toggle('${containerId}',${i})">
+      <div class="check-box ${state[i]?'done':''}"></div>
+      <div class="check-label ${state[i]?'done':''}">${item}</div>
+    </div>
+  `).join('');
+}
+
+function toggle(containerId, i) {
+  if (containerId === 'checks-pre') { preState[i] = !preState[i]; renderChecks(preItems, preState, 'checks-pre'); }
+  else { obraState[i] = !obraState[i]; renderChecks(obraItems, obraState, 'checks-obra'); }
+}
+
+function adj(key, delta) {
+  counters[key] = Math.max(0, counters[key] + delta);
+  document.getElementById('v-'+key).textContent = counters[key];
+  if (key==='vis') document.getElementById('s-vis').textContent = counters.vis;
+  if (key==='num') document.getElementById('s-num').textContent = counters.num;
+  if (key==='dem') document.getElementById('s-dem').textContent = counters.dem;
+}
+
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+renderChecks(preItems, preState, 'checks-pre');
+renderChecks(obraItems, obraState, 'checks-obra');
+</script>
