@@ -196,6 +196,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   <div class="tab" onclick="sw('equipo',this)">👷 Equipo</div>
   <div class="tab" onclick="sw('modelo',this)">🏗 Modelo 3D</div>
   <div class="tab" onclick="sw('visita',this)">👁 Visita</div>
+  <div class="tab" onclick="sw('presupuesto',this)">💰 Presupuesto</div>
 </nav>
 <div class="main">
 
@@ -378,6 +379,108 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   </div>
 </div>
 
+<!-- PRESUPUESTO -->
+<div class="tp" id="tp-presupuesto">
+  <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+    <div class="sc"><div class="sl">Presupuesto base</div><div class="sv" id="pre-base">—</div></div>
+    <div class="sc r"><div class="sl">Desviaciones</div><div class="sv" id="pre-desv">—</div><div class="ss" id="pre-desv-cnt">0 registradas</div></div>
+    <div class="sc"><div class="sl">Presupuesto real</div><div class="sv" id="pre-real">—</div></div>
+    <div class="sc" id="pre-sem-card"><div class="sl">% Desviación</div><div class="sv" id="pre-pct">—</div></div>
+  </div>
+
+  <!-- Desglose por etapa -->
+  <div class="card" style="margin-bottom:.75rem">
+    <div class="ch">Desglose por etapa
+      <button onclick="mostrarEditarPresupuesto()" style="background:none;border:1px solid var(--border2);color:var(--text3);padding:3px 10px;border-radius:5px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Editar presupuesto</button>
+    </div>
+    <div class="cb" id="pre-etapas"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+
+  <!-- Desviaciones registradas -->
+  <div class="card" style="margin-bottom:.75rem">
+    <div class="ch">Desviaciones registradas
+      <button onclick="mostrarNuevaDesviacion()" style="background:var(--amber);color:#000;border:none;padding:3px 10px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">+ Registrar</button>
+    </div>
+    <div class="cb" id="pre-desviaciones"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+
+  <!-- Historial de versiones -->
+  <div class="card">
+    <div class="ch">Historial de cambios al presupuesto</div>
+    <div class="cb" id="pre-versiones"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR PRESUPUESTO -->
+<div id="modal-presupuesto" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:500;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:1.5rem;width:90%;max-width:480px">
+    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;margin-bottom:1rem">Editar presupuesto base</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:1rem;background:var(--amber-d);border:1px solid var(--amber-b);border-radius:6px;padding:8px 12px">⚠️ Esta acción queda registrada en el historial con fecha, hora y motivo.</div>
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Nuevo presupuesto total (COP)</div>
+        <input id="pre-nuevo-monto" type="number" placeholder="Ej: 1850000000" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:13px;font-family:'DM Mono',monospace"/>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Motivo del cambio *</div>
+        <input id="pre-motivo" type="text" placeholder="Ej: Ajuste por cambio de especificaciones en estructura" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif"/>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Contraseña de presupuesto *</div>
+        <input id="pre-password" type="password" placeholder="••••••" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:13px;font-family:'DM Mono',monospace"/>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">Contraseña predeterminada: <code style="color:var(--amber)">goobra2026</code></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="confirmarEditarPresupuesto()" style="background:var(--amber);color:#000;border:none;padding:8px 18px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Guardar cambio</button>
+        <button onclick="document.getElementById('modal-presupuesto').style.display='none'" style="background:none;color:var(--text3);border:1px solid var(--border2);padding:8px 18px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NUEVA DESVIACION -->
+<div id="modal-desviacion" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.8);z-index:500;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:1.5rem;width:90%;max-width:480px;max-height:90vh;overflow-y:auto">
+    <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;margin-bottom:1rem">Registrar desviación</div>
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Tipo *</div>
+        <select id="desv-tipo" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif">
+          <option value="costo_extra">A. Costo extra no considerado</option>
+          <option value="negligencia">B. Negligencia / error de ejecución</option>
+          <option value="cambio_diseno">C. Cambio de diseño / especificación</option>
+          <option value="clima">D. Condiciones climáticas / externas</option>
+          <option value="retraso_suministro">E. Retraso en suministro de materiales</option>
+          <option value="otro">F. Otro</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Etapa afectada</div>
+        <select id="desv-etapa" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif">
+          <option value="">General</option>
+          <option value="prel">Preliminares</option><option value="mvt">Mov. tierras</option>
+          <option value="cim">Cimentación</option><option value="estr">Estructura</option>
+          <option value="mamp">Mampostería</option><option value="redes">Redes</option>
+          <option value="acab">Acabados</option><option value="urb">Urbanismo</option>
+          <option value="entr">Entrega</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Monto (COP) — positivo=sobrecosto, negativo=ahorro *</div>
+        <input id="desv-monto" type="number" placeholder="Ej: 4500000 o -800000" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:13px;font-family:'DM Mono',monospace"/>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Descripción *</div>
+        <textarea id="desv-desc" placeholder="Describe qué pasó y por qué..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:70px"></textarea>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="confirmarDesviacion()" style="background:var(--amber);color:#000;border:none;padding:8px 18px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Registrar desviación</button>
+        <button onclick="document.getElementById('modal-desviacion').style.display='none'" style="background:none;color:var(--text3);border:1px solid var(--border2);padding:8px 18px;border-radius:6px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /main -->
 
 <!-- LIGHTBOX FOTOS -->
@@ -447,6 +550,7 @@ function sw(name,btn){
   if(name==='equipo') renderEquipo();
   if(name==='modelo') renderModelo();
   if(name==='visita') loadVisitaHistorial();
+  if(name==='presupuesto') loadPresupuesto();
 }
 
 function timeAgo(ts){
@@ -544,7 +648,7 @@ async function loadDash(){
   } else {
     document.getElementById('sem-ico').textContent='📋';
     document.getElementById('sem-title').textContent='Sin presupuesto registrado';
-    document.getElementById('sem-sub').textContent='Ingresa el presupuesto en el onboarding para activar el semáforo financiero';
+    document.getElementById('sem-sub').textContent='Ve a la pestaña 💰 Presupuesto para ingresar el presupuesto de la obra';
   }
 
   // Alerta narrativa — detectar etapas con mayor retraso
@@ -1156,6 +1260,168 @@ function updateVisContadores(){
   document.getElementById('vis-rev').textContent=visData.filter(v=>v.estado==='rev').length;
   document.getElementById('vis-rej').textContent=visData.filter(v=>v.estado==='rej').length;
   document.getElementById('vis-pen').textContent=visData.filter(v=>!v.estado).length;
+}
+
+// ── PRESUPUESTO ──
+const PRE_PASSWORD='goobra2026';
+const fmt=v=>v===null||v===undefined?'—':Math.abs(v)>=1e9?'$'+(v/1e9).toFixed(2)+'B':Math.abs(v)>=1e6?'$'+(v/1e6).toFixed(1)+'M':Math.abs(v)>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+Math.round(v).toLocaleString('es-CO');
+
+async function loadPresupuesto(){
+  // Load presupuesto_total from proyecto
+  const presupuesto=parseFloat(PROJ.presupuesto_total)||0;
+  // Load desviaciones
+  const {data:desv}=await db.from('desviaciones').select('*').eq('proyecto_id',PID).order('created_at',{ascending:false});
+  const {data:etapas}=await db.from('presupuesto_etapas').select('*').eq('proyecto_id',PID).order('etapa_id');
+  const {data:versiones}=await db.from('presupuesto_versiones').select('*').eq('proyecto_id',PID).order('version',{ascending:false});
+
+  const totalDesv=(desv||[]).reduce((s,d)=>s+parseFloat(d.monto||0),0);
+  const sobrec=(desv||[]).filter(d=>d.monto>0).reduce((s,d)=>s+d.monto,0);
+  const real=presupuesto+totalDesv;
+  const pctDesv=presupuesto>0?((totalDesv/presupuesto)*100):0;
+
+  // Stats
+  document.getElementById('pre-base').textContent=fmt(presupuesto)||'Sin definir';
+  document.getElementById('pre-desv').textContent=fmt(totalDesv);
+  document.getElementById('pre-desv').style.color=totalDesv>0?'var(--red)':totalDesv<0?'var(--green)':'var(--text)';
+  document.getElementById('pre-desv-cnt').textContent=(desv||[]).length+' registradas';
+  document.getElementById('pre-real').textContent=fmt(real);
+  document.getElementById('pre-pct').textContent=(pctDesv>0?'+':'')+pctDesv.toFixed(2)+'%';
+  document.getElementById('pre-pct').style.color=pctDesv>5?'var(--red)':pctDesv>0?'var(--amber)':'var(--green)';
+
+  // Desglose por etapa
+  const PCTS={prel:.03,mvt:.05,cim:.12,estr:.35,mamp:.18,redes:.10,acab:.12,urb:.03,entr:.02};
+  const desvByEtapa={};
+  (desv||[]).forEach(d=>{if(d.etapa_id){if(!desvByEtapa[d.etapa_id])desvByEtapa[d.etapa_id]=0;desvByEtapa[d.etapa_id]+=parseFloat(d.monto||0);}});
+  // Avance por etapa de MDATA
+  const avByEtapa={};
+  MDATA.forEach(m=>{if(!avByEtapa[m.etapa_id])avByEtapa[m.etapa_id]={p:0,n:0};avByEtapa[m.etapa_id].p+=parseFloat(m.pct_avance||0);avByEtapa[m.etapa_id].n++;});
+
+  document.getElementById('pre-etapas').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr>
+        <th style="text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Etapa</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">% CAMACOL</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Presupuesto</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Desviaciones</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Avance</th>
+      </tr></thead>
+      <tbody>${EO.map(e=>{
+        const pct=PCTS[e]||0;
+        const monto=presupuesto*pct;
+        const dEtapa=desvByEtapa[e]||0;
+        const av=avByEtapa[e]?Math.round(avByEtapa[e].p/avByEtapa[e].n):0;
+        const col=dEtapa>0?'var(--red)':dEtapa<0?'var(--green)':'var(--text3)';
+        return`<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 8px;font-weight:500">${EN[e]||e}</td>
+          <td style="padding:7px 8px;text-align:right;color:var(--text2)">${(pct*100).toFixed(0)}%</td>
+          <td style="padding:7px 8px;text-align:right">${fmt(monto)}</td>
+          <td style="padding:7px 8px;text-align:right;color:${col};font-weight:500">${dEtapa?((dEtapa>0?'+':'')+fmt(dEtapa)):'—'}</td>
+          <td style="padding:7px 8px;text-align:right">
+            <div style="display:flex;align-items:center;gap:6px;justify-content:flex-end">
+              <div style="width:60px;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden"><div style="height:100%;background:${av===100?'var(--green)':av>0?'var(--amber)':'var(--bg4)'};width:${av}%"></div></div>
+              <span style="color:${av===100?'var(--green)':av>0?'var(--amber)':'var(--text3)'}">${av}%</span>
+            </div>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+
+  // Desviaciones
+  if(!(desv||[]).length){
+    document.getElementById('pre-desviaciones').innerHTML='<div class="empty">Sin desviaciones registradas. Todo dentro del presupuesto.</div>';
+  } else {
+    const TIPOS={costo_extra:'A. Costo extra',negligencia:'B. Negligencia',cambio_diseno:'C. Cambio diseño',clima:'D. Clima',retraso_suministro:'E. Retraso suministro',otro:'F. Otro'};
+    document.getElementById('pre-desviaciones').innerHTML=desv.map(d=>`
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1">
+          <div style="font-size:11px;font-weight:500;margin-bottom:2px">${TIPOS[d.tipo]||d.tipo} · <span style="color:var(--text2)">${EN[d.etapa_id]||d.etapa_id||'General'}</span></div>
+          <div style="font-size:11px;color:var(--text2)">${d.descripcion}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${new Date(d.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})} · origen: ${d.origen}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:${d.monto>0?'var(--red)':'var(--green)'}">${d.monto>0?'+':''}${fmt(d.monto)}</div>
+          <div style="font-size:9px;color:var(--text3)">${d.monto>0?'sobrecosto':'ahorro'}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  // Versiones
+  document.getElementById('pre-versiones').innerHTML=(versiones||[]).length
+    ?(versiones.map((v,i)=>`
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px">
+        <div>
+          <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--amber)">v${v.version}</span>
+          <span style="color:var(--text2);margin-left:8px">${v.motivo_cambio||'Sin motivo'}</span>
+          ${i===0?`<span style="font-size:9px;background:var(--green-d);color:var(--green);border:1px solid rgba(39,174,96,.2);padding:1px 5px;border-radius:3px;margin-left:6px">actual</span>`:''}
+        </div>
+        <div style="text-align:right">
+          <div style="font-weight:500">${fmt(v.presupuesto_total)}</div>
+          <div style="font-size:10px;color:var(--text3)">${new Date(v.created_at).toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}</div>
+        </div>
+      </div>`).join(''))
+    :'<div class="empty">Sin historial de versiones</div>';
+}
+
+function mostrarEditarPresupuesto(){
+  document.getElementById('pre-nuevo-monto').value=PROJ.presupuesto_total||'';
+  document.getElementById('pre-motivo').value='';
+  document.getElementById('pre-password').value='';
+  document.getElementById('modal-presupuesto').style.display='flex';
+}
+
+async function confirmarEditarPresupuesto(){
+  const pwd=document.getElementById('pre-password').value;
+  if(pwd!==PRE_PASSWORD){alert('Contraseña incorrecta.');return;}
+  const nuevo=parseFloat(document.getElementById('pre-nuevo-monto').value);
+  const motivo=document.getElementById('pre-motivo').value.trim();
+  if(!nuevo||nuevo<=0){alert('Ingresa un monto válido.');return;}
+  if(!motivo){alert('El motivo del cambio es obligatorio.');return;}
+
+  // Get current version
+  const {data:vers}=await db.from('presupuesto_versiones').select('version').eq('proyecto_id',PID).order('version',{ascending:false}).limit(1);
+  const nextVer=(vers?.[0]?.version||0)+1;
+
+  // Save new version
+  await db.from('presupuesto_versiones').insert({proyecto_id:PID,version:nextVer,presupuesto_total:nuevo,motivo_cambio:motivo});
+  // Update proyecto
+  await db.from('proyectos').update({presupuesto_total:nuevo}).eq('id',PID);
+  // Update etapas
+  const PCTS={prel:.03,mvt:.05,cim:.12,estr:.35,mamp:.18,redes:.10,acab:.12,urb:.03,entr:.02};
+  const etapasRows=Object.entries(PCTS).map(([e,p])=>({proyecto_id:PID,etapa_id:e,pct_camacol:p,monto_base:Math.round(nuevo*p),version:nextVer}));
+  await db.from('presupuesto_etapas').insert(etapasRows);
+
+  PROJ.presupuesto_total=nuevo;
+  document.getElementById('modal-presupuesto').style.display='none';
+  await loadPresupuesto();
+  await loadAll(); // refresh dashboard semaforo
+}
+
+function mostrarNuevaDesviacion(){
+  document.getElementById('modal-desviacion').style.display='flex';
+}
+
+async function confirmarDesviacion(){
+  const tipo=document.getElementById('desv-tipo').value;
+  const etapa=document.getElementById('desv-etapa').value;
+  const monto=parseFloat(document.getElementById('desv-monto').value);
+  const desc=document.getElementById('desv-desc').value.trim();
+  if(!monto||isNaN(monto)){alert('Ingresa un monto válido.');return;}
+  if(!desc){alert('La descripción es obligatoria.');return;}
+
+  await db.from('desviaciones').insert({
+    proyecto_id:PID,
+    etapa_id:etapa||null,
+    tipo,
+    monto,
+    descripcion:desc,
+    origen:'manual'
+  });
+
+  document.getElementById('modal-desviacion').style.display='none';
+  document.getElementById('desv-monto').value='';
+  document.getElementById('desv-desc').value='';
+  await loadPresupuesto();
+  await loadAll();
 }
 
 // ── REALTIME ──
