@@ -155,6 +155,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .empty{text-align:center;padding:2rem;color:var(--text3);font-size:12px}
 .spin{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto .5rem}
 @keyframes sp{to{transform:rotate(360deg)}}
+/* VISITA FOTO */
+.vis-foto-btn{width:32px;height:32px;border-radius:5px;border:1px solid var(--border2);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all .15s}
+.vis-foto-btn:hover{border-color:var(--amber);background:var(--amber-d)}
+.vis-foto-btn.has-foto{border-color:rgba(39,174,96,.4);background:var(--green-d)}
+.vis-foto-thumb{width:32px;height:32px;border-radius:5px;object-fit:cover;cursor:pointer;border:1px solid rgba(39,174,96,.4)}
+/* HISTORIAL EXPANDIBLE */
+.acta-row{padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.acta-row:last-child{border:none}
+.acta-row:hover{background:rgba(255,255,255,.01)}
+.acta-detalle{display:none;padding:10px 0 4px;border-bottom:1px solid var(--border2)}
+.acta-detalle.open{display:block}
+.acta-mis-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px}
+.acta-mis-row:last-child{border:none}
+/* LIGHTBOX */
+#lightbox{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.9);z-index:1000;display:none;align-items:center;justify-content:center;flex-direction:column;gap:1rem}
+#lightbox img{max-width:90vw;max-height:80vh;border-radius:8px;object-fit:contain}
+#lightbox-close{color:#fff;font-size:14px;cursor:pointer;padding:8px 16px;border:1px solid #444;border-radius:5px;background:none;font-family:'DM Sans',sans-serif}
 @media(max-width:700px){.sg{grid-template-columns:repeat(2,1fr)}.g2,.obra-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -362,6 +379,12 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 </div>
 
 </div><!-- /main -->
+
+<!-- LIGHTBOX FOTOS -->
+<div id="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img" src="" alt="Foto de visita"/>
+  <button id="lightbox-close" onclick="closeLightbox()">Cerrar ×</button>
+</div>
 
 <script>
 const SB='https://muyezsssnzlxavchabum.supabase.co';
@@ -859,6 +882,8 @@ function iniciarVisita(){
           <button class="vis-btn" onclick="setVisita('${sid}','ok',this)">✅ Aprobado</button>
           <button class="vis-btn" onclick="setVisita('${sid}','rev',this)">🔄 Revisión</button>
           <button class="vis-btn" onclick="pedirNota('${sid}','rej',this)">❌ Rechazar</button>
+          <button class="vis-foto-btn" id="fotobtn_${sid}" onclick="subirFoto('${sid}')" title="Agregar foto">📷</button>
+          <input type="file" id="fileinput_${sid}" accept="image/*" capture="environment" style="display:none" onchange="procesarFoto('${sid}',this)"/>
         </div>
       </div>
       <div id="nota_${sid}" style="display:none;padding:6px 0 10px;border-bottom:1px solid var(--border)">
@@ -1012,6 +1037,118 @@ async function guardarVisitaCompleta(){
 
   await loadAll();
   await loadVisitaHistorial();
+}
+
+// ── FOTO VISITA ──
+function subirFoto(sid){
+  document.getElementById('fileinput_'+sid).click();
+}
+
+async function procesarFoto(sid, input){
+  const file=input.files[0];
+  if(!file) return;
+  const btn=document.getElementById('fotobtn_'+sid);
+  btn.textContent='⏳';btn.disabled=true;
+
+  // Upload to Supabase Storage
+  const fname=`${PID}/${new Date().toISOString().split('T')[0]}/${sid}_${Date.now()}.jpg`;
+  const {data:upload,error}=await db.storage.from('visitas-fotos').upload(fname,file,{contentType:file.type,upsert:true});
+
+  if(error){btn.textContent='📷';btn.disabled=false;alert('Error al subir foto: '+error.message);return;}
+
+  const {data:urlData}=db.storage.from('visitas-fotos').getPublicUrl(fname);
+  const url=urlData.publicUrl;
+
+  // Save url to visitas record
+  const item=visData.find(v=>v.sid===sid);
+  if(item) item.foto_url=url;
+  const mId=item?.id;
+  if(mId){
+    await db.from('visitas').upsert({
+      proyecto_id:PID,
+      mision_key:mId,
+      foto_url:url,
+      fecha:new Date().toISOString().split('T')[0],
+      timestamp:new Date().toISOString(),
+      resultado:item?.estado||null,
+      nota:item?.nota||null,
+      mision_estado_previo:item?.estado_previo||null
+    },{onConflict:'proyecto_id,mision_key,fecha'});
+  }
+
+  // Show thumbnail
+  btn.outerHTML=`<img class="vis-foto-thumb" id="fotobtn_${sid}" src="${url}" onclick="openLightbox('${url}')" title="Ver foto"/>`;
+}
+
+function openLightbox(url){
+  document.getElementById('lightbox-img').src=url;
+  document.getElementById('lightbox').style.display='flex';
+}
+function closeLightbox(){
+  document.getElementById('lightbox').style.display='none';
+  document.getElementById('lightbox-img').src='';
+}
+
+// ── HISTORIAL EXPANDIBLE ──
+async function loadVisitaHistorial(){
+  const {data:actas}=await db.from('actas_visita').select('*').eq('proyecto_id',PID).order('fecha',{ascending:false}).limit(20);
+  if(!actas?.length){document.getElementById('vis-historial').innerHTML='<div class="empty">Sin visitas previas registradas</div>';return;}
+
+  // For each acta, load its visitas
+  const actaIds=actas.map(a=>a.id);
+  const {data:detalles}=await db.from('visitas')
+    .select('acta_id,mision_key,resultado,nota,foto_url')
+    .in('acta_id',actaIds);
+  const {data:misiones}=await db.from('proyecto_misiones')
+    .select('id,etapa_id,mision_id,nivel')
+    .eq('proyecto_id',PID);
+  const misMap=new Map((misiones||[]).map(m=>[m.id,m]));
+  const detalleMap={};
+  (detalles||[]).forEach(d=>{if(!detalleMap[d.acta_id])detalleMap[d.acta_id]=[];detalleMap[d.acta_id].push(d);});
+
+  const TIPOS_RESULTADO={'ok':'✅ Aprobado','rev':'🔄 Revisión','rej':'❌ Rechazado'};
+
+  document.getElementById('vis-historial').innerHTML=actas.map(a=>{
+    const aid=a.id.replace(/-/g,'_');
+    const ds=detalleMap[a.id]||[];
+    const detHtml=ds.length?ds.map(d=>{
+      const m=misMap.get(d.mision_key);
+      const nom=m?`${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}`:(d.mision_key||'—').slice(-20);
+      const res=TIPOS_RESULTADO[d.resultado]||d.resultado||'Sin revisar';
+      const resCol=d.resultado==='ok'?'var(--green)':d.resultado==='rej'?'var(--red)':'var(--amber)';
+      return`<div class="acta-mis-row">
+        <span style="min-width:110px;color:${resCol};font-weight:500">${res}</span>
+        <span style="flex:1;color:var(--text2)">${nom}</span>
+        ${d.nota?`<span style="color:var(--text3);font-size:10px;max-width:160px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap" title="${d.nota}">"${d.nota}"</span>`:''}
+        ${d.foto_url?`<img src="${d.foto_url}" style="width:28px;height:28px;border-radius:4px;object-fit:cover;cursor:pointer;border:1px solid var(--border2)" onclick="event.stopPropagation();openLightbox('${d.foto_url}')"/>`:''}
+      </div>`;
+    }).join(''):'<div style="font-size:11px;color:var(--text3);padding:6px 0">Sin detalle de misiones</div>';
+
+    return`<div class="acta-row" onclick="toggleActa('${aid}')">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:11px;font-weight:500">${new Date(a.fecha+'T12:00:00').toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${a.visitador_nombre} · ✅${a.total_aprobadas} · 🔄${a.total_revision} · ❌${a.total_rechazadas}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${a.firmada?`<span style="font-size:9px;background:var(--green-d);color:var(--green);border:1px solid rgba(39,174,96,.2);padding:2px 6px;border-radius:3px">✓ Firmada</span>`:''}
+          <span id="arrow_${aid}" style="color:var(--text3);font-size:12px">▶</span>
+        </div>
+      </div>
+    </div>
+    <div class="acta-detalle" id="det_${aid}">
+      ${a.condiciones_generales?`<div style="font-size:11px;color:var(--text2);padding:6px 0;border-bottom:1px solid var(--border)">🌤 <strong>Condiciones:</strong> ${a.condiciones_generales}</div>`:''}
+      ${detHtml}
+      ${a.observacion_cierre?`<div style="font-size:11px;color:var(--text2);padding:6px 0;border-top:1px solid var(--border);margin-top:4px">💬 <strong>Observación:</strong> ${a.observacion_cierre}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function toggleActa(aid){
+  const det=document.getElementById('det_'+aid);
+  const arrow=document.getElementById('arrow_'+aid);
+  if(det.classList.toggle('open')){arrow.textContent='▼';}
+  else{arrow.textContent='▶';}
 }
 
 function updateVisContadores(){
