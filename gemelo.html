@@ -303,16 +303,61 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 <!-- VISITA -->
 <div class="tp" id="tp-visita">
-  <div class="sg" style="grid-template-columns:repeat(3,1fr)">
+  <!-- Estado en vivo -->
+  <div class="sg" style="grid-template-columns:repeat(4,1fr)">
     <div class="sc g"><div class="sl">Aprobadas</div><div class="sv" id="vis-ok">0</div></div>
     <div class="sc"><div class="sl">En revisión</div><div class="sv" id="vis-rev">0</div></div>
     <div class="sc r"><div class="sl">Rechazadas</div><div class="sv" id="vis-rej">0</div></div>
+    <div class="sc b"><div class="sl">Sin revisar</div><div class="sv" id="vis-pen">0</div></div>
   </div>
-  <div class="card">
-    <div class="ch">Checklist de visita <span id="vis-fecha" style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0"></span>
-      <button onclick="iniciarVisita()" style="background:var(--amber);color:#000;border:none;padding:4px 12px;border-radius:5px;font-size:10px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif">Nueva visita</button>
+
+  <!-- Formulario inicio de visita (visible antes de iniciar) -->
+  <div id="vis-inicio" class="card" style="margin-bottom:.75rem">
+    <div class="ch">Iniciar nueva visita</div>
+    <div class="cb" style="display:flex;flex-direction:column;gap:.75rem">
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Quién realiza la visita *</div>
+        <input id="vis-visitador" type="text" placeholder="Ej: Juan García (dueño) o Carlos Pérez (interventor)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif"/>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Condiciones generales de la obra hoy</div>
+        <textarea id="vis-condiciones" placeholder="Ej: Clima despejado, 8 trabajadores en obra, grúa disponible..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:60px"></textarea>
+      </div>
+      <button onclick="iniciarVisita()" style="background:var(--amber);color:#000;border:none;padding:8px 18px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;align-self:flex-start">Iniciar recorrido →</button>
     </div>
-    <div class="cb" id="vis-lista"><div class="empty">Presiona "Nueva visita" para iniciar el recorrido de la obra.</div></div>
+  </div>
+
+  <!-- Checklist (visible durante visita) -->
+  <div id="vis-checklist" style="display:none">
+    <div class="card" style="margin-bottom:.75rem">
+      <div class="ch">
+        <span>Recorrido en curso <span id="vis-fecha" style="color:var(--amber);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px"></span></span>
+        <span style="font-size:10px;color:var(--text3)" id="vis-visitador-lbl"></span>
+      </div>
+      <div class="cb" id="vis-lista"></div>
+    </div>
+
+    <!-- Cierre de visita -->
+    <div class="card" id="vis-cierre-panel">
+      <div class="ch">Observaciones y cierre</div>
+      <div class="cb" style="display:flex;flex-direction:column;gap:.75rem">
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Observación general de cierre</div>
+          <textarea id="vis-observacion" placeholder="Resumen general de la visita, puntos de atención, compromisos..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:80px"></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--bg3);border-radius:6px;border:1px solid var(--border2)">
+          <input type="checkbox" id="vis-firma" style="width:16px;height:16px;cursor:pointer"/>
+          <label for="vis-firma" style="font-size:12px;color:var(--text2);cursor:pointer">Confirmo que esta acta de visita es fiel a lo observado en obra</label>
+        </div>
+        <button onclick="guardarVisitaCompleta()" id="btn-guardar-visita" style="background:var(--green-d);color:var(--green);border:1px solid rgba(39,174,96,.3);padding:8px 18px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;align-self:flex-start">Guardar acta de visita ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial de actas -->
+  <div class="card" style="margin-top:.75rem">
+    <div class="ch">Historial de visitas</div>
+    <div class="cb" id="vis-historial"><div class="empty"><div class="spin"></div></div></div>
   </div>
 </div>
 
@@ -378,6 +423,7 @@ function sw(name,btn){
   if(name==='materiales') renderMateriales();
   if(name==='equipo') renderEquipo();
   if(name==='modelo') renderModelo();
+  if(name==='visita') loadVisitaHistorial();
 }
 
 function timeAgo(ts){
@@ -761,12 +807,34 @@ function renderModelo(){
 }
 
 // ── VISITA ──
-let visData=[];
+let visData=[], actaId=null;
+
+async function loadVisitaHistorial(){
+  const {data}=await db.from('actas_visita').select('*').eq('proyecto_id',PID).order('fecha',{ascending:false}).limit(10);
+  if(!data?.length){document.getElementById('vis-historial').innerHTML='<div class="empty">Sin visitas previas registradas</div>';return;}
+  document.getElementById('vis-historial').innerHTML=data.map(a=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:11px;font-weight:500">${new Date(a.fecha+'T12:00:00').toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'})}</div>
+        <div style="font-size:10px;color:var(--text3)">${a.visitador_nombre} · ${a.total_aprobadas} aprobadas · ${a.total_rechazadas} rechazadas</div>
+        ${a.observacion_cierre?`<div style="font-size:10px;color:var(--text2);margin-top:2px">"${a.observacion_cierre.slice(0,80)}${a.observacion_cierre.length>80?'...':''}"</div>`:''}
+      </div>
+      <div style="text-align:right">
+        ${a.firmada?`<span style="font-size:9px;background:var(--green-d);color:var(--green);border:1px solid rgba(39,174,96,.2);padding:2px 6px;border-radius:3px">✓ Firmada</span>`:`<span style="font-size:9px;color:var(--text3)">Sin firma</span>`}
+      </div>
+    </div>`).join('');
+}
 
 function iniciarVisita(){
-  visData=[];
+  const visitador=document.getElementById('vis-visitador').value.trim();
+  if(!visitador){document.getElementById('vis-visitador').style.borderColor='var(--red)';document.getElementById('vis-visitador').focus();return;}
+  document.getElementById('vis-visitador').style.borderColor='var(--border2)';
+  visData=[];actaId=null;
   const hoy=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('vis-fecha').textContent=hoy;
+  document.getElementById('vis-visitador-lbl').textContent=visitador;
+  document.getElementById('vis-inicio').style.display='none';
+  document.getElementById('vis-checklist').style.display='block';
   const activas=MDATA.filter(m=>m.estado!=='completada'&&(m.estado==='en_curso'||parseFloat(m.pct_avance||0)>0));
   if(!activas.length){
     document.getElementById('vis-lista').innerHTML='<div class="empty">Sin misiones activas para revisar en esta visita.</div>';
@@ -885,10 +953,72 @@ async function guardarVisita(sid,estado,nota){
   },{onConflict:'proyecto_id,mision_key,fecha'});
 }
 
+async function guardarVisitaCompleta(){
+  const firmada=document.getElementById('vis-firma').checked;
+  if(!firmada){alert('Debes confirmar que el acta es fiel a lo observado antes de guardar.');return;}
+  const visitador=document.getElementById('vis-visitador').value.trim();
+  const condiciones=document.getElementById('vis-condiciones').value.trim();
+  const observacion=document.getElementById('vis-observacion').value.trim();
+  const ok=visData.filter(v=>v.estado==='ok').length;
+  const rev=visData.filter(v=>v.estado==='rev').length;
+  const rej=visData.filter(v=>v.estado==='rej').length;
+  const pen=visData.filter(v=>!v.estado).length;
+  const btn=document.getElementById('btn-guardar-visita');
+  btn.textContent='Guardando...';btn.disabled=true;
+
+  // Create acta
+  const {data:acta,error}=await db.from('actas_visita').insert({
+    proyecto_id:PID,
+    fecha:new Date().toISOString().split('T')[0],
+    hora_inicio:new Date(Date.now()-visData.length*30000).toISOString(),
+    hora_cierre:new Date().toISOString(),
+    visitador_nombre:visitador,
+    condiciones_generales:condiciones||null,
+    total_aprobadas:ok,
+    total_revision:rev,
+    total_rechazadas:rej,
+    total_sin_revisar:pen,
+    observacion_cierre:observacion||null,
+    firmada:true,
+    firma_timestamp:new Date().toISOString()
+  }).select().single();
+
+  if(acta){
+    actaId=acta.id;
+    // Link all visitas to this acta
+    const misIds=visData.filter(v=>v.id).map(v=>v.id);
+    if(misIds.length){
+      await db.from('visitas').update({acta_id:acta.id})
+        .eq('proyecto_id',PID)
+        .eq('fecha',new Date().toISOString().split('T')[0])
+        .in('mision_key',misIds);
+    }
+  }
+
+  // Show result and reset
+  document.getElementById('vis-checklist').style.display='none';
+  document.getElementById('vis-inicio').style.display='block';
+  document.getElementById('vis-visitador').value='';
+  document.getElementById('vis-condiciones').value='';
+  document.getElementById('vis-observacion').value='';
+  document.getElementById('vis-firma').checked=false;
+  btn.textContent='Guardar acta de visita ✓';btn.disabled=false;
+
+  // Show confirmation banner
+  const banner=document.createElement('div');
+  banner.style.cssText='background:var(--green-d);border:1px solid rgba(39,174,96,.3);border-radius:8px;padding:12px 16px;margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center';
+  banner.innerHTML=`<div><div style="font-weight:600;color:var(--green);font-size:12px">✓ Acta de visita guardada</div><div style="font-size:11px;color:var(--text2);margin-top:2px">${ok} aprobadas · ${rej} rechazadas · ${rev} en revisión · firmada por ${visitador}</div></div><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">×</button>`;
+  document.getElementById('tp-visita').insertBefore(banner,document.getElementById('tp-visita').firstChild);
+
+  await loadAll();
+  await loadVisitaHistorial();
+}
+
 function updateVisContadores(){
   document.getElementById('vis-ok').textContent=visData.filter(v=>v.estado==='ok').length;
   document.getElementById('vis-rev').textContent=visData.filter(v=>v.estado==='rev').length;
   document.getElementById('vis-rej').textContent=visData.filter(v=>v.estado==='rej').length;
+  document.getElementById('vis-pen').textContent=visData.filter(v=>!v.estado).length;
 }
 
 // ── REALTIME ──
