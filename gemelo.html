@@ -454,6 +454,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
           <option value="otro">F. Otro</option>
         </select>
       </div>
+      <!-- Misión rechazada como origen -->
+      <div id="desv-mision-wrap">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">¿Viene de una misión rechazada?</div>
+        <select id="desv-mision-ref" onchange="autoFillDesviacion(this.value)" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif">
+          <option value="">No / Desviación general</option>
+        </select>
+      </div>
       <div>
         <div style="font-size:10px;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:1px">Etapa afectada</div>
         <select id="desv-etapa" style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;font-family:'DM Sans',sans-serif">
@@ -1035,7 +1042,10 @@ async function confirmarRechazo(sid){
   // Show confirmation
   const notaEl=document.getElementById('nota_'+sid);
   notaEl.style.display='block';
-  notaEl.innerHTML=`<div style="font-size:10px;color:var(--red);padding:4px 0">❌ Rechazado — "${nota}" <span style="color:var(--text3)">· guardado</span></div>`;
+  notaEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
+    <div style="font-size:10px;color:var(--red)">❌ Rechazado — "${nota}" <span style="color:var(--text3)">· guardado</span></div>
+    <button onclick="mostrarNuevaDesviacion('${mId}','${item?.estado_previo||''}','')" style="background:var(--amber-d);color:var(--amber);border:1px solid var(--amber-b);padding:3px 8px;border-radius:4px;font-size:9px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">+ Desviación</button>
+  </div>`;
 }
 
 async function setVisita(sid,estado,btn){
@@ -1396,8 +1406,61 @@ async function confirmarEditarPresupuesto(){
   await loadAll(); // refresh dashboard semaforo
 }
 
-function mostrarNuevaDesviacion(){
+async function mostrarNuevaDesviacion(misionId=null, etapaId=null, nomMision=null){
+  // Load misiones rechazadas hoy y en los últimos 7 días
+  const hace7=new Date();hace7.setDate(hace7.getDate()-7);
+  const {data:rechazadas}=await db.from('visitas')
+    .select('mision_key,nota,fecha')
+    .eq('proyecto_id',PID)
+    .eq('resultado','rej')
+    .gte('fecha',hace7.toISOString().split('T')[0])
+    .order('fecha',{ascending:false});
+
+  // Load mision details
+  const misionIds=[...new Set((rechazadas||[]).map(v=>v.mision_key).filter(Boolean))];
+  let misMap={};
+  if(misionIds.length){
+    const {data:mis}=await db.from('proyecto_misiones').select('id,etapa_id,mision_id,nivel').in('id',misionIds);
+    (mis||[]).forEach(m=>misMap[m.id]=m);
+  }
+
+  const sel=document.getElementById('desv-mision-ref');
+  sel.innerHTML='<option value="">No / Desviación general</option>';
+  (rechazadas||[]).forEach(v=>{
+    const m=misMap[v.mision_key];
+    if(!m) return;
+    const nom=`${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''} (${v.fecha})`;
+    const opt=document.createElement('option');
+    opt.value=v.mision_key;
+    opt.dataset.etapa=m.etapa_id;
+    opt.dataset.mision=m.mision_id;
+    opt.dataset.nota=v.nota||'';
+    opt.textContent='❌ '+nom;
+    sel.appendChild(opt);
+  });
+
+  // Pre-select if called from visita
+  if(misionId){
+    sel.value=misionId;
+    autoFillDesviacion(misionId);
+  }
+  if(etapaId) document.getElementById('desv-etapa').value=etapaId;
+
   document.getElementById('modal-desviacion').style.display='flex';
+}
+
+function autoFillDesviacion(misionKey){
+  if(!misionKey) return;
+  const sel=document.getElementById('desv-mision-ref');
+  const opt=sel.querySelector(`option[value="${misionKey}"]`);
+  if(!opt) return;
+  // Auto-fill etapa
+  document.getElementById('desv-etapa').value=opt.dataset.etapa||'';
+  // Auto-fill descripcion with nota del rechazo
+  const nota=opt.dataset.nota;
+  if(nota) document.getElementById('desv-desc').value='Retrabajo por rechazo en visita: '+nota;
+  // Set tipo a negligencia by default for rejected missions
+  document.getElementById('desv-tipo').value='negligencia';
 }
 
 async function confirmarDesviacion(){
@@ -1408,14 +1471,16 @@ async function confirmarDesviacion(){
   if(!monto||isNaN(monto)){alert('Ingresa un monto válido.');return;}
   if(!desc){alert('La descripción es obligatoria.');return;}
 
+  const misionRef=document.getElementById('desv-mision-ref').value;
   const {error}=await db.from('desviaciones').insert({
     proyecto_id:PID,
     etapa_id:etapa||null,
+    mision_id:misionRef?document.getElementById('desv-mision-ref').querySelector(`option[value="${misionRef}"]`)?.dataset.mision||null:null,
     tipo,
     monto,
     descripcion:desc,
     motivo:desc,
-    origen:'manual',
+    origen:misionRef?'visita':'manual',
     timestamp_evento:new Date().toISOString()
   });
 
