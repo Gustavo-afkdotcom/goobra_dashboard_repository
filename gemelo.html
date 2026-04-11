@@ -1408,14 +1408,18 @@ async function confirmarDesviacion(){
   if(!monto||isNaN(monto)){alert('Ingresa un monto válido.');return;}
   if(!desc){alert('La descripción es obligatoria.');return;}
 
-  await db.from('desviaciones').insert({
+  const {error}=await db.from('desviaciones').insert({
     proyecto_id:PID,
     etapa_id:etapa||null,
     tipo,
     monto,
     descripcion:desc,
-    origen:'manual'
+    motivo:desc,
+    origen:'manual',
+    timestamp_evento:new Date().toISOString()
   });
+
+  if(error){alert('Error al guardar: '+error.message);return;}
 
   document.getElementById('modal-desviacion').style.display='none';
   document.getElementById('desv-monto').value='';
