@@ -184,12 +184,29 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 <!-- DASHBOARD -->
 <div class="tp on" id="tp-dashboard">
-  <div class="sg" style="grid-template-columns:repeat(5,1fr)">
+  <!-- Banner financiero estilo goobra.co -->
+  <div id="fin-banner" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.875rem 1.25rem;margin-bottom:.875rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="sem-ico" style="font-size:1.5rem">⏳</div>
+      <div>
+        <div id="sem-title" style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;letter-spacing:.5px">Analizando...</div>
+        <div id="sem-sub" style="font-size:11px;color:var(--text3);margin-top:2px">cargando datos del proyecto</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+      <div style="text-align:right"><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800" id="bn-avance">—</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">avance real</div><div style="font-size:10px;color:var(--text3)" id="bn-vs-plan"></div></div>
+      <div style="text-align:right"><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text2)" id="bn-gastado">—</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">gastado est.</div></div>
+      <div style="text-align:right"><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800" id="bn-proyeccion">—</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">proyección</div><div style="font-size:10px" id="bn-sobrecosto"></div></div>
+      <div style="text-align:right"><div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text2)" id="bn-entrega">—</div><div style="font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--text3)">entrega est.</div><div style="font-size:10px;color:var(--text3)" id="bn-retraso"></div></div>
+    </div>
+  </div>
+  <!-- Alerta narrativa -->
+  <div id="alerta-narrativa" style="display:none;background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.2);border-radius:8px;padding:9px 14px;margin-bottom:.875rem;font-size:12px;color:var(--text2)"></div>
+  <div class="sg" style="grid-template-columns:repeat(4,1fr)">
     <div class="sc"><div class="sl">Avances hoy</div><div class="sv" id="s-hoy">—</div><div class="ss">desde las 00:00</div></div>
     <div class="sc b"><div class="sl">Workers activos</div><div class="sv" id="s-wrk">—</div><div class="ss">reportaron hoy</div></div>
-    <div class="sc r"><div class="sl">Desviaciones</div><div class="sv" id="s-desv">—</div><div class="ss">requieren atención</div></div>
+    <div class="sc r"><div class="sl">Alertas activas</div><div class="sv" id="s-desv">—</div><div class="ss">requieren atención</div></div>
     <div class="sc g"><div class="sl">Avance global</div><div class="sv" id="s-global">—</div><div class="ss">del proyecto</div></div>
-    <div class="sc" id="sc-sem"><div class="sl">Estado financiero</div><div class="sv" id="s-sem" style="font-size:1.8rem">—</div><div class="ss" id="s-sem-txt">calculando...</div></div>
   </div>
   <div class="g2">
     <div class="card"><div class="ch">Progreso por etapa</div><div class="cb" id="etapas-l"><div class="empty"><div class="spin"></div></div></div></div>
@@ -372,7 +389,9 @@ function timeAgo(ts){
 async function loadAll(){
   const {data:proj}=await db.from('proyectos').select('*').eq('id',PID).single();
   if(proj){PROJ=proj;document.getElementById('proj-name').textContent=proj.nombre||'—';document.getElementById('cod-tag').textContent=proj.codigo_corto||CODIGO;}
-  await Promise.all([loadWorkers(),loadDash(),loadMisiones(),loadAlertas(),loadObra()]);
+  // Load workers and misiones first — other functions depend on MDATA and WMAPS
+  await Promise.all([loadWorkers(),loadMisiones()]);
+  await Promise.all([loadDash(),loadAlertas(),loadObra()]);
   if(curTab==='cronograma') renderGantt();
   if(curTab==='materiales') renderMateriales();
   if(curTab==='equipo') renderEquipo();
@@ -395,35 +414,91 @@ async function loadDash(){
   const glb=MDATA.length?Math.round(MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length):0;
   document.getElementById('s-global').textContent=glb+'%';
 
-  // Semáforo financiero simple
+  // ── BANNER FINANCIERO estilo goobra.co ──
   const PCTS={prel:.03,mvt:.05,cim:.12,estr:.35,mamp:.18,redes:.10,acab:.12,urb:.03,entr:.02};
   const presupuesto=parseFloat(PROJ.presupuesto_total)||0;
-  const semEl=document.getElementById('sc-sem');
-  const semVal=document.getElementById('s-sem');
-  const semTxt=document.getElementById('s-sem-txt');
-  if(!presupuesto){
-    semVal.textContent='—';semTxt.textContent='Sin presupuesto';
-  } else {
-    const diasTot=PROJ.fecha_fin_estimada&&PROJ.fecha_inicio?Math.round((new Date(PROJ.fecha_fin_estimada)-new Date(PROJ.fecha_inicio))/86400000):365;
-    const diasTrans=PROJ.fecha_inicio?Math.round((new Date()-new Date(PROJ.fecha_inicio))/86400000):0;
-    const pctTiempo=Math.min(diasTrans/Math.max(diasTot,1),1);
+  const fmt=v=>v>=1e9?'$'+(v/1e9).toFixed(1)+'B':v>=1e6?'$'+Math.round(v/1e6)+'M':v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+Math.round(v);
+
+  const glbPct=MDATA.length?MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length:0;
+  document.getElementById('bn-avance').textContent=glbPct.toFixed(0)+'%';
+  document.getElementById('bn-avance').style.color=glbPct>=50?'var(--green)':'var(--amber)';
+
+  // Calcular avance esperado según tiempo transcurrido
+  const diasTot=PROJ.fecha_fin_estimada&&PROJ.fecha_inicio?Math.round((new Date(PROJ.fecha_fin_estimada)-new Date(PROJ.fecha_inicio))/86400000):365;
+  const diasTrans=PROJ.fecha_inicio?Math.round((new Date()-new Date(PROJ.fecha_inicio))/86400000):0;
+  const pctTiempoEsp=Math.min(diasTrans/Math.max(diasTot,1),1)*100;
+  const diff=glbPct-pctTiempoEsp;
+  const vsEl=document.getElementById('bn-vs-plan');
+  if(pctTiempoEsp>0){
+    vsEl.textContent=(diff>=0?'+':'')+diff.toFixed(0)+'% vs plan';
+    vsEl.style.color=diff>=0?'var(--green)':'var(--red)';
+  } else vsEl.textContent='';
+
+  if(presupuesto){
+    // Gasto estimado por avance de cada etapa
     const em2={};MDATA.forEach(m=>{if(!em2[m.etapa_id])em2[m.etapa_id]={p:0,n:0};em2[m.etapa_id].p+=parseFloat(m.pct_avance||0);em2[m.etapa_id].n++;});
-    let ejec=0;
-    Object.entries(em2).forEach(([e,v])=>{ejec+=(v.n>0?v.p/v.n/100:0)*(PCTS[e]||0)*presupuesto;});
-    const esp=pctTiempo*presupuesto;
-    const ratio=esp>0?ejec/esp:1;
-    const fmt=v=>v>=1e9?(v/1e9).toFixed(1)+'B':v>=1e6?Math.round(v/1e6)+'M':Math.round(v/1e3)+'K';
-    if(ratio>=0.9){semVal.textContent='🟢';semTxt.textContent='En presupuesto · '+fmt(ejec);semEl.style.setProperty('--amber','#27ae60');}
-    else if(ratio>=0.7){semVal.textContent='🟡';semTxt.textContent='Atención · Retraso vs tiempo';}
-    else{semVal.textContent='🔴';semTxt.textContent='Fuera de plan · Revisar avance';}
+    let ejec=0;Object.entries(em2).forEach(([e,v])=>{ejec+=(v.n>0?v.p/v.n/100:0)*(PCTS[e]||0)*presupuesto;});
+    const proyeccion=presupuesto*(glbPct>0?1+(1-glbPct/100)*0.05:1); // simple projection
+    const sobrecosto=proyeccion-presupuesto;
+    document.getElementById('bn-gastado').textContent=fmt(ejec);
+    document.getElementById('bn-proyeccion').textContent=fmt(proyeccion);
+    const scEl=document.getElementById('bn-sobrecosto');
+    scEl.textContent=(sobrecosto>0?'+':'')+fmt(sobrecosto)+' sobrecosto';
+    scEl.style.color=sobrecosto>0?'var(--red)':'var(--green)';
+    // Entrega estimada
+    if(PROJ.fecha_fin_estimada){
+      const finEst=new Date(PROJ.fecha_fin_estimada);
+      const diasRetraso=glbPct<pctTiempoEsp?Math.round((pctTiempoEsp-glbPct)/100*diasTot):0;
+      const finReal=new Date(finEst.getTime()+diasRetraso*86400000);
+      document.getElementById('bn-entrega').textContent=finReal.toLocaleDateString('es-CO',{month:'short',day:'numeric'});
+      const retEl=document.getElementById('bn-retraso');
+      if(diasRetraso>0){retEl.textContent='+'+diasRetraso+' días retraso';retEl.style.color='var(--red)';}
+      else{retEl.textContent='En tiempo';retEl.style.color='var(--green)';}
+    }
+    // Banner color + icon
+    const ratio=pctTiempoEsp>0?glbPct/pctTiempoEsp:1;
+    const banner=document.getElementById('fin-banner');
+    if(ratio>=0.95){
+      document.getElementById('sem-ico').textContent='✅';
+      document.getElementById('sem-title').textContent='LA OBRA VA BIEN — DENTRO DE PLAN';
+      banner.style.borderColor='rgba(39,174,96,.3)';banner.style.background='rgba(39,174,96,.04)';
+    } else if(ratio>=0.8){
+      document.getElementById('sem-ico').textContent='⚠️';
+      document.getElementById('sem-title').textContent='ATENCIÓN — RETRASO MODERADO';
+      banner.style.borderColor='rgba(232,160,32,.3)';banner.style.background='rgba(232,160,32,.04)';
+    } else {
+      document.getElementById('sem-ico').textContent='🔴';
+      document.getElementById('sem-title').textContent='ALERTA — OBRA CON RETRASO SIGNIFICATIVO';
+      banner.style.borderColor='rgba(192,57,43,.3)';banner.style.background='rgba(192,57,43,.04)';
+    }
+    document.getElementById('sem-sub').textContent=`${glbPct.toFixed(0)}% ejecutado · esperado ${pctTiempoEsp.toFixed(0)}% · semana ${Math.ceil(diasTrans/7)}`;
+  } else {
+    document.getElementById('sem-ico').textContent='📋';
+    document.getElementById('sem-title').textContent='Sin presupuesto registrado';
+    document.getElementById('sem-sub').textContent='Ingresa el presupuesto en el onboarding para activar el semáforo financiero';
   }
+
+  // Alerta narrativa — detectar etapas con mayor retraso
+  const alertaEl=document.getElementById('alerta-narrativa');
+  const etapasRetrasadas=[];
+  const em3={};MDATA.forEach(m=>{if(!em3[m.etapa_id])em3[m.etapa_id]={p:0,n:0,venc:0};em3[m.etapa_id].p+=parseFloat(m.pct_avance||0);em3[m.etapa_id].n++;if(m.fecha_fin_plan&&new Date(m.fecha_fin_plan)<new Date()&&m.estado!=='completada')em3[m.etapa_id].venc++;});
+  Object.entries(em3).forEach(([e,v])=>{if(v.venc>0)etapasRetrasadas.push({e,venc:v.venc,pct:Math.round(v.p/v.n)});});
+  if(etapasRetrasadas.length){
+    const top=etapasRetrasadas.sort((a,b)=>b.venc-a.venc)[0];
+    alertaEl.style.display='block';
+    alertaEl.innerHTML=`⚠️ <strong style="color:var(--amber)">${EN[top.e]||top.e}</strong> tiene ${top.venc} misión(es) vencida(s) al ${top.pct}% de avance.${PROJ.fecha_fin_estimada?' Entrega proyectada en riesgo.':''}`;
+  } else alertaEl.style.display='none';
 
   // Etapas
   const em={};MDATA.forEach(m=>{if(!em[m.etapa_id])em[m.etapa_id]={meta:0,exec:0};em[m.etapa_id].meta+=parseFloat(m.cantidad_meta||0);em[m.etapa_id].exec+=parseFloat(m.cantidad_ejecutada||0);});
   document.getElementById('etapas-l').innerHTML=EO.filter(e=>em[e]).map(e=>{
     const p=em[e].meta>0?Math.min(Math.round(em[e].exec/em[e].meta*100),100):0;
+    const esp=Math.round(pctTiempoEsp*(PCTS[e]||0)*5); // rough expected per etapa
     const col=p===100?'var(--green)':p>0?'var(--amber)':'var(--bg4)';
-    return`<div class="er"><div class="en">${EN[e]||e}</div><div class="bt"><div class="bf" style="width:${p}%;background:${col}"></div></div><div class="ep" style="color:${col}">${p}%</div><div class="bdg ${p===100?'bdg-c':p>0?'bdg-e':'bdg-p'}">${p===100?'✓':p>0?'↗':'—'}</div></div>`;
+    // Check if any missions in this etapa are overdue
+    const vencEnEtapa=MDATA.filter(m=>m.etapa_id===e&&m.fecha_fin_plan&&new Date(m.fecha_fin_plan)<new Date()&&m.estado!=='completada').length;
+    const subLabel=vencEnEtapa>0?`<span style="color:var(--red);font-size:9px"> · ${vencEnEtapa} vencida(s)</span>`:p>0&&p<esp?`<span style="color:var(--text3);font-size:9px"> · esperado ~${Math.min(esp,100)}%</span>`:'';
+    return`<div class="er"><div class="en">${EN[e]||e}${subLabel}</div><div class="bt"><div class="bf" style="width:${p}%;background:${col}"></div></div><div class="ep" style="color:${col}">${p}%</div><div class="bdg ${p===100?'bdg-c':p>0?'bdg-e':'bdg-p'}">${p===100?'✓':p>0?'↗':'—'}</div></div>`;
   }).join('')||'<div class="empty">Sin datos aún</div>';
 
   // Feed
@@ -667,12 +742,16 @@ async function renderEquipo(){
 // ── MODELO 3D ──
 function renderModelo(){
   const wrap=document.getElementById('modelo-wrap');
-  if(wrap.querySelector('iframe')) return;
+  // Clear previous iframe (could be from different project)
+  wrap.innerHTML='';
   const p=PROJ;
+  if(!p.id){wrap.innerHTML='<div class="empty">Sin datos del proyecto</div>';return;}
   const fr=parseFloat(p.frente)||12,fo=parseFloat(p.fondo)||24,pi=parseInt(p.numero_pisos)||8,so=parseInt(p.sotanos)||0,al=parseFloat(p.altura_piso)||2.8;
   const iframe=document.createElement('iframe');
-  iframe.src=`/modelo3d.html#proyecto=${PID}&frente=${fr}&fondo=${fo}&pisos=${pi}&sotanos=${so}&altura=${al}`;
+  // Pass proyecto ID explicitly so modelo3d.html only renders THIS project
+  iframe.src=`/modelo3d.html#proyecto=${encodeURIComponent(PID)}&frente=${fr}&fondo=${fo}&pisos=${pi}&sotanos=${so}&altura=${al}&solo=1`;
   iframe.style.cssText='width:100%;height:calc(100vh - 130px);border:none;border-radius:8px';
+  iframe.setAttribute('sandbox','allow-scripts allow-same-origin');
   wrap.appendChild(iframe);
 }
 
