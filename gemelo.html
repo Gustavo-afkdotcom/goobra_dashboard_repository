@@ -317,7 +317,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   <!-- PROYECCIÓN -->
   <div id="mat-panel-proyeccion">
     <div class="sg" style="grid-template-columns:repeat(4,1fr)">
-      <div class="sc r"><div class="sl">Pedir urgente</div><div class="sv" id="mat-urg">—</div><div class="ss">misiones vencen pronto</div></div>
+      <div class="sc r"><div class="sl">Pedir urgente</div><div class="sv" id="mat-urg">—</div><div class="ss">sin stock suficiente</div></div>
       <div class="sc"><div class="sl">Este mes</div><div class="sv" id="mat-mes">—</div><div class="ss">misiones activas</div></div>
       <div class="sc g"><div class="sl">M² pendientes</div><div class="sv" id="mat-m2">—</div></div>
       <div class="sc b"><div class="sl">Items proyectados</div><div class="sv" id="mat-tot">—</div></div>
@@ -1108,16 +1108,15 @@ async function renderMateriales(){
 
       const stockAlertStyle=hasStockAlert?'border-left:2px solid var(--red)':'';
       rows.push(`
-        <tr style="cursor:pointer;${stockAlertStyle}" onclick="toggleMatRow('${rowId}')">
-          <td style="padding:7px 8px;font-weight:500">${misionNom} <span style="font-size:9px;color:var(--text3)">▶ ${insumos.length} insumos</span>${hasStockAlert?' <span style="color:var(--red);font-size:9px">⚠ stock insuficiente</span>':''}</td>
-          <td style="padding:7px 8px;color:var(--text3)">${etapaNom}</td>
-          <td style="padding:7px 8px;color:var(--text2)">${pend} ${m.unidad_primaria||''}</td>
-          <td style="padding:7px 8px" colspan="2"></td>
-          <td style="padding:7px 8px;color:var(--text2)">${finStr}</td>
-          <td style="padding:7px 8px">${alertaBadge}</td>
+        <tr style="cursor:pointer;border-bottom:1px solid var(--border);${stockAlertStyle}" onclick="toggleMatRow('${rowId}')">
+          <td style="padding:8px 8px;font-weight:500">${misionNom}<br><span style="font-size:9px;color:var(--amber)">▶ clic para ver ${insumos.length} insumos</span>${hasStockAlert?' <span style="color:var(--red);font-size:9px;font-weight:700"> ⚠ stock bajo</span>':''}</td>
+          <td style="padding:8px 8px;color:var(--text3);font-size:11px">${etapaNom}</td>
+          <td style="padding:8px 8px;color:var(--text2);text-align:right;font-size:11px">${pend} ${m.unidad_primaria||''}</td>
+          <td style="padding:8px 8px;color:var(--text2);font-size:11px">${finStr}</td>
+          <td style="padding:8px 8px">${alertaBadge}</td>
         </tr>
         <tr id="${rowId}" style="display:none">
-          <td colspan="7" style="padding:0">
+          <td colspan="5" style="padding:0">
             <table style="width:100%;border-collapse:collapse;font-size:11px">
               <thead><tr style="background:var(--bg4)">
                 <th style="text-align:left;padding:4px 8px 4px 24px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Material</th>
@@ -1149,16 +1148,28 @@ async function renderMateriales(){
       ⚠️ <strong style="color:var(--amber)">${sinStockCnt} insumos con stock insuficiente</strong> para completar las misiones activas. Revisa las filas marcadas en rojo.
     </div>`:'';
 
-  document.getElementById('mat-tabla').innerHTML=
-    (alertHtml||'')+
-    (rows.length
-      ?`<table class="mat-t" style="font-size:11px">
-          <thead><tr>
-            <th>Misión</th><th>Etapa</th><th>Pendiente</th><th colspan="2"></th><th>Fecha fin</th><th>Alerta</th>
-          </tr></thead>
-          <tbody>${rows.join('')}</tbody>
-        </table>`
-      :'<div class="empty">Sin misiones activas con materiales proyectados</div>');
+  // Alert banner goes ABOVE the card, not inside mat-tabla
+  let alertEl=document.getElementById('mat-alerta-banner');
+  if(!alertEl){
+    alertEl=document.createElement('div');
+    alertEl.id='mat-alerta-banner';
+    const card=document.getElementById('mat-tabla').closest('.card');
+    card.parentNode.insertBefore(alertEl,card);
+  }
+  alertEl.innerHTML=alertHtml||'';
+
+  document.getElementById('mat-tabla').innerHTML=rows.length
+    ?`<table class="mat-t" style="font-size:11px;width:100%;border-collapse:collapse">
+        <thead><tr style="border-bottom:2px solid var(--border)">
+          <th style="text-align:left;padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Misión · Nivel</th>
+          <th style="text-align:left;padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Etapa</th>
+          <th style="text-align:right;padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Pendiente</th>
+          <th style="text-align:left;padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Fecha fin</th>
+          <th style="text-align:left;padding:7px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Estado</th>
+        </tr></thead>
+        <tbody>${rows.join('')}</tbody>
+      </table>`
+    :'<div class="empty">Sin misiones activas con materiales proyectados</div>';
 }
 
 function toggleMatRow(id){
@@ -1856,6 +1867,7 @@ function setMatTab(tab){
   if(tab==='bodega') loadBodega();
   if(tab==='catalogo') loadCatalogo();
   if(tab==='proyeccion') renderMateriales();
+  // also triggered from sw()
 }
 
 async function loadCatalogo(){
