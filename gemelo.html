@@ -323,7 +323,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
       <div class="sc b"><div class="sl">Items proyectados</div><div class="sv" id="mat-tot">—</div></div>
     </div>
     <div class="card">
-      <div class="ch">Insumos necesarios para misiones activas y próximas</div>
+      <div class="ch">Insumos necesarios para misiones activas y próximas
+        <span id="mat-calibracion-badge" style="font-size:9px;font-weight:400;color:var(--text3);text-transform:none;letter-spacing:0"></span>
+      </div>
       <div class="cb" id="mat-tabla"><div class="empty"><div class="spin"></div></div></div>
     </div>
   </div>
@@ -1050,11 +1052,54 @@ async function renderMateriales(){
     RENDIMIENTOS_DB=rends||[];
   }
 
+  // Calculate project-specific multipliers from PROJ dimensions
+  const colA=parseFloat(PROJ.col_ancho_cm)||30;
+  const colH=parseFloat(PROJ.col_alto_cm)||30;
+  const altPiso=parseFloat(PROJ.altura_piso)||2.8;
+  const vigA=parseFloat(PROJ.viga_ancho_cm)||30;
+  const vigH=parseFloat(PROJ.viga_alto_cm)||50;
+  const placaE=parseFloat(PROJ.placa_espesor_cm)||12;
+  const usaPremez=PROJ.tipo_concreto!=='manual';
+
+  // Volume overrides vs CAMACOL defaults
+  // col: real m³ = (ancho*alto*altura)/1000000 + 7% loss — CAMACOL assumes 30x30
+  const factorCol=((colA/100)*(colH/100)*altPiso*1.07)/((0.30*0.30)*altPiso*1.07);
+  // viga: real m³/ml = (ancho*alto)/10000 + 20% loss — CAMACOL assumes 30x50
+  const factorViga=((vigA/100)*(vigH/100)*1.20)/((0.30*0.50)*1.20);
+  // placa: real m³/m² = espesor/100 — CAMACOL assumes 12cm
+  const factorPlaca=(placaE/100)/0.12;
+
+  // Material code for concreto según resistencia
+  const concretoCode=PROJ.resistencia_concreto==='35mpa'?'CON-03':PROJ.resistencia_concreto==='21mpa'?'CON-01':'CON-02';
+
+  // Function to get calibrated quantity for a rendimiento row
+  function getCantidadCalibrada(r, pend){
+    let base=r.cantidad_por_unidad;
+    // Apply dimensional factor per mision type
+    if(r.mision_id==='columnas_vaciado'&&(r.material_codigo==='CON-02'||r.material_codigo===concretoCode||r.material_codigo==='CEM-01'||r.material_codigo==='AGR-01'||r.material_codigo==='AGR-02')){
+      base=base*factorCol;
+    } else if(r.mision_id==='vigas'&&(r.material_codigo==='CON-02'||r.material_codigo===concretoCode||r.material_codigo==='CEM-01'||r.material_codigo==='AGR-01'||r.material_codigo==='AGR-02')){
+      base=base*factorViga;
+    } else if(r.mision_id==='placa_entrepiso'&&(r.material_codigo==='CON-02'||r.material_codigo===concretoCode||r.material_codigo==='ACE-04'||r.material_codigo==='ACE-02')){
+      base=base*factorPlaca;
+    }
+    return Math.round(base*pend*1.05*10)/10;
+  }
+
   // Load bodega stock
   const {data:bodega}=await db.from('materiales_bodega').select('*').eq('proyecto_id',PID);
   BODEGA_MAP={};
   (bodega||[]).forEach(b=>BODEGA_MAP[b.material_codigo]=b.stock_actual||0);
   const hayBodega=(bodega||[]).length>0;
+
+  // Show calibration info
+  const badgeEl=document.getElementById('mat-calibracion-badge');
+  if(badgeEl){
+    const colA2=parseFloat(PROJ.col_ancho_cm)||30;
+    const colH2=parseFloat(PROJ.col_alto_cm)||30;
+    const conc=PROJ.tipo_concreto||'premezclado';
+    badgeEl.textContent=`Calibrado: col ${colA2}×${colH2}cm · ${conc} · placa ${parseFloat(PROJ.placa_espesor_cm)||12}cm`;
+  }
 
   let urgCnt=0,mesCnt=0,m2tot=0,sinStockCnt=0;
   const rows=[];
@@ -1073,7 +1118,17 @@ async function renderMateriales(){
     if(m.unidad_primaria==='m2') m2tot+=pend;
 
     // Get all insumos for this mision from DB
-    const insumos=RENDIMIENTOS_DB.filter(r=>r.mision_id===m.mision_id&&!r.es_opcional);
+    // Filter based on concreto type: skip premezclado rows if manual and vice versa
+    const insumos=RENDIMIENTOS_DB.filter(r=>{
+      if(r.mision_id!==m.mision_id) return false;
+      if(r.es_opcional) return false;
+      // If using premezclado, skip manual alternatives (CEM-01+AGR for structural)
+      if(usaPremez&&r.alternativa_grupo&&(r.material_codigo==='CEM-01'||r.material_codigo==='AGR-01'||r.material_codigo==='AGR-02')&&
+        (r.mision_id==='columnas_vaciado'||r.mision_id==='vigas'||r.mision_id==='placa_entrepiso'||r.mision_id==='vaciado_zapatas')) return false;
+      // If using manual, skip premezclado
+      if(!usaPremez&&(r.material_codigo==='CON-01'||r.material_codigo==='CON-02'||r.material_codigo==='CON-03')) return false;
+      return true;
+    });
     
     if(insumos.length){
       // Expandable row per mision with all insumos
@@ -1086,7 +1141,7 @@ async function renderMateriales(){
       // Check stock for each insumo
       let hasStockAlert=false;
       const insumoRows=insumos.map(r=>{
-        const cantNecesaria=Math.round(r.cantidad_por_unidad*pend*1.05*10)/10;
+        const cantNecesaria=getCantidadCalibrada(r, pend);
         const matNom=r.materiales_catalogo?.nombre||r.material_codigo;
         const matUnidad=r.materiales_catalogo?.unidad||r.unidad_mision;
         const precioRef=r.materiales_catalogo?.precio_referencia||0;
