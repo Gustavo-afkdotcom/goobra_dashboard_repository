@@ -1089,7 +1089,12 @@ async function renderMateriales(){
   // Load bodega stock
   const {data:bodega}=await db.from('materiales_bodega').select('*').eq('proyecto_id',PID);
   BODEGA_MAP={};
-  (bodega||[]).forEach(b=>BODEGA_MAP[b.material_codigo]=b.stock_actual||0);
+  // Map by codigo (ACE-02 etc) for easy lookup in renderMateriales
+  (bodega||[]).forEach(b=>{
+    const cod=b.materiales_catalogo?.codigo||b.material_codigo;
+    BODEGA_MAP[cod]=b.stock_actual||0;
+    BODEGA_MAP[b.material_codigo]=b.stock_actual||0; // also by id
+  });
   const hayBodega=(bodega||[]).length>0;
 
   // Show calibration info
@@ -1104,11 +1109,50 @@ async function renderMateriales(){
   let urgCnt=0,mesCnt=0,m2tot=0,sinStockCnt=0;
   const rows=[];
 
-  const misionesActivas=MDATA.filter(m=>m.estado!=='completada');
+  // ── RESTRICCIÓN ESTRUCTURAL ──
+  // Para pórticos: piso N solo disponible si piso N-1 tiene col+vigas+placa completadas
+  const esPorticos=(PROJ.sistema_constructivo||'porticos')==='porticos';
+  
+  // Build set of completed structural elements per piso
+  const estructCompletada={};
+  MDATA.filter(m=>m.etapa_id==='estr'&&m.estado==='completada').forEach(m=>{
+    if(!m.nivel) return;
+    if(!estructCompletada[m.nivel]) estructCompletada[m.nivel]={col:false,vigas:false,placa:false};
+    if(m.mision_id==='columnas_vaciado') estructCompletada[m.nivel].col=true;
+    if(m.mision_id==='vigas') estructCompletada[m.nivel].vigas=true;
+    if(m.mision_id==='placa_entrepiso') estructCompletada[m.nivel].placa=true;
+  });
+
+  function pisoNum(nivel){
+    if(!nivel) return 0;
+    const m=nivel.match(/(\d+)/);
+    return m?parseInt(m[1]):0;
+  }
+
+  function pisoAnteriorListo(nivel){
+    if(!esPorticos) return true; // IPE/mixto no tiene restricción
+    const n=pisoNum(nivel);
+    if(n<=1) return true; // piso 1 siempre disponible
+    const prev='piso '+(n-1);
+    const p=estructCompletada[prev];
+    return p&&p.col&&p.vigas&&p.placa;
+  }
+
+  // Filter and sort missions: completadas fuera, bloqueadas marcadas, ordenar por fecha
+  const misionesActivas=MDATA
+    .filter(m=>m.estado!=='completada')
+    .sort((a,b)=>{
+      const fa=a.fecha_fin_plan?new Date(a.fecha_fin_plan):new Date('2099-01-01');
+      const fb=b.fecha_fin_plan?new Date(b.fecha_fin_plan):new Date('2099-01-01');
+      return fa-fb;
+    });
 
   misionesActivas.forEach(m=>{
     const pend=Math.max(0,parseFloat(m.cantidad_meta||0)-parseFloat(m.cantidad_ejecutada||0));
     if(pend<=0) return;
+    
+    // Check structural restriction
+    const bloqueado=m.etapa_id==='estr'&&m.nivel&&!pisoAnteriorListo(m.nivel);
     const fin=m.fecha_fin_plan?new Date(m.fecha_fin_plan):null;
     const dr=fin?Math.round((fin-hoy)/86400000):999;
     const esUrg=dr<=7&&m.estado==='en_curso';
@@ -1161,14 +1205,15 @@ async function renderMateriales(){
         </tr>`;
       }).join('');
 
-      const stockAlertStyle=hasStockAlert?'border-left:2px solid var(--red)':'';
+      const stockAlertStyle=hasStockAlert&&!bloqueado?'border-left:2px solid var(--red)':bloqueado?'border-left:2px solid var(--bg4);opacity:.55':'';
+      const bloqBadge=bloqueado?`<span style="font-size:9px;color:var(--text3);background:var(--bg4);padding:2px 6px;border-radius:3px">🔒 Esperar piso ${pisoNum(m.nivel)-1}</span>`:'';
       rows.push(`
-        <tr style="cursor:pointer;border-bottom:1px solid var(--border);${stockAlertStyle}" onclick="toggleMatRow('${rowId}')">
-          <td style="padding:8px 8px;font-weight:500">${misionNom}<br><span style="font-size:9px;color:var(--amber)">▶ clic para ver ${insumos.length} insumos</span>${hasStockAlert?' <span style="color:var(--red);font-size:9px;font-weight:700"> ⚠ stock bajo</span>':''}</td>
+        <tr style="cursor:${bloqueado?'default':'pointer'};border-bottom:1px solid var(--border);${stockAlertStyle}" ${!bloqueado?`onclick="toggleMatRow('${rowId}')"`:''}> 
+          <td style="padding:8px 8px;font-weight:500">${misionNom}${bloqueado?'':` <span style="font-size:9px;color:var(--amber)">▶ ${insumos.length} insumos</span>`}${hasStockAlert&&!bloqueado?' <span style="color:var(--red);font-size:9px;font-weight:700"> ⚠ stock bajo</span>':''}</td>
           <td style="padding:8px 8px;color:var(--text3);font-size:11px">${etapaNom}</td>
           <td style="padding:8px 8px;color:var(--text2);text-align:right;font-size:11px">${pend} ${m.unidad_primaria||''}</td>
           <td style="padding:8px 8px;color:var(--text2);font-size:11px">${finStr}</td>
-          <td style="padding:8px 8px">${alertaBadge}</td>
+          <td style="padding:8px 8px">${bloqBadge||alertaBadge}</td>
         </tr>
         <tr id="${rowId}" style="display:none">
           <td colspan="5" style="padding:0">
@@ -1965,8 +2010,8 @@ function renderCatalogo(){
 }
 
 async function loadBodega(){
-  const {data:bodega}=await db.from('materiales_bodega').select('*,materiales_catalogo(nombre,unidad,tipo)').eq('proyecto_id',PID).order('stock_actual');
-  const {data:movs}=await db.from('movimientos_bodega').select('*,materiales_catalogo(nombre)').eq('proyecto_id',PID).order('timestamp_mov',{ascending:false}).limit(20);
+  const {data:bodega}=await db.from('materiales_bodega').select('*,materiales_catalogo(id,codigo,nombre,unidad,tipo,precio_referencia)').eq('proyecto_id',PID).order('stock_actual');
+  const {data:movs}=await db.from('movimientos_bodega').select('*,materiales_catalogo(id,nombre)').eq('proyecto_id',PID).order('timestamp_mov',{ascending:false}).limit(20);
 
   // Bodega lista
   if(!bodega?.length){
@@ -2069,10 +2114,13 @@ async function confirmarEntradaBodega(){
   const esPropio=document.getElementById('bod-propio').value==='true';
   if(!codigo||!cantidad){alert('Material y cantidad son obligatorios.');return;}
 
+  // Find the UUID id for this material codigo
+  const matItem=CATALOGO.find(m=>m.codigo===codigo);
+  const matId=matItem?.id||codigo;
   // Upsert bodega
   await db.from('materiales_bodega').upsert({
     proyecto_id:PID,
-    material_codigo:codigo,
+    material_codigo:matId,
     stock_actual:cantidad,
     stock_minimo:Math.round(cantidad*0.1),
     es_propio:esPropio,
@@ -2084,7 +2132,7 @@ async function confirmarEntradaBodega(){
   // Movimiento
   await db.from('movimientos_bodega').insert({
     proyecto_id:PID,
-    material_codigo:codigo,
+    material_codigo:matId,
     tipo:'entrada',
     cantidad,
     precio_unitario:precio,
