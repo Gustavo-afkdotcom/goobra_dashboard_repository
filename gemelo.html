@@ -1038,16 +1038,32 @@ function renderGantt(){
 }
 
 // ── MATERIALES (proyección CAMACOL) ──
-function renderMateriales(){
-  const hoy=new Date();
+let RENDIMIENTOS_DB=[], BODEGA_MAP={};
+
+async function renderMateriales(){
+  const hoy=new Date();hoy.setHours(0,0,0,0);
   const fin30=new Date(hoy);fin30.setDate(fin30.getDate()+30);
-  let urgCnt=0,mesCnt=0,m2tot=0;
+
+  // Load rendimientos from DB if not loaded
+  if(!RENDIMIENTOS_DB.length){
+    const {data:rends}=await db.from('rendimientos_actividad').select('*,materiales_catalogo(nombre,unidad,precio_referencia)');
+    RENDIMIENTOS_DB=rends||[];
+  }
+
+  // Load bodega stock
+  const {data:bodega}=await db.from('materiales_bodega').select('*').eq('proyecto_id',PID);
+  BODEGA_MAP={};
+  (bodega||[]).forEach(b=>BODEGA_MAP[b.material_codigo]=b.stock_actual||0);
+  const hayBodega=(bodega||[]).length>0;
+
+  let urgCnt=0,mesCnt=0,m2tot=0,sinStockCnt=0;
   const rows=[];
-  MDATA.filter(m=>m.estado!=='completada').forEach(m=>{
-    const r=REND[m.mision_id];
+
+  const misionesActivas=MDATA.filter(m=>m.estado!=='completada');
+
+  misionesActivas.forEach(m=>{
     const pend=Math.max(0,parseFloat(m.cantidad_meta||0)-parseFloat(m.cantidad_ejecutada||0));
-    if(!r||pend<=0) return;
-    const cant=Math.round(r.r*pend*1.05*10)/10;
+    if(pend<=0) return;
     const fin=m.fecha_fin_plan?new Date(m.fecha_fin_plan):null;
     const dr=fin?Math.round((fin-hoy)/86400000):999;
     const esUrg=dr<=7&&m.estado==='en_curso';
@@ -1055,24 +1071,109 @@ function renderMateriales(){
     if(esUrg) urgCnt++;
     if(esMes) mesCnt++;
     if(m.unidad_primaria==='m2') m2tot+=pend;
-    const estado=esUrg?`<span class="mat-urg">⚡ URGENTE</span>`:esMes?`<span class="mat-warn">Este mes</span>`:'';
-    rows.push(`<tr>
-      <td style="font-weight:500">${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}</td>
-      <td style="color:var(--text3)">${EN[m.etapa_id]||m.etapa_id}</td>
-      <td style="color:var(--text2)">${pend} ${m.unidad_primaria||''}</td>
-      <td>${cant} ${r.u}</td>
-      <td>${r.mat}</td>
-      <td style="color:var(--text2)">${fin?fin.toLocaleDateString('es-CO',{day:'numeric',month:'short'}):'—'}</td>
-      <td>${estado}</td>
-    </tr>`);
+
+    // Get all insumos for this mision from DB
+    const insumos=RENDIMIENTOS_DB.filter(r=>r.mision_id===m.mision_id&&!r.es_opcional);
+    
+    if(insumos.length){
+      // Expandable row per mision with all insumos
+      const misionNom=`${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}`;
+      const etapaNom=EN[m.etapa_id]||m.etapa_id;
+      const finStr=fin?fin.toLocaleDateString('es-CO',{day:'numeric',month:'short'}):'—';
+      const alertaBadge=esUrg?`<span class="mat-urg">⚡ URGENTE</span>`:esMes?`<span class="mat-warn">Este mes</span>`:'';
+      const rowId='mat_'+m.id.replace(/[^a-z0-9]/gi,'_');
+
+      // Check stock for each insumo
+      let hasStockAlert=false;
+      const insumoRows=insumos.map(r=>{
+        const cantNecesaria=Math.round(r.cantidad_por_unidad*pend*1.05*10)/10;
+        const matNom=r.materiales_catalogo?.nombre||r.material_codigo;
+        const matUnidad=r.materiales_catalogo?.unidad||r.unidad_mision;
+        const precioRef=r.materiales_catalogo?.precio_referencia||0;
+        const costoEst=Math.round(cantNecesaria*precioRef);
+        const stockActual=BODEGA_MAP[r.material_codigo]||0;
+        const stockOk=!hayBodega||stockActual>=cantNecesaria;
+        if(!stockOk){hasStockAlert=true;sinStockCnt++;}
+        const stockBadge=hayBodega?(stockOk?
+          `<span style="color:var(--green);font-size:9px">✓ ${stockActual} en bodega</span>`:
+          `<span style="color:var(--red);font-size:9px;font-weight:700">⚠ Solo ${stockActual} — faltan ${Math.round(cantNecesaria-stockActual)}</span>`):'';
+        return `<tr style="background:var(--bg3)">
+          <td style="padding:5px 8px 5px 24px;font-size:10px;color:var(--text2)">${matNom}</td>
+          <td style="padding:5px 8px;font-size:10px;color:var(--text3)">${r.rendimiento_fuente}</td>
+          <td style="padding:5px 8px;font-size:10px">${cantNecesaria} ${matUnidad}</td>
+          <td style="padding:5px 8px;font-size:10px;color:var(--text2)">${costoEst>0?fmt(costoEst):''}</td>
+          <td style="padding:5px 8px" colspan="3">${stockBadge}</td>
+        </tr>`;
+      }).join('');
+
+      const stockAlertStyle=hasStockAlert?'border-left:2px solid var(--red)':'';
+      rows.push(`
+        <tr style="cursor:pointer;${stockAlertStyle}" onclick="toggleMatRow('${rowId}')">
+          <td style="padding:7px 8px;font-weight:500">${misionNom} <span style="font-size:9px;color:var(--text3)">▶ ${insumos.length} insumos</span>${hasStockAlert?' <span style="color:var(--red);font-size:9px">⚠ stock insuficiente</span>':''}</td>
+          <td style="padding:7px 8px;color:var(--text3)">${etapaNom}</td>
+          <td style="padding:7px 8px;color:var(--text2)">${pend} ${m.unidad_primaria||''}</td>
+          <td style="padding:7px 8px" colspan="2"></td>
+          <td style="padding:7px 8px;color:var(--text2)">${finStr}</td>
+          <td style="padding:7px 8px">${alertaBadge}</td>
+        </tr>
+        <tr id="${rowId}" style="display:none">
+          <td colspan="7" style="padding:0">
+            <table style="width:100%;border-collapse:collapse;font-size:11px">
+              <thead><tr style="background:var(--bg4)">
+                <th style="text-align:left;padding:4px 8px 4px 24px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Material</th>
+                <th style="text-align:left;padding:4px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Fuente</th>
+                <th style="text-align:left;padding:4px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Necesario</th>
+                <th style="text-align:left;padding:4px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Costo est.</th>
+                <th colspan="3" style="text-align:left;padding:4px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Stock bodega</th>
+              </tr>
+              ${insumoRows}
+            </table>
+          </td>
+        </tr>`);
+    }
   });
-  document.getElementById('mat-urg').textContent=urgCnt;
+
+  // Stats
+  document.getElementById('mat-urg').textContent=urgCnt+sinStockCnt;
   document.getElementById('mat-mes').textContent=mesCnt;
   document.getElementById('mat-m2').textContent=Math.round(m2tot)+'m²';
   document.getElementById('mat-tot').textContent=rows.length;
-  document.getElementById('mat-tabla').innerHTML=rows.length
-    ?`<table class="mat-t"><thead><tr><th>Misión</th><th>Etapa</th><th>Pendiente</th><th>Cantidad</th><th>Material</th><th>Fecha fin</th><th>Alerta</th></tr></thead><tbody>${rows.join('')}</tbody></table>`
-    :'<div class="empty">Sin misiones activas con materiales proyectados</div>';
+
+  // Alert if no bodega and active missions
+  const alertHtml=!hayBodega&&misionesActivas.length?
+    `<div style="background:var(--red-d);border:1px solid rgba(192,57,43,.3);border-radius:7px;padding:10px 14px;margin-bottom:.75rem;font-size:12px;color:var(--text2)">
+      ⚠️ <strong style="color:var(--red)">Sin stock registrado en bodega.</strong> Hay ${misionesActivas.length} misiones activas que necesitan materiales. Ve a 🏪 Bodega para registrar entradas.
+    </div>`:
+    sinStockCnt>0?
+    `<div style="background:var(--amber-d);border:1px solid var(--amber-b);border-radius:7px;padding:10px 14px;margin-bottom:.75rem;font-size:12px;color:var(--text2)">
+      ⚠️ <strong style="color:var(--amber)">${sinStockCnt} insumos con stock insuficiente</strong> para completar las misiones activas. Revisa las filas marcadas en rojo.
+    </div>`:'';
+
+  document.getElementById('mat-tabla').innerHTML=
+    (alertHtml||'')+
+    (rows.length
+      ?`<table class="mat-t" style="font-size:11px">
+          <thead><tr>
+            <th>Misión</th><th>Etapa</th><th>Pendiente</th><th colspan="2"></th><th>Fecha fin</th><th>Alerta</th>
+          </tr></thead>
+          <tbody>${rows.join('')}</tbody>
+        </table>`
+      :'<div class="empty">Sin misiones activas con materiales proyectados</div>');
+}
+
+function toggleMatRow(id){
+  const row=document.getElementById(id);
+  if(!row) return;
+  const visible=row.style.display!=='none';
+  row.style.display=visible?'none':'table-row';
+  // Update arrow in parent row
+  const prev=row.previousElementSibling;
+  if(prev){
+    const arrow=prev.querySelector('span');
+    if(arrow&&arrow.textContent.includes('insumos')){
+      arrow.textContent=arrow.textContent.replace(visible?'▼':'▶',visible?'▶':'▼');
+    }
+  }
 }
 
 // ── EQUIPO ──
