@@ -2055,18 +2055,28 @@ async function loadBodega(){
   if(!movs?.length){
     document.getElementById('bodega-movimientos').innerHTML='<div class="empty">Sin movimientos registrados</div>';
   } else {
-    document.getElementById('bodega-movimientos').innerHTML=movs.map(m=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
-        <div style="font-size:16px">${m.tipo==='entrada'?'📥':m.tipo==='salida'?'📤':'🔄'}</div>
-        <div style="flex:1">
-          <div style="font-size:11px;font-weight:500">${m.materiales_catalogo?.nombre||m.material_codigo}</div>
-          <div style="font-size:10px;color:var(--text3)">${m.motivo||m.tipo} · ${new Date(m.timestamp_mov).toLocaleDateString('es-CO',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-family:'Syne',sans-serif;font-weight:800;color:${m.tipo==='entrada'?'var(--green)':m.tipo==='salida'?'var(--red)':'var(--amber)'}">${m.tipo==='entrada'?'+':m.tipo==='salida'?'−':'±'}${m.cantidad} <span style="font-size:10px;font-family:'DM Sans',sans-serif;font-weight:400;color:var(--text3)">${m.materiales_catalogo?.unidad||''}</span></div>
-          ${m.total>0?`<div style="font-size:10px;color:var(--text3)">${fmt(m.total)}</div>`:''}
-        </div>
-      </div>`).join('');
+    document.getElementById('bodega-movimientos').innerHTML=movs.map(m=>{
+    const nom=m.materiales_catalogo?.nombre||m.material_codigo.slice(0,8)+'...';
+    const unidad=m.materiales_catalogo?.unidad||'';
+    const col=m.tipo==='entrada'?'var(--green)':m.tipo==='salida'?'var(--red)':'var(--amber)';
+    const signo=m.tipo==='entrada'?'+':m.tipo==='salida'?'−':'±';
+    const ico=m.tipo==='entrada'?'📥':m.tipo==='salida'?'📤':'🔄';
+    const fecha=new Date(m.timestamp_mov).toLocaleDateString('es-CO',{day:'numeric',month:'short'});
+    const hora=new Date(m.timestamp_mov).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+    const total=m.precio_unitario?fmt(m.cantidad*(m.precio_unitario||0)):'';
+    return`<div style="display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:16px;text-align:center">${ico}</div>
+      <div>
+        <div style="font-size:11px;font-weight:600;color:var(--text)">${nom}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px">${m.motivo||m.tipo} · ${fecha}, ${hora}</div>
+        ${m.proveedor?`<div style="font-size:10px;color:var(--text3)">${m.proveedor}</div>`:''}
+      </div>
+      <div style="text-align:right;min-width:80px">
+        <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:${col}">${signo}${m.cantidad} <span style="font-size:10px;font-weight:400;color:var(--text3)">${unidad}</span></div>
+        ${total?`<div style="font-size:10px;color:var(--text3)">${total}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
   }
 }
 
