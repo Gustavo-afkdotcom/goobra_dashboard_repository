@@ -901,9 +901,16 @@ const GEMELO_BASE='https://goobradashboardrepository-production.up.railway.app/g
 const PCTS={prel:.03,mvt:.05,cim:.12,estr:.35,mamp:.18,redes:.10,acab:.12,urb:.03,entr:.02};
 
 async function supa(path,opts={}){
+  const {headers:extraHeaders,...restOpts}=opts;
   const r=await fetch(SUPA_URL+'/rest/v1/'+path,{
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})},
-    ...opts
+    ...restOpts,
+    headers:{
+      'apikey':SUPA_KEY,
+      'Authorization':'Bearer '+SUPA_KEY,
+      'Content-Type':'application/json',
+      'Prefer':'return=representation',
+      ...(extraHeaders||{})
+    }
   });
   if(!r.ok){const e=await r.text();throw new Error(e);}
   return r.status===204?null:r.json();
