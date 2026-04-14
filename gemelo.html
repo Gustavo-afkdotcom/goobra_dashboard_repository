@@ -381,15 +381,22 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 <!-- EQUIPO -->
 <div class="tp" id="tp-equipo">
-  <div class="sg">
-    <div class="sc"><div class="sl">Workers</div><div class="sv" id="eq-tot">—</div></div>
+  <div class="sg" style="grid-template-columns:repeat(4,1fr)">
+    <div class="sc"><div class="sl">Total equipo</div><div class="sv" id="eq-tot">—</div></div>
     <div class="sc g"><div class="sl">Activos hoy</div><div class="sv" id="eq-hoy">—</div></div>
-    <div class="sc b"><div class="sl">Avances semana</div><div class="sv" id="eq-sem">—</div></div>
-    <div class="sc"><div class="sl">Top worker</div><div class="sv" id="eq-top" style="font-size:14px">—</div></div>
+    <div class="sc b"><div class="sl">Esta semana</div><div class="sv" id="eq-sem">—</div></div>
+    <div class="sc"><div class="sl">Días trabajados</div><div class="sv" id="eq-dias">—</div><div class="ss">últimas 2 semanas</div></div>
   </div>
-  <div class="card">
-    <div class="ch">Ranking del equipo</div>
-    <div class="cb" id="eq-lista"><div class="empty"><div class="spin"></div></div></div>
+  <div style="display:flex;gap:0;margin-bottom:.75rem;border-bottom:1px solid var(--border)">
+    <button id="eq-tab-lista" onclick="setEqTab('lista')" style="padding:8px 16px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:none;border:none;border-bottom:2px solid var(--amber);color:var(--amber);cursor:pointer;white-space:nowrap">👷 Equipo</button>
+    <button id="eq-tab-asistencia" onclick="setEqTab('asistencia')" style="padding:8px 16px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);cursor:pointer;white-space:nowrap">📅 Asistencia</button>
+    <button onclick="mostrarNuevoWorker()" style="padding:8px 16px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);cursor:pointer;white-space:nowrap;margin-left:auto">+ Agregar</button>
+  </div>
+  <div id="eq-panel-lista">
+    <div id="eq-lista"><div class="empty"><div class="spin"></div></div></div>
+  </div>
+  <div id="eq-panel-asistencia" style="display:none">
+    <div id="eq-asistencia"><div class="empty"><div class="spin"></div></div></div>
   </div>
 </div>
 
