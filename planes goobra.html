@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planes GO Obra</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #111;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 24px 16px;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-family: 'Barlow', sans-serif;
+}
+
+.card {
+  width: 360px;
+  height: 640px;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* ── TEXTURAS ── */
+.noise {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ══════════════════════
+   CARD 1 — INICIO / COVER
+══════════════════════ */
+.cover {
+  background: #0e0e0e;
+}
+
+.cover-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(29,158,117,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(29,158,117,0.08) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+.cover-glow {
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(29,158,117,0.18) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+}
+
+.cover-content {
+  position: relative;
+  z-index: 5;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 32px 36px;
+}
+
+.cover-tag {
+  font-family: 'Barlow', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: #FFB300;
+  text-transform: uppercase;
+  margin-bottom: auto;
+}
+
+.cover-brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 80px;
+  letter-spacing: 2px;
+  color: #fff;
+  line-height: 0.9;
+  margin-bottom: 12px;
+}
+
+.cover-brand span { color: #FFB300; }
+
+.cover-sub {
+  font-size: 13px;
+  font-weight: 300;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.6;
+  margin-bottom: 32px;
+  max-width: 240px;
+}
+
+.cover-divider {
+  width: 48px;
+  height: 2px;
+  background: #FFB300;
+  margin-bottom: 20px;
+}
+
+.cover-cta {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+}
+
+/* ══════════════════════
+   CARD 2 — PLAN INICIO
+══════════════════════ */
+.plan-inicio {
+  background: #f5f2eb;
+}
+
+.pi-stripe {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 8px;
+  background: #1a1a1a;
+}
+
+.pi-accent {
+  position: absolute;
+  top: 0; right: 0;
+  width: 130px;
+  height: 130px;
+  background: #FFB300;
+  clip-path: polygon(100% 0, 100% 100%, 0 0);
+}
+
+.pi-content {
+  position: relative;
+  z-index: 5;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 28px 32px;
+}
+
+.plan-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #FFB300;
+  margin-bottom: 6px;
+}
+
+.plan-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 58px;
+  letter-spacing: 1px;
+  color: #1a1a1a;
+  line-height: 0.95;
+  margin-bottom: 4px;
+}
+
+.plan-sub {
+  font-size: 12px;
+  font-weight: 300;
+  color: #666;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.price-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 52px;
+  color: #1a1a1a;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.price-unit {
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
+  letter-spacing: 0.05em;
+}
+
+.price-note {
+  font-size: 10px;
+  color: #aaa;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.divider-line {
+  height: 1px;
+  background: #d8d4cb;
+  margin-bottom: 18px;
+}
+
+.features-list {
+  list-style: none;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feat {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.feat-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.feat-icon.on { background: #FFB300; }
+.feat-icon.off { background: #d8d4cb; }
+
+.feat-icon svg { width: 10px; height: 10px; }
+
+.feat-text {
+  font-size: 13px;
+  font-weight: 400;
+  color: #333;
+  line-height: 1.35;
+}
+
+.feat-text .sub {
+  font-size: 11px;
+  color: #999;
+  font-weight: 300;
+  display: block;
+}
+
+.feat-text.muted { color: #aaa; }
+.feat-text.muted .sub { color: #ccc; }
+
+.plan-footer {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #d8d4cb;
+}
+
+.plan-footer-text {
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ══════════════════════
+   CARD 3 — PLAN CONTROL
+══════════════════════ */
+.plan-control {
+  background: #1a1a1a;
+}
+
+.pc-bar {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 6px;
+  background: #FFB300;
+}
+
+.pc-dots {
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: 1px solid rgba(29,158,117,0.12);
+}
+.pc-dots2 {
+  position: absolute;
+  top: -20px; right: -20px;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 1px solid rgba(29,158,117,0.18);
+}
+
+.pc-content {
+  position: relative;
+  z-index: 5;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 28px 32px 34px;
+}
+
+.plan-name-dark {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 58px;
+  letter-spacing: 1px;
+  color: #fff;
+  line-height: 0.95;
+  margin-bottom: 4px;
+}
+
+.plan-sub-dark {
+  font-size: 12px;
+  font-weight: 300;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.price-num-dark {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 52px;
+  color: #fff;
+  line-height: 1;
+}
+
+.price-unit-dark { color: rgba(255,255,255,0.4); font-size: 12px; font-weight: 500; }
+.price-note-dark { font-size: 10px; color: rgba(255,255,255,0.3); margin-bottom: 20px; font-style: italic; }
+
+.divider-dark { height: 1px; background: rgba(255,255,255,0.08); margin-bottom: 18px; }
+
+.feat-text-dark { font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.35; }
+.feat-text-dark .sub { font-size: 11px; color: rgba(255,255,255,0.35); font-weight: 300; display: block; }
+.feat-text-dark.muted { color: rgba(255,255,255,0.25); }
+.feat-text-dark.muted .sub { color: rgba(255,255,255,0.15); }
+
+.plan-footer-dark {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.plan-footer-dark-text {
+  font-size: 11px;
+  color: rgba(255,255,255,0.3);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ══════════════════════
+   CARD 4 — PLAN TOTAL (featured)
+══════════════════════ */
+.plan-total {
+  background: #FFB300;
+}
+
+.pt-bg-text {
+  position: absolute;
+  bottom: -20px;
+  left: -10px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 180px;
+  color: rgba(0,0,0,0.06);
+  letter-spacing: -4px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+}
+
+.pt-content {
+  position: relative;
+  z-index: 5;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 32px 28px 32px;
+}
+
+.plan-label-light {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(0,0,0,0.45);
+  margin-bottom: 6px;
+}
+
+.plan-name-green {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 58px;
+  letter-spacing: 1px;
+  color: #1a1a1a;
+  line-height: 0.95;
+  margin-bottom: 4px;
+}
+
+.plan-sub-green {
+  font-size: 12px;
+  font-weight: 300;
+  color: rgba(0,0,0,0.5);
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.price-num-green { font-family: 'Bebas Neue', sans-serif; font-size: 52px; color: #1a1a1a; line-height: 1; }
+.price-unit-green { color: rgba(0,0,0,0.45); font-size: 12px; font-weight: 500; }
+.price-note-green { font-size: 10px; color: rgba(0,0,0,0.4); margin-bottom: 20px; font-style: italic; }
+
+.divider-green { height: 1px; background: rgba(0,0,0,0.12); margin-bottom: 18px; }
+
+.feat-text-green { font-size: 13px; color: rgba(0,0,0,0.85); line-height: 1.35; }
+.feat-text-green .sub { font-size: 11px; color: rgba(0,0,0,0.45); font-weight: 300; display: block; }
+
+.feat-icon.on-green { background: rgba(0,0,0,0.15); }
+.feat-icon.star { background: #1a1a1a; }
+
+.plan-footer-green {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0,0,0,0.12);
+}
+.plan-footer-green-text {
+  font-size: 11px;
+  color: rgba(0,0,0,0.45);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* print hint */
+.print-hint {
+  width: 100%;
+  text-align: center;
+  color: #444;
+  font-size: 12px;
+  font-family: 'Barlow', sans-serif;
+  padding: 12px 0 4px;
+  letter-spacing: 0.05em;
+}
+
+@media print {
+  body { background: white; padding: 0; gap: 0; display: block; }
+  .card { border-radius: 0; page-break-after: always; margin: 0; width: 100%; height: 100vh; }
+  .print-hint { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── COVER ── -->
+<div class="card cover">
+  <div class="noise"></div>
+  <div class="cover-grid"></div>
+  <div class="cover-glow"></div>
+  <div class="cover-content">
+    <div class="cover-tag">Gestión de obra en tiempo real</div>
+    <div style="margin-top:auto;">
+      <div class="cover-divider"></div>
+      <div class="cover-brand">GO<br><span>Obra</span></div>
+      <div class="cover-sub">Sepa exactamente en qué va su obra — costos, avance y alertas — sin depender de lo que le cuente el contratista.</div>
+    </div>
+    <div style="margin-top:auto;">
+      <div class="cover-cta">Planes y precios →</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PLAN INICIO ── -->
+<div class="card plan-inicio">
+  <div class="pi-stripe"></div>
+  <div class="pi-accent"></div>
+  <div class="pi-content">
+    <div class="plan-label">Plan</div>
+    <div class="plan-name">INICIO</div>
+    <div class="plan-sub">Para conocer el sistema</div>
+
+    <div class="price-row">
+      <div class="price-num">$500K</div>
+      <div class="price-unit">COP / mes</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+      <span style="font-size:22px; font-weight:600; color:#FFB300; text-decoration:line-through; font-family:'Bebas Neue',sans-serif; letter-spacing:1px;">$800K</span>
+      <span style="font-size:10px; background:#1a1a1a; color:#FFB300; padding:2px 7px; border-radius:3px; font-weight:600; letter-spacing:0.08em;">LANZAMIENTO</span>
+    </div>
+    <div class="price-note">Precio real $800K/mes · solo primeras 10 obras</div>
+
+    <div class="divider-line"></div>
+
+    <ul class="features-list">
+      <li class="feat">
+        <div class="feat-icon on">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text">Dashboard en tiempo real
+          <span class="sub">Avance real vs reportado, actualización diaria</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon on">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text">Alertas críticas
+          <span class="sub">Notificaciones de retrasos y desvíos</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon on">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text">Misiones del día por Telegram
+          <span class="sub">El residente reporta, usted recibe el resumen</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon off">
+          <svg viewBox="0 0 10 10" fill="none"><line x1="3" y1="3" x2="7" y2="7" stroke="#bbb" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="3" x2="3" y2="7" stroke="#bbb" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="feat-text muted">Cronograma Gantt
+          <span class="sub">Disponible en plan Control</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon off">
+          <svg viewBox="0 0 10 10" fill="none"><line x1="3" y1="3" x2="7" y2="7" stroke="#bbb" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="3" x2="3" y2="7" stroke="#bbb" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="feat-text muted">Control de materiales
+          <span class="sub">Disponible en plan Total</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon off">
+          <svg viewBox="0 0 10 10" fill="none"><line x1="3" y1="3" x2="7" y2="7" stroke="#bbb" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="3" x2="3" y2="7" stroke="#bbb" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="feat-text muted">Gemelo digital 3D
+          <span class="sub">Disponible en plan Total</span>
+        </div>
+      </li>
+    </ul>
+
+    <div class="plan-footer">
+      <div class="plan-footer-text">Incluye instalación, configuración y soporte directo con el fundador durante el primer mes.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PLAN CONTROL ── -->
+<div class="card plan-control">
+  <div class="pc-bar"></div>
+  <div class="pc-dots"></div>
+  <div class="pc-dots2"></div>
+  <div class="noise"></div>
+  <div class="pc-content">
+    <div class="plan-label" style="color:#FFB300;">Plan</div>
+    <div class="plan-name-dark">CONTROL</div>
+    <div class="plan-sub-dark">Para obras en ejecución activa</div>
+
+    <div class="price-row" style="align-items:baseline; gap:4px; margin-bottom:4px;">
+      <div class="price-num-dark">$1.5M</div>
+      <div class="price-unit-dark">&nbsp;COP / mes</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+      <span style="font-size:22px; font-weight:600; color:#FFB300; text-decoration:line-through; font-family:'Bebas Neue',sans-serif; letter-spacing:1px;">$2.5M</span>
+      <span style="font-size:10px; background:#FFB300; color:#1a1a1a; padding:2px 7px; border-radius:3px; font-weight:600; letter-spacing:0.08em;">LANZAMIENTO</span>
+    </div>
+    <div class="price-note-dark">Precio real $2.5M/mes · compromiso mínimo 6 meses</div>
+
+    <div class="divider-dark"></div>
+
+    <ul class="features-list">
+      <li class="feat">
+        <div class="feat-icon on">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text-dark">Todo lo del plan Inicio</div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon on">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text-dark">Cronograma Gantt
+          <span class="sub">Atraso o adelanto semana a semana</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon on">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text-dark">Semáforo de costos
+          <span class="sub">¿Su obra está ganando o perdiendo dinero?</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon on">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text-dark">Registro del equipo de obra
+          <span class="sub">Productividad real por trabajador</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon off" style="background:rgba(255,255,255,0.08);">
+          <svg viewBox="0 0 10 10" fill="none"><line x1="3" y1="3" x2="7" y2="7" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="3" x2="3" y2="7" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="feat-text-dark muted">Control de materiales
+          <span class="sub">Disponible en plan Total</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon off" style="background:rgba(255,255,255,0.08);">
+          <svg viewBox="0 0 10 10" fill="none"><line x1="3" y1="3" x2="7" y2="7" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/><line x1="7" y1="3" x2="3" y2="7" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="feat-text-dark muted">Gemelo digital 3D
+          <span class="sub">Disponible en plan Total</span>
+        </div>
+      </li>
+    </ul>
+
+    <div class="plan-footer-dark">
+      <div class="plan-footer-dark-text">El precio sube cada mes automáticamente mientras más valor entrega el sistema. Se puede pausar entre obras.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PLAN TOTAL ── -->
+<div class="card plan-total">
+  <div class="pt-bg-text">TOTAL</div>
+  <div class="noise"></div>
+  <div class="pt-content">
+    <div class="plan-label-light">Plan recomendado</div>
+    <div class="plan-name-green">TOTAL</div>
+    <div class="plan-sub-green">Visibilidad completa de su inversión</div>
+
+    <div class="price-row" style="align-items:baseline; gap:4px; margin-bottom:4px;">
+      <div class="price-num-green">$2.5M</div>
+      <div class="price-unit-green">&nbsp;COP / mes</div>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+      <span style="font-size:22px; font-weight:600; color:#1a1a1a; text-decoration:line-through; font-family:'Bebas Neue',sans-serif; letter-spacing:1px; text-decoration-color:#1a1a1a;">$5M</span>
+      <span style="font-size:10px; background:rgba(0,0,0,0.18); color:#1a1a1a; padding:2px 7px; border-radius:3px; font-weight:600; letter-spacing:0.08em;">LANZAMIENTO</span>
+    </div>
+    <div class="price-note-green">Precio real $5M/mes · compromiso mínimo 6 meses</div>
+
+    <div class="divider-green"></div>
+
+    <ul class="features-list">
+      <li class="feat">
+        <div class="feat-icon on-green">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text-green">Todo lo del plan Control</div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon star">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text-green">Control de materiales
+          <span class="sub">Nunca más pare por falta de cemento o varilla</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon star">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text-green">Gemelo digital 3D
+          <span class="sub">Modelo 3D de su edificio con avance por zona</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon star">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text-green">Modo visita
+          <span class="sub">Recorrido virtual de la obra desde el celular</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon star">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text-green">Reporte ejecutivo mensual
+          <span class="sub">PDF listo para banco, fiducia o inversionistas</span>
+        </div>
+      </li>
+      <li class="feat">
+        <div class="feat-icon star">
+          <svg viewBox="0 0 10 10" fill="none"><polyline points="2,5 4,7 8,3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feat-text-green">Soporte prioritario directo
+          <span class="sub">WhatsApp con el equipo GO Obra, respuesta en 2h</span>
+        </div>
+      </li>
+    </ul>
+
+    <div class="plan-footer-green">
+      <div class="plan-footer-green-text">Lo que no sabe le está costando más que esto. Cada mes sin control es dinero que no recupera.</div>
+    </div>
+  </div>
+</div>
+
+<div class="print-hint">Ctrl+P para imprimir · cada tarjeta es una página 9:16</div>
+
+</body>
+</html>
