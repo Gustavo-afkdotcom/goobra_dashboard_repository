@@ -1347,9 +1347,23 @@ function toggleMatRow(id){
 }
 
 // ── EQUIPO ──
+let eqTab='lista', WORKERS_DATA=[];
+
+function setEqTab(tab){
+  eqTab=tab;
+  ['lista','asistencia'].forEach(t=>{
+    const panel=document.getElementById('eq-panel-'+t);
+    if(panel) panel.style.display=t===tab?'block':'none';
+    const btn=document.getElementById('eq-tab-'+t);
+    if(btn){btn.style.color=t===tab?'var(--amber)':'var(--text3)';btn.style.borderBottom=t===tab?'2px solid var(--amber)':'2px solid transparent';}
+  });
+  if(tab==='asistencia') renderAsistencia();
+}
+
 async function renderEquipo(){
-  const {data:ws}=await db.from('workers').select('id,nombre,rol,especialidad,estado_hoy').eq('proyecto_id',PID);
+  const {data:ws}=await db.from('workers').select('*').eq('proyecto_id',PID);
   const {data:av}=await db.from('avances').select('trabajador_id,timestamp_mensaje').eq('proyecto_id',PID);
+  WORKERS_DATA=ws||[];
   const hoy=new Date();hoy.setHours(0,0,0,0);
   const sem=new Date();sem.setDate(sem.getDate()-7);
   const cnt={},hoySet=new Set();let semC=0;
@@ -1359,372 +1373,155 @@ async function renderEquipo(){
     if(ts>=hoy) hoySet.add(a.trabajador_id);
     if(ts>=sem) semC++;
   });
-  const rank=(ws||[]).map(w=>({...w,n:cnt[w.id]||0})).sort((a,b)=>b.n-a.n);
-  document.getElementById('eq-tot').textContent=ws?.length||0;
-  document.getElementById('eq-hoy').textContent=hoySet.size;
-  document.getElementById('eq-sem').textContent=semC;
-  document.getElementById('eq-top').textContent=rank[0]?.nombre?.split(' ')[0]||'—';
-  const mx=Math.max(rank[0]?.n||1,1);
+
+  const {data:asist}=await db.from('asistencia_workers').select('worker_id,estado,fecha')
+    .eq('proyecto_id',PID)
+    .gte('fecha',new Date(Date.now()-13*86400000).toISOString().split('T')[0]);
+  const diasPresente={};
+  (asist||[]).forEach(a=>{if(a.estado==='presente'||a.estado==='medio_dia'){diasPresente[a.worker_id]=(diasPresente[a.worker_id]||0)+(a.estado==='medio_dia'?0.5:1);}});
+  const totalDias=Object.values(diasPresente).reduce((s,v)=>s+v,0);
+
+  const totEl=document.getElementById('eq-tot');const hoyEl=document.getElementById('eq-hoy');
+  const semEl=document.getElementById('eq-sem');const diasEl=document.getElementById('eq-dias');
+  if(totEl) totEl.textContent=ws?.length||0;
+  if(hoyEl) hoyEl.textContent=hoySet.size;
+  if(semEl) semEl.textContent=semC;
+  if(diasEl) diasEl.textContent=Math.round(totalDias);
+
   const ROLES={res:'Residente',mae:'Maestro',ayu:'Ayudante',arq:'Arquitecto',of:'Oficial'};
-  const est=w=>w.estado_hoy==='en_obra'?`<span style="font-size:9px;background:var(--green-d);color:var(--green);border:1px solid rgba(39,174,96,.2);padding:1px 5px;border-radius:3px;margin-left:4px">En obra</span>`:w.estado_hoy==='ausente'?`<span style="font-size:9px;background:var(--red-d);color:var(--red);border:1px solid rgba(192,57,43,.2);padding:1px 5px;border-radius:3px;margin-left:4px">Ausente</span>`:'';
-  document.getElementById('eq-lista').innerHTML=rank.length?rank.map((w,i)=>{
-    const col=i===0?'var(--amber)':i===1?'var(--blue)':'var(--text2)';
-    const ini=w.nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
-    return`<div class="eq-row">
-      <div style="font-size:10px;color:var(--text3);min-width:18px">#${i+1}</div>
-      <div class="eq-av">${ini}</div>
-      <div class="eq-info"><div class="eq-nom">${w.nombre}${est(w)}</div><div class="eq-sub">${ROLES[w.rol]||w.rol||'—'} · ${w.n} avances</div></div>
-      <div class="eq-bar"><div class="bt"><div class="bf" style="width:${Math.round(w.n/mx*100)}%;background:${col}"></div></div></div>
-      <div class="eq-cnt" style="color:${col}">${w.n}</div>
-    </div>`;
-  }).join(''):'<div class="empty">Sin workers registrados</div>';
-}
+  const CONTRATOS={jornal:'Jornal',destajo:'Destajo',mensual:'Mensual',obra_labor:'Obra y labor'};
+  const rank=(ws||[]).map(w=>({...w,n:cnt[w.id]||0,dias:diasPresente[w.id]||0})).sort((a,b)=>b.n-a.n);
 
-// ── MODELO 3D ──
-function renderModelo(){
-  const wrap=document.getElementById('modelo-wrap');
-  // Clear previous iframe (could be from different project)
-  wrap.innerHTML='';
-  const p=PROJ;
-  if(!p.id){wrap.innerHTML='<div class="empty">Sin datos del proyecto</div>';return;}
-  const fr=parseFloat(p.frente)||12,fo=parseFloat(p.fondo)||24,pi=parseInt(p.numero_pisos)||8,so=parseInt(p.sotanos)||0,al=parseFloat(p.altura_piso)||2.8;
-  const iframe=document.createElement('iframe');
-  // Pass proyecto ID explicitly so modelo3d.html only renders THIS project
-  iframe.src=`/modelo3d.html#proyecto=${encodeURIComponent(PID)}&frente=${fr}&fondo=${fo}&pisos=${pi}&sotanos=${so}&altura=${al}&solo=1`;
-  iframe.style.cssText='width:100%;height:calc(100vh - 130px);border:none;border-radius:8px';
-  wrap.appendChild(iframe);
-}
+  const eq=document.getElementById('eq-lista');
+  if(!eq) return;
+  if(!rank.length){eq.innerHTML='<div class="empty">Sin workers registrados. Usa "+ Agregar" para ingresar el equipo.</div>';return;}
 
-// ── VISITA ──
-let visData=[], actaId=null;
-
-async function loadVisitaHistorial(){
-  const {data}=await db.from('actas_visita').select('*').eq('proyecto_id',PID).order('fecha',{ascending:false}).limit(10);
-  if(!data?.length){document.getElementById('vis-historial').innerHTML='<div class="empty">Sin visitas previas registradas</div>';return;}
-  document.getElementById('vis-historial').innerHTML=data.map(a=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-      <div>
-        <div style="font-size:11px;font-weight:500">${new Date(a.fecha+'T12:00:00').toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'})}</div>
-        <div style="font-size:10px;color:var(--text3)">${a.visitador_nombre} · ${a.total_aprobadas} aprobadas · ${a.total_rechazadas} rechazadas</div>
-        ${a.observacion_cierre?`<div style="font-size:10px;color:var(--text2);margin-top:2px">"${a.observacion_cierre.slice(0,80)}${a.observacion_cierre.length>80?'...':''}"</div>`:''}
-      </div>
-      <div style="text-align:right">
-        ${a.firmada?`<span style="font-size:9px;background:var(--green-d);color:var(--green);border:1px solid rgba(39,174,96,.2);padding:2px 6px;border-radius:3px">✓ Firmada</span>`:`<span style="font-size:9px;color:var(--text3)">Sin firma</span>`}
+  eq.innerHTML=rank.map(w=>`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:8px">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700">${w.nombre||'—'}</div>
+            <span style="font-size:9px;background:var(--bg4);color:var(--text3);padding:2px 6px;border-radius:3px">${ROLES[w.rol]||w.rol}</span>
+            ${w.activo===false?`<span style="font-size:9px;background:var(--red-d);color:var(--red);padding:2px 6px;border-radius:3px">Retirado</span>`:`<span style="font-size:9px;background:var(--green-d);color:var(--green);padding:2px 6px;border-radius:3px">Activo</span>`}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">
+            <div style="font-size:10px;color:var(--text3)">${w.tipo_documento||'CC'}: <span style="color:var(--text2)">${w.documento||'—'}</span></div>
+            <div style="font-size:10px;color:var(--text3)">Contrato: <span style="color:var(--text2)">${CONTRATOS[w.tipo_contrato]||'—'}</span></div>
+            <div style="font-size:10px;color:var(--text3)">Tarifa: <span style="color:var(--amber);font-weight:600">${w.tarifa_diaria?fmt(w.tarifa_diaria)+'/día':'—'}</span></div>
+            <div style="font-size:10px;color:var(--text3)">EPS: <span style="color:var(--text2)">${w.eps||'—'}</span></div>
+            <div style="font-size:10px;color:var(--text3)">ARL: <span style="color:var(--text2)">${w.arl||'—'}</span></div>
+            <div style="font-size:10px;color:var(--text3)">Ingreso: <span style="color:var(--text2)">${w.fecha_ingreso?new Date(w.fecha_ingreso+'T12:00:00').toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'}):'—'}</span></div>
+          </div>
+          ${w.contacto_emergencia?`<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--text3)">🆘 ${w.contacto_emergencia} · ${w.tel_emergencia||'—'}</div>`:''}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--amber)">${w.n}</div>
+          <div style="font-size:9px;color:var(--text3)">avances</div>
+          <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;color:var(--green);margin-top:4px">${w.dias}</div>
+          <div style="font-size:9px;color:var(--text3)">días/14</div>
+          <button onclick="editarWorker('${w.id}')" style="margin-top:8px;background:none;border:1px solid var(--border2);color:var(--text3);padding:3px 8px;border-radius:4px;font-size:9px;cursor:pointer;font-family:'DM Sans',sans-serif">✏️ Editar</button>
+        </div>
       </div>
     </div>`).join('');
 }
 
-function iniciarVisita(){
-  const visitador=document.getElementById('vis-visitador').value.trim();
-  if(!visitador){document.getElementById('vis-visitador').style.borderColor='var(--red)';document.getElementById('vis-visitador').focus();return;}
-  document.getElementById('vis-visitador').style.borderColor='var(--border2)';
-  visData=[];actaId=null;
-  const hoy=new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
-  document.getElementById('vis-fecha').textContent=hoy;
-  document.getElementById('vis-visitador-lbl').textContent=visitador;
-  document.getElementById('vis-inicio').style.display='none';
-  document.getElementById('vis-checklist').style.display='block';
-  const activas=MDATA.filter(m=>m.estado!=='completada'&&(m.estado==='en_curso'||parseFloat(m.pct_avance||0)>0));
-  if(!activas.length){
-    document.getElementById('vis-lista').innerHTML='<div class="empty">Sin misiones activas para revisar en esta visita.</div>';
-    return;
+async function renderAsistencia(){
+  if(!WORKERS_DATA.length){
+    const {data:ws}=await db.from('workers').select('id,nombre,rol').eq('proyecto_id',PID);
+    WORKERS_DATA=ws||[];
   }
-  const byPiso={};
-  activas.forEach(m=>{const key=m.nivel||'General';if(!byPiso[key])byPiso[key]=[];byPiso[key].push(m);});
-  let html='';
-  Object.entries(byPiso).sort(([a],[b])=>a.localeCompare(b,'es',{numeric:true})).forEach(([piso,misions])=>{
-    html+=`<div class="vis-piso-hd">📍 ${piso}</div>`;
-    misions.forEach(m=>{
-      const sid='v_'+m.id.replace(/[^a-z0-9]/gi,'_');
-      const nom=`${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}`;
-      const pct=parseFloat(m.pct_avance||0).toFixed(0);
-      visData.push({id:m.id,sid,estado:null,estado_previo:m.estado,pct:m.pct_avance});
-      html+=`<div class="vis-row" id="vrow_${sid}">
-        <div class="vis-nom">
-          <div style="font-weight:500">${nom}</div>
-          <div style="font-size:10px;color:var(--text3)">Avance reportado: ${pct}% · ${m.estado}</div>
-        </div>
-        <div class="vis-btns">
-          <button class="vis-btn" onclick="setVisita('${sid}','ok',this)">✅ Aprobado</button>
-          <button class="vis-btn" onclick="setVisita('${sid}','rev',this)">🔄 Revisión</button>
-          <button class="vis-btn" onclick="pedirNota('${sid}','rej',this)">❌ Rechazar</button>
-          <button class="vis-foto-btn" id="fotobtn_${sid}" onclick="subirFoto('${sid}')" title="Agregar foto">📷</button>
-          <input type="file" id="fileinput_${sid}" accept="image/*" capture="environment" style="display:none" onchange="procesarFoto('${sid}',this)"/>
-        </div>
-      </div>
-      <div id="nota_${sid}" style="display:none;padding:6px 0 10px;border-bottom:1px solid var(--border)">
-        <div style="font-size:10px;color:var(--red);margin-bottom:5px">⚠️ Rechazo requiere nota obligatoria:</div>
-        <textarea id="txt_${sid}" placeholder="Describe el motivo del rechazo..." style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px;font-size:11px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:60px"></textarea>
-        <div style="display:flex;gap:6px;margin-top:6px">
-          <button onclick="confirmarRechazo('${sid}')" style="background:var(--red-d);color:var(--red);border:1px solid rgba(192,57,43,.3);padding:5px 12px;border-radius:5px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">Confirmar rechazo</button>
-          <button onclick="cancelarRechazo('${sid}')" style="background:none;color:var(--text3);border:1px solid var(--border2);padding:5px 12px;border-radius:5px;font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif">Cancelar</button>
-        </div>
-      </div>`;
-    });
-  });
-  document.getElementById('vis-lista').innerHTML=html;
-  updateVisContadores();
-}
+  const hoy=new Date();
+  const inicio=new Date(hoy);inicio.setDate(inicio.getDate()-13);
+  const {data:asist}=await db.from('asistencia_workers').select('*')
+    .eq('proyecto_id',PID).gte('fecha',inicio.toISOString().split('T')[0]).order('fecha');
 
-function pedirNota(sid,estado,btn){
-  // Show nota field before confirming rejection
-  document.getElementById('nota_'+sid).style.display='block';
-  document.getElementById('txt_'+sid).focus();
-}
+  const fechas=[];
+  for(let i=13;i>=0;i--){const d=new Date(hoy);d.setDate(d.getDate()-i);fechas.push(d.toISOString().split('T')[0]);}
 
-function cancelarRechazo(sid){
-  document.getElementById('nota_'+sid).style.display='none';
-  document.getElementById('txt_'+sid).value='';
-}
+  const asistMap={};
+  (asist||[]).forEach(a=>{if(!asistMap[a.worker_id])asistMap[a.worker_id]={};asistMap[a.worker_id][a.fecha]=a.estado;});
 
-async function confirmarRechazo(sid){
-  const nota=document.getElementById('txt_'+sid).value.trim();
-  if(!nota){alert('La nota es obligatoria para rechazar.');return;}
-  const row=document.getElementById('vrow_'+sid);
-  if(row) row.querySelectorAll('.vis-btn').forEach(b=>b.classList.remove('ok','rev','rej'));
-  const btn=row?.querySelector('.vis-btn:last-child');
-  if(btn) btn.classList.add('rej');
-  document.getElementById('nota_'+sid).style.display='none';
-  const item=visData.find(v=>v.sid===sid);
-  if(item){item.estado='rej';item.nota=nota;}
-  updateVisContadores();
-  await guardarVisita(sid,'rej',nota);
-  // Revert mission to en_curso if it was marked differently
-  const mId=item?.id;
-  if(mId){
-    await db.from('proyecto_misiones').update({estado:'en_curso'}).eq('id',mId);
-  }
-  // Show confirmation
-  const notaEl=document.getElementById('nota_'+sid);
-  notaEl.style.display='block';
-  notaEl.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">
-    <div style="font-size:10px;color:var(--red)">❌ Rechazado — "${nota}" <span style="color:var(--text3)">· guardado</span></div>
-    <button onclick="mostrarNuevaDesviacion('${mId}','${item?.estado_previo||''}','')" style="background:var(--amber-d);color:var(--amber);border:1px solid var(--amber-b);padding:3px 8px;border-radius:4px;font-size:9px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap">+ Desviación</button>
-  </div>`;
-}
+  const ECOL={presente:'var(--green)',ausente:'var(--red)',medio_dia:'var(--amber)',permiso:'#185FA5',incapacidad:'rgba(192,57,43,.4)'};
+  const EICO={presente:'✓',ausente:'✗',medio_dia:'½',permiso:'P',incapacidad:'I'};
 
-async function setVisita(sid,estado,btn){
-  const row=document.getElementById('vrow_'+sid);
-  if(row) row.querySelectorAll('.vis-btn').forEach(b=>b.classList.remove('ok','rev','rej'));
-  btn.classList.add(estado);
-  // Hide nota if was showing
-  const notaEl=document.getElementById('nota_'+sid);
-  if(notaEl) notaEl.style.display='none';
-  const item=visData.find(v=>v.sid===sid);
-  if(item) item.estado=estado;
-  updateVisContadores();
-  await guardarVisita(sid,estado,null);
+  const eq=document.getElementById('eq-asistencia');
+  if(!WORKERS_DATA.length){eq.innerHTML='<div class="empty">Sin workers registrados</div>';return;}
 
-  // Apply state changes to proyecto_misiones
-  const mId=item?.id;
-  if(!mId) return;
-  if(estado==='ok'){
-    // If mission was at 100% pct_avance, mark as completada
-    if(parseFloat(item?.pct||0)>=100){
-      await db.from('proyecto_misiones').update({estado:'completada'}).eq('id',mId);
-    }
-    // Otherwise just confirm the advance — state stays en_curso
-  } else if(estado==='rev'){
-    // Add a marker — state stays as is, visible in misiones tab
-    // The badge in misiones will show "En revisión" based on visitas table
-  }
-  // Reload misiones to reflect changes
-  await loadMisiones();
-}
+  const diasHdr=fechas.map(f=>{
+    const d=new Date(f+'T12:00:00');const esFS=d.getDay()===0||d.getDay()===6;
+    return`<div style="text-align:center;font-size:9px;color:${esFS?'var(--text3)':'var(--text2)'};padding:2px">${d.toLocaleDateString('es-CO',{weekday:'narrow'})}<br>${d.getDate()}</div>`;
+  }).join('');
 
-async function guardarVisita(sid,estado,nota){
-  const item=visData.find(v=>v.sid===sid);
-  const mId=item?.id;
-  if(!mId) return;
-  await db.from('visitas').upsert({
-    proyecto_id:PID,
-    mision_key:mId,
-    resultado:estado,
-    fecha:new Date().toISOString().split('T')[0],
-    timestamp:new Date().toISOString(),
-    nota:nota||null,
-    mision_estado_previo:item?.estado_previo||null
-  },{onConflict:'proyecto_id,mision_key,fecha'});
-}
-
-async function guardarVisitaCompleta(){
-  const firmada=document.getElementById('vis-firma').checked;
-  if(!firmada){alert('Debes confirmar que el acta es fiel a lo observado antes de guardar.');return;}
-  const visitador=document.getElementById('vis-visitador').value.trim();
-  const condiciones=document.getElementById('vis-condiciones').value.trim();
-  const observacion=document.getElementById('vis-observacion').value.trim();
-  const ok=visData.filter(v=>v.estado==='ok').length;
-  const rev=visData.filter(v=>v.estado==='rev').length;
-  const rej=visData.filter(v=>v.estado==='rej').length;
-  const pen=visData.filter(v=>!v.estado).length;
-  const btn=document.getElementById('btn-guardar-visita');
-  btn.textContent='Guardando...';btn.disabled=true;
-
-  // Create acta
-  const {data:acta,error}=await db.from('actas_visita').insert({
-    proyecto_id:PID,
-    fecha:new Date().toISOString().split('T')[0],
-    hora_inicio:new Date(Date.now()-visData.length*30000).toISOString(),
-    hora_cierre:new Date().toISOString(),
-    visitador_nombre:visitador,
-    condiciones_generales:condiciones||null,
-    total_aprobadas:ok,
-    total_revision:rev,
-    total_rechazadas:rej,
-    total_sin_revisar:pen,
-    observacion_cierre:observacion||null,
-    firmada:true,
-    firma_timestamp:new Date().toISOString()
-  }).select().single();
-
-  if(acta){
-    actaId=acta.id;
-    // Link all visitas to this acta
-    const misIds=visData.filter(v=>v.id).map(v=>v.id);
-    if(misIds.length){
-      await db.from('visitas').update({acta_id:acta.id})
-        .eq('proyecto_id',PID)
-        .eq('fecha',new Date().toISOString().split('T')[0])
-        .in('mision_key',misIds);
-    }
-  }
-
-  // Show result and reset
-  document.getElementById('vis-checklist').style.display='none';
-  document.getElementById('vis-inicio').style.display='block';
-  document.getElementById('vis-visitador').value='';
-  document.getElementById('vis-condiciones').value='';
-  document.getElementById('vis-observacion').value='';
-  document.getElementById('vis-firma').checked=false;
-  btn.textContent='Guardar acta de visita ✓';btn.disabled=false;
-
-  // Show confirmation banner
-  const banner=document.createElement('div');
-  banner.style.cssText='background:var(--green-d);border:1px solid rgba(39,174,96,.3);border-radius:8px;padding:12px 16px;margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center';
-  banner.innerHTML=`<div><div style="font-weight:600;color:var(--green);font-size:12px">✓ Acta de visita guardada</div><div style="font-size:11px;color:var(--text2);margin-top:2px">${ok} aprobadas · ${rej} rechazadas · ${rev} en revisión · firmada por ${visitador}</div></div><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px">×</button>`;
-  document.getElementById('tp-visita').insertBefore(banner,document.getElementById('tp-visita').firstChild);
-
-  await loadAll();
-  await loadVisitaHistorial();
-}
-
-// ── FOTO VISITA ──
-function subirFoto(sid){
-  document.getElementById('fileinput_'+sid).click();
-}
-
-async function procesarFoto(sid, input){
-  const file=input.files[0];
-  if(!file) return;
-  const btn=document.getElementById('fotobtn_'+sid);
-  btn.textContent='⏳';btn.disabled=true;
-
-  // Upload to Supabase Storage
-  const fname=`${PID}/${new Date().toISOString().split('T')[0]}/${sid}_${Date.now()}.jpg`;
-  const {data:upload,error}=await db.storage.from('visitas-fotos').upload(fname,file,{contentType:file.type,upsert:true});
-
-  if(error){btn.textContent='📷';btn.disabled=false;alert('Error al subir foto: '+error.message);return;}
-
-  const {data:urlData}=db.storage.from('visitas-fotos').getPublicUrl(fname);
-  const url=urlData.publicUrl;
-
-  // Save url to visitas record
-  const item=visData.find(v=>v.sid===sid);
-  if(item) item.foto_url=url;
-  const mId=item?.id;
-  if(mId){
-    await db.from('visitas').upsert({
-      proyecto_id:PID,
-      mision_key:mId,
-      foto_url:url,
-      fecha:new Date().toISOString().split('T')[0],
-      timestamp:new Date().toISOString(),
-      resultado:item?.estado||null,
-      nota:item?.nota||null,
-      mision_estado_previo:item?.estado_previo||null
-    },{onConflict:'proyecto_id,mision_key,fecha'});
-  }
-
-  // Show thumbnail
-  btn.outerHTML=`<img class="vis-foto-thumb" id="fotobtn_${sid}" src="${url}" onclick="openLightbox('${url}')" title="Ver foto"/>`;
-}
-
-function openLightbox(url){
-  document.getElementById('lightbox-img').src=url;
-  document.getElementById('lightbox').style.display='flex';
-}
-function closeLightbox(){
-  document.getElementById('lightbox').style.display='none';
-  document.getElementById('lightbox-img').src='';
-}
-
-// ── HISTORIAL EXPANDIBLE ──
-async function loadVisitaHistorial(){
-  const {data:actas}=await db.from('actas_visita').select('*').eq('proyecto_id',PID).order('fecha',{ascending:false}).limit(20);
-  if(!actas?.length){document.getElementById('vis-historial').innerHTML='<div class="empty">Sin visitas previas registradas</div>';return;}
-
-  // For each acta, load its visitas
-  const actaIds=actas.map(a=>a.id);
-  const {data:detalles}=await db.from('visitas')
-    .select('acta_id,mision_key,resultado,nota,foto_url')
-    .in('acta_id',actaIds);
-  const {data:misiones}=await db.from('proyecto_misiones')
-    .select('id,etapa_id,mision_id,nivel')
-    .eq('proyecto_id',PID);
-  const misMap=new Map((misiones||[]).map(m=>[m.id,m]));
-  const detalleMap={};
-  (detalles||[]).forEach(d=>{if(!detalleMap[d.acta_id])detalleMap[d.acta_id]=[];detalleMap[d.acta_id].push(d);});
-
-  const TIPOS_RESULTADO={'ok':'✅ Aprobado','rev':'🔄 Revisión','rej':'❌ Rechazado'};
-
-  document.getElementById('vis-historial').innerHTML=actas.map(a=>{
-    const aid=a.id.replace(/-/g,'_');
-    const ds=detalleMap[a.id]||[];
-    const detHtml=ds.length?ds.map(d=>{
-      const m=misMap.get(d.mision_key);
-      const nom=m?`${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}`:(d.mision_key||'—').slice(-20);
-      const res=TIPOS_RESULTADO[d.resultado]||d.resultado||'Sin revisar';
-      const resCol=d.resultado==='ok'?'var(--green)':d.resultado==='rej'?'var(--red)':'var(--amber)';
-      return`<div class="acta-mis-row">
-        <span style="min-width:110px;color:${resCol};font-weight:500">${res}</span>
-        <span style="flex:1;color:var(--text2)">${nom}</span>
-        ${d.nota?`<span style="color:var(--text3);font-size:10px;max-width:160px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap" title="${d.nota}">"${d.nota}"</span>`:''}
-        ${d.foto_url?`<img src="${d.foto_url}" style="width:28px;height:28px;border-radius:4px;object-fit:cover;cursor:pointer;border:1px solid var(--border2)" onclick="event.stopPropagation();openLightbox('${d.foto_url}')"/>`:''}
-      </div>`;
-    }).join(''):'<div style="font-size:11px;color:var(--text3);padding:6px 0">Sin detalle de misiones</div>';
-
-    return`<div class="acta-row" onclick="toggleActa('${aid}')">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <div style="font-size:11px;font-weight:500">${new Date(a.fecha+'T12:00:00').toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
-          <div style="font-size:10px;color:var(--text3);margin-top:2px">${a.visitador_nombre} · ✅${a.total_aprobadas} · 🔄${a.total_revision} · ❌${a.total_rechazadas}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          ${a.firmada?`<span style="font-size:9px;background:var(--green-d);color:var(--green);border:1px solid rgba(39,174,96,.2);padding:2px 6px;border-radius:3px">✓ Firmada</span>`:''}
-          <span id="arrow_${aid}" style="color:var(--text3);font-size:12px">▶</span>
-        </div>
-      </div>
-    </div>
-    <div class="acta-detalle" id="det_${aid}">
-      ${a.condiciones_generales?`<div style="font-size:11px;color:var(--text2);padding:6px 0;border-bottom:1px solid var(--border)">🌤 <strong>Condiciones:</strong> ${a.condiciones_generales}</div>`:''}
-      ${detHtml}
-      ${a.observacion_cierre?`<div style="font-size:11px;color:var(--text2);padding:6px 0;border-top:1px solid var(--border);margin-top:4px">💬 <strong>Observación:</strong> ${a.observacion_cierre}</div>`:''}
+  const rows=WORKERS_DATA.map(w=>{
+    const dias=fechas.map(f=>{
+      const est=asistMap[w.id]?.[f];
+      const d=new Date(f+'T12:00:00');const esFS=d.getDay()===0||d.getDay()===6;
+      if(!est) return`<div onclick="toggleAsistencia('${w.id}','${f}')" style="text-align:center;padding:4px 2px;font-size:11px;cursor:pointer;border-radius:3px;background:${esFS?'var(--bg4)':'var(--bg3)'};color:var(--text3)">·</div>`;
+      return`<div onclick="toggleAsistencia('${w.id}','${f}')" style="text-align:center;padding:4px 2px;font-size:11px;cursor:pointer;border-radius:3px;background:${ECOL[est]};color:#fff;font-weight:700" title="${est}">${EICO[est]||'?'}</div>`;
+    }).join('');
+    const pres=asistMap[w.id]?Object.values(asistMap[w.id]).filter(e=>e==='presente').length:0;
+    return`<div style="display:grid;grid-template-columns:130px repeat(14,1fr) 36px;gap:2px;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:6px">${w.nombre}</div>
+      ${dias}
+      <div style="text-align:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;color:var(--green)">${pres}</div>
     </div>`;
   }).join('');
+
+  const totXdia=fechas.map(f=>{
+    const t=(asist||[]).filter(a=>a.fecha===f&&a.estado==='presente').length;
+    return`<div style="text-align:center;font-size:9px;color:var(--amber);font-weight:700">${t||'·'}</div>`;
+  }).join('');
+
+  eq.innerHTML=`<div style="overflow-x:auto"><div style="min-width:700px">
+    <div style="font-size:10px;color:var(--text3);margin-bottom:8px">Clic en celda para cambiar · ✓ presente · ✗ ausente · ½ medio día · P permiso</div>
+    <div style="display:grid;grid-template-columns:130px repeat(14,1fr) 36px;gap:2px;margin-bottom:4px">
+      <div style="font-size:9px;color:var(--text3)">Worker</div>${diasHdr}
+      <div style="text-align:center;font-size:9px;color:var(--text3)">Tot</div>
+    </div>
+    ${rows}
+    <div style="display:grid;grid-template-columns:130px repeat(14,1fr) 36px;gap:2px;margin-top:6px;padding-top:6px;border-top:1px solid var(--border)">
+      <div style="font-size:9px;color:var(--text3)">Total/día</div>${totXdia}<div></div>
+    </div>
+  </div></div>`;
 }
 
-function toggleActa(aid){
-  const det=document.getElementById('det_'+aid);
-  const arrow=document.getElementById('arrow_'+aid);
-  if(det.classList.toggle('open')){arrow.textContent='▼';}
-  else{arrow.textContent='▶';}
+async function toggleAsistencia(workerId,fecha){
+  const ciclo=['presente','medio_dia','ausente','permiso'];
+  let cur=null;
+  try{const r=await db.from('asistencia_workers').select('estado').eq('proyecto_id',PID).eq('worker_id',workerId).eq('fecha',fecha).maybeSingle();cur=r.data?.estado;}catch(e){}
+  const idx=ciclo.indexOf(cur||'ausente');
+  const next=ciclo[(idx+1)%ciclo.length];
+  await db.from('asistencia_workers').upsert({proyecto_id:PID,worker_id:workerId,fecha,estado:next,registrado_por:'dueno'},{onConflict:'proyecto_id,worker_id,fecha'});
+  await renderAsistencia();
 }
 
-function updateVisContadores(){
-  document.getElementById('vis-ok').textContent=visData.filter(v=>v.estado==='ok').length;
-  document.getElementById('vis-rev').textContent=visData.filter(v=>v.estado==='rev').length;
-  document.getElementById('vis-rej').textContent=visData.filter(v=>v.estado==='rej').length;
-  document.getElementById('vis-pen').textContent=visData.filter(v=>!v.estado).length;
+function mostrarNuevoWorker(wkId=null){
+  const w=wkId?WORKERS_DATA.find(x=>x.id===wkId):null;
+  const set=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
+  set('wk-nombre',w?.nombre);set('wk-documento',w?.documento);
+  set('wk-tipo-doc',w?.tipo_documento||'CC');set('wk-rol',w?.rol||'mae');
+  set('wk-contrato',w?.tipo_contrato||'jornal');set('wk-tarifa',w?.tarifa_diaria);
+  set('wk-ingreso',w?.fecha_ingreso);set('wk-tel',w?.telefono);
+  set('wk-eps',w?.eps);set('wk-arl',w?.arl);
+  set('wk-emerg',w?.contacto_emergencia);set('wk-tel-emerg',w?.tel_emergencia);
+  set('wk-notas',w?.notas);
+  const t=document.getElementById('modal-worker-title');if(t)t.textContent=w?'Editar trabajador':'Agregar trabajador';
+  const m=document.getElementById('modal-worker');if(m){m.dataset.wkid=wkId||'';m.style.display='flex';}
+}
+
+function editarWorker(id){mostrarNuevoWorker(id);}
+
+async function guardarWorker(){
+  const g=id=>document.getElementById(id)?.value?.trim()||null;
+  const nombre=g('wk-nombre');
+  if(!nombre){alert('El nombre es obligatorio.');return;}
+  const wkId=document.getElementById('modal-worker').dataset.wkid;
+  const data={proyecto_id:PID,nombre,tipo_documento:g('wk-tipo-doc')||'CC',documento:g('wk-documento'),rol:g('wk-rol')||'mae',tipo_contrato:g('wk-contrato')||'jornal',tarifa_diaria:parseFloat(g('wk-tarifa'))||0,fecha_ingreso:g('wk-ingreso')||null,telefono:g('wk-tel'),eps:g('wk-eps'),arl:g('wk-arl'),contacto_emergencia:g('wk-emerg'),tel_emergencia:g('wk-tel-emerg'),notas:g('wk-notas'),activo:true};
+  if(wkId){await db.from('workers').update(data).eq('id',wkId);}
+  else{await db.from('workers').insert(data);}
+  document.getElementById('modal-worker').style.display='none';
+  await renderEquipo();
 }
 
 // ── PRESUPUESTO ──
