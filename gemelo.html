@@ -695,7 +695,11 @@ async function loadDash(){
   const {data:av}=await db.from('avances').select('trabajador_id,desviacion_detectada').eq('proyecto_id',PID).gte('timestamp_mensaje',hoy.toISOString());
   document.getElementById('s-hoy').textContent=av?.length||0;
   document.getElementById('s-wrk').textContent=new Set(av?.map(a=>a.trabajador_id)).size;
-  document.getElementById('s-desv').textContent=av?.filter(a=>a.desviacion_detectada).length||0;
+  // Alertas activas = misiones vencidas + desviaciones detectadas
+  const hoyD=new Date();hoyD.setHours(0,0,0,0);
+  const vencidas=MDATA.filter(m=>m.estado!=='completada'&&m.fecha_fin_plan&&new Date(m.fecha_fin_plan)<hoyD).length;
+  const desvBot=av?.filter(a=>a.desviacion_detectada).length||0;
+  document.getElementById('s-desv').textContent=vencidas+desvBot||0;
 
   const glb=MDATA.length?Math.round(MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length):0;
   document.getElementById('s-global').textContent=glb+'%';
