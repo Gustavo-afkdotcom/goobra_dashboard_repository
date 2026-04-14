@@ -1146,8 +1146,16 @@ async function renderMateriales(){
   // Mission order within a piso: armado → vaciado → vigas → placa
   const MISION_ORDER={'columnas_armado':1,'columnas_vaciado':2,'vigas':3,'placa_entrepiso':4};
 
+  const hoy30=new Date();hoy30.setDate(hoy30.getDate()+30);
   const misionesActivas=MDATA
-    .filter(m=>m.estado!=='completada')
+    .filter(m=>{
+      if(m.estado==='completada') return false;
+      if(m.estado==='en_curso') return true;
+      if(parseFloat(m.pct_avance||0)>0) return true;
+      // Include pendiente only if starting within 30 days
+      if(m.fecha_inicio_plan&&new Date(m.fecha_inicio_plan)<=hoy30) return true;
+      return false;
+    })
     .sort((a,b)=>{
       // Primary: by piso number
       const pa=pisoNum(a.nivel)||99;
