@@ -1070,7 +1070,7 @@ async function activar(){
     const codigo=g('nombre_obra')?.toLowerCase().replace(/\s+/g,'').slice(0,3).replace(/[^a-z0-9]/g,'')||'obr';
     const ts=Date.now();
     const pid=`${codigo}${Math.floor(Math.random()*900+100)}_${ts}`;
-    const codigoCorto=String(Math.floor(Math.random()*900+100));
+    const codigoCorto=Math.random().toString(36).slice(2,8).toUpperCase();
     const token=Math.random().toString(36).slice(2,10).toUpperCase();
 
     // Etapas activas
