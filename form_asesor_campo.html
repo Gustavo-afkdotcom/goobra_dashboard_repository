@@ -913,7 +913,9 @@ async function supa(path,opts={}){
     }
   });
   if(!r.ok){const e=await r.text();throw new Error(e);}
-  return r.status===204?null:r.json();
+  if(r.status===204||r.headers.get('content-length')==='0') return null;
+  const txt=await r.text();
+  return txt?JSON.parse(txt):null;
 }
 
 // ── STEPS ──
