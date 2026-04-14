@@ -1155,8 +1155,12 @@ async function renderMateriales(){
     const pend=Math.max(0,parseFloat(m.cantidad_meta||0)-parseFloat(m.cantidad_ejecutada||0));
     if(pend<=0) return;
     
-    // Check structural restriction
-    const bloqueado=m.etapa_id==='estr'&&m.nivel&&!pisoAnteriorListo(m.nivel);
+    // Check restrictions
+    const bloqueadoEstr=m.etapa_id==='estr'&&m.nivel&&!pisoAnteriorListo(m.nivel);
+    const bloqueadoMamp=m.etapa_id==='mamp'&&m.nivel&&!tieneSuperficieHorizontal(m.nivel);
+    const bloqueado=bloqueadoEstr||bloqueadoMamp;
+    const bloqueadoMsg=bloqueadoEstr?`🔒 Esperar piso ${pisoNum(m.nivel)-1}`:
+      bloqueadoMamp?`🔒 Necesita placa piso ${pisoNum(m.nivel)-1} completada`:'';
     const fin=m.fecha_fin_plan?new Date(m.fecha_fin_plan):null;
     const dr=fin?Math.round((fin-hoy)/86400000):999;
     const esUrg=dr<=7&&m.estado==='en_curso';
@@ -1210,7 +1214,7 @@ async function renderMateriales(){
       }).join('');
 
       const stockAlertStyle=hasStockAlert&&!bloqueado?'border-left:2px solid var(--red)':bloqueado?'border-left:2px solid var(--bg4);opacity:.55':'';
-      const bloqBadge=bloqueado?`<span style="font-size:9px;color:var(--text3);background:var(--bg4);padding:2px 6px;border-radius:3px">🔒 Esperar piso ${pisoNum(m.nivel)-1}</span>`:'';
+      const bloqBadge=bloqueado?`<span style="font-size:9px;color:var(--text3);background:var(--bg4);padding:2px 6px;border-radius:3px">${bloqueadoMsg}</span>`:'';
       rows.push(`
         <tr style="cursor:${bloqueado?'default':'pointer'};border-bottom:1px solid var(--border);${stockAlertStyle}" ${!bloqueado?`onclick="toggleMatRow('${rowId}')"`:''}> 
           <td style="padding:8px 8px;font-weight:500">${misionNom}${bloqueado?'':` <span style="font-size:9px;color:var(--amber)">▶ ${insumos.length} insumos</span>`}${hasStockAlert&&!bloqueado?' <span style="color:var(--red);font-size:9px;font-weight:700"> ⚠ stock bajo</span>':''}</td>
@@ -2172,7 +2176,11 @@ async function confirmarMovimientoBodega(tipoMov){
   const esPropio=esEntrada?(document.getElementById('bod-propio')?.value==='true'):true;
 
   // Update stock en bodega
-  const {data:existing}=await db.from('materiales_bodega').select('stock_actual').eq('proyecto_id',PID).eq('material_codigo',matId).single().catch(()=>({data:null}));
+  let existing=null;
+  try{
+    const res=await db.from('materiales_bodega').select('stock_actual').eq('proyecto_id',PID).eq('material_codigo',matId).maybeSingle();
+    existing=res.data;
+  }catch(e){existing=null;}
   const stockActual=parseFloat(existing?.stock_actual||0);
   const nuevoStock=esEntrada?stockActual+cantidad:Math.max(0,stockActual-cantidad);
 
