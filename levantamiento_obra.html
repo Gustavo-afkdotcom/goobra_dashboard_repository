@@ -3,568 +3,357 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Levantamiento de Obra — GO Obra</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>GO Obra — Formulario Asesor de Campo</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --ink: #1a1a1a;
-  --ink2: #444;
-  --ink3: #777;
-  --line: #d0d0d0;
-  --line2: #e8e8e8;
-  --green: #1D9E75;
-  --green-bg: #EAF3DE;
-  --amber: #BA7517;
-  --amber-bg: #FAEEDA;
-  --blue: #185FA5;
-  --blue-bg: #E6F1FB;
-  --page: #fff;
-  --surface: #f7f6f3;
-  --accent: #1D9E75;
-  --radius: 6px;
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0f0f0f;--ink2:#2a2a2a;--ink3:#666;
+  --surface:#f6f4ef;--page:#fff;
+  --gold:#c8780a;--gold-bg:#fdf3e3;--gold-b:rgba(200,120,10,.2);
+  --amber:#BA7517;--amber-bg:#fdf3e3;--amber-b:rgba(186,117,23,.2);
+  --red:#c0392b;--red-bg:#fdf0ee;
+  --line:#d8d4cc;--line2:#ece9e2;
+  --radius:8px;
 }
+body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink);min-height:100vh;font-size:14px}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--surface);
-  color: var(--ink);
-  font-size: 14px;
-  line-height: 1.5;
+/* HEADER */
+.top-bar{
+  position:sticky;top:0;z-index:100;
+  background:var(--ink);color:#fff;
+  padding:0 2rem;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
 }
-
-/* ── SCREEN LAYOUT ── */
-.screen-wrapper {
-  max-width: 860px;
-  margin: 0 auto;
-  padding: 2rem 1rem 4rem;
+.brand{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.5px}
+.brand span{color:var(--gold)}
+.step-indicator{display:flex;align-items:center;gap:6px}
+.step-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,.2);
+  transition:all .3s ease;cursor:pointer;
 }
+.step-dot.active{background:var(--gold);transform:scale(1.4)}
+.step-dot.done{background:rgba(255,255,255,.5)}
 
-.doc-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
-  border-bottom: 2px solid var(--ink);
+/* PROGRESS BAR */
+.progress-bar{height:3px;background:rgba(255,255,255,.1);position:sticky;top:56px;z-index:99}
+.progress-fill{height:100%;background:var(--gold);transition:width .5s cubic-bezier(.16,1,.3,1)}
+
+/* MAIN */
+.main{max-width:680px;margin:0 auto;padding:2.5rem 1.25rem 6rem}
+
+/* STEP */
+.step{display:none}
+.step.active{display:block;animation:fadeUp .4s cubic-bezier(.16,1,.3,1)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.step-header{margin-bottom:2rem}
+.step-num{
+  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;
+  text-transform:uppercase;color:var(--gold);margin-bottom:8px;
 }
+.step-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1.2;margin-bottom:8px}
+.step-sub{font-size:14px;color:var(--ink3);line-height:1.6}
 
-.brand {
-  font-family: 'DM Mono', monospace;
-  font-size: 20px;
-  font-weight: 500;
-  letter-spacing: -0.5px;
+/* MVP BADGE */
+.mvp-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--gold);color:#fff;
+  font-family:'DM Mono',monospace;font-size:9px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 8px;border-radius:3px;
+  vertical-align:middle;
 }
-
-.brand span { color: var(--green); }
-
-.doc-meta {
-  text-align: right;
-  font-size: 12px;
-  color: var(--ink3);
-  font-family: 'DM Mono', monospace;
+.opt-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--line2);color:var(--ink3);
+  font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:3px 8px;border-radius:3px;margin-left:6px;
+  vertical-align:middle;
 }
-
-.doc-title {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--ink3);
-  margin-bottom: 4px;
-  font-family: 'DM Mono', monospace;
+.alimenta{
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--ink);color:rgba(255,255,255,.7);
+  font-family:'DM Mono',monospace;font-size:9px;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:2px 7px;border-radius:3px;margin-left:4px;
+  vertical-align:middle;border:none;
 }
-
-.section {
-  background: var(--page);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  margin-bottom: 1.25rem;
-  overflow: hidden;
+.alimenta em{color:var(--gold);font-style:normal;font-weight:700}
+.field .alimenta-hint{
+  display:flex;align-items:center;gap:5px;
+  font-size:11px;color:var(--ink3);margin-top:3px;
+  padding:4px 8px;background:var(--line2);border-radius:4px;
+  border-left:2px solid var(--gold);
 }
+.field .alimenta-hint em{color:var(--gold);font-style:normal;font-weight:600;white-space:nowrap}
 
-.section-head {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  background: var(--ink);
-  color: white;
+/* FIELDS */
+.field-group{margin-bottom:1.5rem}
+.field-group-title{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--ink3);
+  margin-bottom:12px;padding-bottom:6px;
+  border-bottom:1px solid var(--line2);
 }
-
-.section-num {
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  opacity: 0.5;
+.fgt-mvp{
+  color:var(--gold);
+  border-bottom:2px solid var(--gold);
+  font-weight:700;
+  letter-spacing:2.5px;
 }
-
-.section-title {
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.field label{
+  font-size:11px;font-family:'DM Mono',monospace;
+  color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;
 }
-
-.badge {
-  margin-left: auto;
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-family: 'DM Mono', monospace;
+.field label .req{color:var(--gold);margin-left:2px}
+.field .hint{font-size:11px;color:var(--ink3);font-style:italic;margin-top:-2px}
+.field input,.field select,.field textarea{
+  font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);
+  background:var(--page);border:1.5px solid var(--line);border-radius:var(--radius);
+  padding:10px 14px;outline:none;transition:border-color .15s,box-shadow .15s;width:100%;
 }
-
-.badge-req { background: #f0f; color: #fff; background: #1D9E75; }
-.badge-opt { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
-
-.section-body { padding: 16px; }
-
-.field-grid {
-  display: grid;
-  gap: 12px;
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-bg);
 }
+.field input.error{border-color:var(--red)}
+.field input[type="number"]{font-family:'DM Mono',monospace}
 
-.grid-2 { grid-template-columns: 1fr 1fr; }
-.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-.grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.grid-4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px}
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{
+  padding:7px 14px;border:1.5px solid var(--line);border-radius:var(--radius);
+  font-size:13px;cursor:pointer;transition:all .12s;
+  background:var(--page);color:var(--ink2);user-select:none;
 }
+.chip:hover{border-color:var(--gold);color:var(--gold);background:var(--gold-bg)}
+.chip.active{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:500}
 
-.field label {
-  font-size: 11px;
-  font-family: 'DM Mono', monospace;
-  color: var(--ink3);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+/* INFO BOX */
+.info-box{
+  display:flex;gap:10px;background:var(--gold-bg);
+  border:1px solid var(--gold-b);border-radius:var(--radius);
+  padding:12px 14px;margin-bottom:1.5rem;
 }
+.info-box.amber{background:var(--amber-bg);border-color:var(--amber-b)}
+.info-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.info-text{font-size:12px;color:var(--ink2);line-height:1.6}
+.info-text strong{font-weight:600;color:var(--ink)}
 
-.field .hint {
-  font-size: 11px;
-  color: var(--ink3);
-  margin-top: -2px;
-  font-style: italic;
+/* ETAPAS */
+.etapas{border:1.5px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.etapa-row{
+  display:grid;grid-template-columns:32px 1fr 130px 90px;
+  align-items:center;border-bottom:1px solid var(--line2);transition:background .1s;
 }
+.etapa-row:last-child{border:none}
+.etapa-row:hover{background:var(--gold-bg)}
+.etapa-row.completada{background:#f0faf5}
+.etapa-row.en_curso{background:var(--amber-bg)}
+.etapa-check{display:flex;align-items:center;justify-content:center;padding:10px 6px;cursor:pointer}
+.etapa-check input{width:15px;height:15px;accent-color:var(--gold);cursor:pointer}
+.etapa-name{padding:10px 8px;font-size:13px}
+.etapa-estado select{font-size:12px;padding:4px 6px;border:1px solid var(--line);border-radius:4px;background:#fff;width:100%;margin:4px 8px 4px 0}
+.etapa-pct input{font-family:'DM Mono',monospace;font-size:12px;padding:4px;width:56px;border:1px solid var(--line);border-radius:4px;text-align:right}
+.etapa-header{display:grid;grid-template-columns:32px 1fr 130px 90px;background:var(--surface);border-bottom:1px solid var(--line);font-size:9px;font-family:'DM Mono',monospace;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
+.etapa-header>div{padding:6px 8px}
 
-.field input,
-.field select,
-.field textarea {
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  color: var(--ink);
-  background: var(--page);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 7px 10px;
-  outline: none;
-  transition: border-color 0.15s;
-  width: 100%;
+/* NAVIGATION */
+.nav-bar{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--page);border-top:1px solid var(--line2);
+  padding:1rem 1.25rem;display:flex;justify-content:space-between;align-items:center;
+  z-index:100;
 }
-
-.field input:focus,
-.field select:focus,
-.field textarea:focus {
-  border-color: var(--green);
+.btn{
+  padding:11px 24px;border-radius:var(--radius);font-size:13px;
+  font-weight:600;cursor:pointer;border:1.5px solid;font-family:'DM Sans',sans-serif;
+  transition:all .15s;display:flex;align-items:center;gap:6px;
 }
+.btn-primary{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn-primary:hover{background:#0f7a56}
+.btn-outline{background:transparent;border-color:var(--line);color:var(--ink3)}
+.btn-outline:hover{border-color:var(--ink3);color:var(--ink)}
+.btn-success{background:var(--ink);border-color:var(--ink);color:#fff;font-size:14px;padding:13px 28px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
 
-.field input[type="number"] { font-family: 'DM Mono', monospace; }
+.nav-info{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink3)}
 
-/* Line inputs (blank underlines for print) */
-.line-input {
-  border: none;
-  border-bottom: 1px solid var(--line);
-  border-radius: 0;
-  padding: 6px 4px;
+/* SUCCESS */
+#step-success{text-align:center;padding:3rem 0}
+.success-ico{font-size:64px;margin-bottom:1.5rem}
+.success-title{font-family:'Syne',sans-serif;font-size:36px;font-weight:800;margin-bottom:.75rem}
+.success-sub{font-size:16px;color:var(--ink3);line-height:1.7;max-width:440px;margin:0 auto 2rem}
+.link-box{
+  background:var(--ink);color:#fff;border-radius:var(--radius);
+  padding:16px 20px;margin:1.5rem 0;font-family:'DM Mono',monospace;
+  font-size:13px;word-break:break-all;
 }
+.link-box span{color:var(--gold)}
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 2px;
+/* SAVING OVERLAY */
+#saving-overlay{
+  display:none;position:fixed;inset:0;background:rgba(15,15,15,.8);
+  z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:16px;
 }
-
-.chip {
-  padding: 5px 12px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.12s;
-  background: var(--page);
-  color: var(--ink2);
-  user-select: none;
+#saving-overlay.active{display:flex}
+.saving-spinner{
+  width:40px;height:40px;border:3px solid rgba(255,255,255,.2);
+  border-top-color:var(--gold);border-radius:50%;
+  animation:spin 1s linear infinite;
 }
+@keyframes spin{to{transform:rotate(360deg)}}
+.saving-text{font-family:'DM Mono',monospace;font-size:12px;color:rgba(255,255,255,.7);letter-spacing:2px}
 
-.chip:hover { border-color: var(--green); color: var(--green); }
-.chip.active { background: var(--green); border-color: var(--green); color: white; font-weight: 500; }
-
-.row-divider {
-  height: 1px;
-  background: var(--line2);
-  margin: 12px 0;
+.dolor-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;border:1.5px solid var(--line);border-radius:var(--radius);
+  cursor:pointer;transition:all .15s;background:var(--page);
+  user-select:none;
 }
-
-.sub-label {
-  font-size: 11px;
-  color: var(--ink3);
-  font-family: 'DM Mono', monospace;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 8px;
-  margin-top: 4px;
+.dolor-item:hover{border-color:var(--gold);background:var(--gold-bg)}
+.dolor-item.active{border-color:var(--gold);background:var(--gold-bg)}
+.dolor-num{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--gold);color:#fff;
+  font-family:'Syne',sans-serif;font-size:11px;font-weight:800;
+  display:none;align-items:center;justify-content:center;flex-shrink:0;
 }
-
-/* Etapas timeline */
-.etapas {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  overflow: hidden;
+.dolor-item.active .dolor-num{display:flex}
+.dolor-ico{font-size:20px;flex-shrink:0}
+.dolor-body{flex:1}
+.dolor-title{font-size:13px;font-weight:600;color:var(--ink)}
+.dolor-sub{font-size:11px;color:var(--ink3);margin-top:2px;line-height:1.4}
+.dolor-check{
+  font-size:18px;color:var(--line);flex-shrink:0;
+  transition:all .15s;
 }
+.dolor-item.active .dolor-check{color:var(--gold)}
 
-.etapa-row {
-  display: grid;
-  grid-template-columns: 28px 1fr 120px 100px;
-  align-items: center;
-  gap: 0;
-  border-bottom: 1px solid var(--line2);
-  transition: background 0.1s;
-}
-
-.etapa-row:last-child { border-bottom: none; }
-.etapa-row:hover { background: var(--green-bg); }
-
-.etapa-row.completada { background: #f0faf5; }
-.etapa-row.en_curso { background: var(--amber-bg); }
-
-.etapa-check {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 6px;
-  cursor: pointer;
-}
-
-.etapa-check input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
-  cursor: pointer;
-  accent-color: var(--green);
-}
-
-.etapa-name {
-  padding: 10px 8px;
-  font-size: 13px;
-  color: var(--ink);
-}
-
-.etapa-estado {
-  padding: 6px 8px;
-}
-
-.etapa-estado select {
-  font-size: 12px;
-  padding: 3px 6px;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  background: white;
-  color: var(--ink2);
-  width: 100%;
-}
-
-.etapa-pct {
-  padding: 6px 8px;
-}
-
-.etapa-pct input {
-  font-family: 'DM Mono', monospace;
-  font-size: 12px;
-  padding: 3px 6px;
-  width: 60px;
-  border: 1px solid var(--line);
-  border-radius: 3px;
-  text-align: right;
-}
-
-.etapa-header {
-  display: grid;
-  grid-template-columns: 28px 1fr 120px 100px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  font-size: 10px;
-  font-family: 'DM Mono', monospace;
-  color: var(--ink3);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.etapa-header > div { padding: 6px 8px; }
-
-/* Sketch box */
-.sketch-box {
-  border: 1px dashed var(--line);
-  border-radius: 4px;
-  background: var(--surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 180px;
-  color: var(--ink3);
-  font-size: 12px;
-  font-family: 'DM Mono', monospace;
-  text-align: center;
-  line-height: 1.8;
-  position: relative;
-}
-
-/* Notes */
-.notes-area {
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 8px 10px;
-  min-height: 60px;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
-  width: 100%;
-  resize: vertical;
-  color: var(--ink);
-  background: var(--page);
-}
-
-/* Footer actions */
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 1.5rem;
-  justify-content: flex-end;
-}
-
-.btn {
-  padding: 9px 20px;
-  border-radius: 5px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  border: 1px solid;
-  font-family: 'DM Sans', sans-serif;
-  transition: all 0.12s;
-}
-
-.btn-primary {
-  background: var(--green);
-  border-color: var(--green);
-  color: white;
-}
-.btn-primary:hover { background: #0F6E56; }
-
-.btn-outline {
-  background: transparent;
-  border-color: var(--line);
-  color: var(--ink2);
-}
-.btn-outline:hover { border-color: var(--ink3); }
-
-.btn-print {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: white;
-}
-.btn-print:hover { background: #333; }
-
-/* Info row */
-.info-row {
-  display: flex;
-  gap: 10px;
-  background: var(--blue-bg);
-  border: 1px solid #B5D4F4;
-  border-radius: 4px;
-  padding: 10px 14px;
-  margin-bottom: 12px;
-  align-items: flex-start;
-}
-
-.info-icon { font-size: 14px; margin-top: 1px; }
-.info-text { font-size: 12px; color: var(--blue); line-height: 1.5; }
-.info-text strong { font-weight: 600; }
-
-/* ══════════════════════════════════════
-   PRINT STYLES
-══════════════════════════════════════ */
-@media print {
-  body {
-    background: white;
-    font-size: 11px;
-  }
-
-  .screen-wrapper {
-    max-width: 100%;
-    padding: 0;
-  }
-
-  .no-print { display: none !important; }
-
-  .section {
-    border: 1px solid #999;
-    border-radius: 0;
-    margin-bottom: 10pt;
-    break-inside: avoid;
-  }
-
-  .section-head {
-    background: #1a1a1a !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-    padding: 6px 10px;
-  }
-
-  .section-body { padding: 10px; }
-
-  .field input,
-  .field select,
-  .field textarea {
-    border: none;
-    border-bottom: 1px solid #999;
-    border-radius: 0;
-    padding: 3px 2px;
-    font-size: 11px;
-  }
-
-  .chip {
-    padding: 3px 8px;
-    font-size: 10px;
-    border: 1px solid #999;
-  }
-
-  .chip.active {
-    background: #1D9E75 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .sketch-box {
-    height: 140pt;
-    background: white !important;
-  }
-
-  .actions { display: none; }
-
-  .etapa-row.completada {
-    background: #f0faf5 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .etapa-row.en_curso {
-    background: #FAEEDA !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .grid-2 { grid-template-columns: 1fr 1fr; }
-  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
-  .grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
-
-  .doc-header {
-    border-bottom: 2px solid black;
-    padding-bottom: 8pt;
-    margin-bottom: 12pt;
-  }
+@media(max-width:600px){
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr 1fr}
+  .grid-4{grid-template-columns:1fr 1fr}
+  .main{padding:1.5rem 1rem 5rem}
+  .step-title{font-size:22px}
 }
 </style>
 </head>
 <body>
 
-<div class="screen-wrapper">
+<!-- SAVING OVERLAY -->
+<div id="saving-overlay">
+  <div class="saving-spinner"></div>
+  <div class="saving-text">Activando proyecto...</div>
+</div>
 
-  <!-- HEADER -->
-  <div class="doc-header">
-    <div>
-      <div class="brand">GO<span>Obra</span></div>
-      <div class="doc-meta" style="text-align:left; margin-top:4px;">Ficha de Levantamiento de Obra</div>
-    </div>
-    <div class="doc-meta">
-      <div>Fecha de visita: <span id="fecha-display"></span></div>
-      <div>Asesor: Gustavo Oyuela</div>
-      <div>goobra.co</div>
-    </div>
-  </div>
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="brand">GO<span>Obra</span></div>
+  <div class="step-indicator" id="step-dots"></div>
+</div>
+<div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
 
-  <!-- SECCIÓN 1: IDENTIFICACIÓN -->
-  <div class="section">
-    <div class="section-head">
-      <span class="section-num">01</span>
-      <span class="section-title">Identificación del proyecto</span>
-      <span class="badge badge-req">Obligatorio</span>
+<div class="main">
+
+  <!-- ══ STEP 1: IDENTIFICACIÓN MVP ══ -->
+  <div class="step active" id="step-1">
+    <div class="step-header">
+      <div class="step-num">Paso 01 de 06</div>
+      <div class="step-title">¿Quién y dónde?</div>
+      <div class="step-sub">La información mínima para activar el gemelo digital y conectar el bot de reporte.</div>
     </div>
-    <div class="section-body">
-      <div class="field-grid grid-2" style="margin-bottom:12px;">
-        <div class="field" style="grid-column: span 2;">
-          <label>Nombre de la obra / proyecto</label>
-          <input type="text" id="nombre_obra" placeholder="Ej: Edificio Castilla, Residencias El Nogal…">
-        </div>
+
+    <div class="info-box">
+      <div class="info-icon">📱</div>
+      <div class="info-text"><strong>El residente solo necesita Telegram.</strong> Le llega un mensaje con el código de la obra y empieza a reportar avances. El dueño recibe su link privado al instante.</div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title fgt-mvp">Proyecto</div>
+      <div class="field">
+        <label>Nombre de la obra / proyecto <span class="req">*</span></label>
+        <div class="alimenta-hint">→ <em>Todas las pestañas</em> — aparece en el encabezado del gemelo</div>
+        <input type="text" id="nombre_obra" placeholder="Ej: Edificio Castilla, Casa Nogal, Torres Simón…">
       </div>
-      <div class="field-grid grid-2">
+      <div class="grid-2">
         <div class="field">
-          <label>Dirección exacta</label>
+          <label>Dirección exacta <span class="req">*</span></label>
           <input type="text" id="direccion" placeholder="Cra 50 # 12-34">
         </div>
         <div class="field">
-          <label>Barrio / Localidad</label>
-          <input type="text" id="barrio" placeholder="Ciudad Montes, Puente Aranda">
+          <label>Barrio / Ciudad</label>
+          <input type="text" id="barrio" placeholder="Ciudad Montes, Bogotá">
         </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title fgt-mvp">Dueño de obra</div>
+      <div class="grid-2">
         <div class="field">
-          <label>Nombre del dueño</label>
+          <label>Nombre del dueño <span class="req">*</span></label>
           <input type="text" id="dueno_nombre" placeholder="">
         </div>
         <div class="field">
-          <label>WhatsApp del dueño</label>
+          <label>WhatsApp del dueño <span class="req">*</span></label>
+          <div class="alimenta-hint">→ <em>Acceso al gemelo</em> — recibe el link personalizado aquí</div>
           <input type="tel" id="dueno_wa" placeholder="+57 300 000 0000">
+          <span class="hint">Recibe el link del gemelo por aquí</span>
         </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title fgt-mvp">Residente / Maestro</div>
+      <div class="grid-2">
         <div class="field">
-          <label>Nombre del residente / maestro</label>
+          <label>Nombre <span class="req">*</span></label>
           <input type="text" id="residente_nombre" placeholder="">
         </div>
         <div class="field">
-          <label>Telegram del residente (o cel)</label>
+          <label>Telegram del residente <span class="req">*</span></label>
+          <div class="alimenta-hint">→ <em>Bot de avances</em> — el agente IA recibe reportes de este número</div>
           <input type="tel" id="residente_tel" placeholder="+57 310 000 0000">
+          <span class="hint">Recibe misiones y reporta avances por aquí</span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SECCIÓN 2: GEOMETRÍA -->
-  <div class="section">
-    <div class="section-head">
-      <span class="section-num">02</span>
-      <span class="section-title">Geometría del lote y edificio</span>
-      <span class="badge badge-req">Obligatorio — alimenta el modelo 3D</span>
-    </div>
-    <div class="section-body">
-
-      <div class="info-row">
-        <span class="info-icon">ℹ</span>
-        <div class="info-text">Estos datos generan el <strong>gemelo digital 3D</strong> del edificio. Medir con cinta métrica o leer de la licencia de construcción. Si no tiene la licencia a mano, estimar visualmente.</div>
+  <!-- ══ STEP 2: GEOMETRÍA ══ -->
+  <div class="step" id="step-2">
+    <div class="step-header">
+      <div class="step-num">Paso 02 de 06</div>
+      <div class="step-title">¿Cómo es el edificio?</div>
+      <div class="step-sub">Dimensiones básicas para el gemelo. Si no tienes los datos exactos, estima visualmente.</div>
+      <div style="background:var(--gold-bg);border:1px solid var(--gold-b);border-radius:var(--radius);padding:10px 14px;margin-top:12px;font-size:11px;color:var(--ink2);line-height:1.6">
+        📐 <strong>Frente + fondo + pisos</strong> son suficientes para activar el gemelo. Agrega área construida y retrocesos para mayor precisión en el modelo de obra.
       </div>
+    </div>
 
-      <div class="sub-label">Lote</div>
-      <div class="field-grid grid-4" style="margin-bottom:14px;">
+    <div class="field-group">
+      <div class="field-group-title fgt-mvp">Lote</div>
+      <div class="grid-4">
         <div class="field">
-          <label>Frente (m)</label>
+          <label>Frente (m) <span class="req">*</span></label>
+          <div class="alimenta-hint">→ <em>Proyección de materiales</em> · <em>Pestaña Obra</em> — base del modelo del lote</div>
           <input type="number" id="frente" step="0.5" min="3" placeholder="12">
         </div>
         <div class="field">
-          <label>Fondo (m)</label>
+          <label>Fondo (m) <span class="req">*</span></label>
           <input type="number" id="fondo" step="0.5" min="5" placeholder="24">
         </div>
         <div class="field">
           <label>Área lote (m²)</label>
-          <input type="number" id="area_lote" step="1" placeholder="288" id="area_lote">
-          <span class="hint">Frente × Fondo si es rectangular</span>
+          <input type="number" id="area_lote" placeholder="288">
+          <span class="hint">Auto: frente × fondo</span>
         </div>
         <div class="field">
           <label>Forma del lote</label>
@@ -577,307 +366,59 @@ body {
           </select>
         </div>
       </div>
+    </div>
 
-      <div class="row-divider"></div>
-      <div class="sub-label">Edificio</div>
-      <div class="field-grid grid-4" style="margin-bottom:14px;">
+    <div class="field-group">
+      <div class="field-group-title fgt-mvp">Edificio</div>
+      <div class="grid-4">
         <div class="field">
-          <label>N.º pisos sobre rasante</label>
+          <label>N.º pisos <span class="req">*</span></label>
+          <div class="alimenta-hint">→ <em>Cronograma</em> · <em>Misiones</em> — genera una misión estructural por cada piso</div>
           <input type="number" id="pisos" min="1" max="30" placeholder="8">
         </div>
         <div class="field">
           <label>N.º sótanos</label>
-          <input type="number" id="sotanos" min="0" max="5" placeholder="1">
+          <input type="number" id="sotanos" min="0" max="5" placeholder="0">
         </div>
         <div class="field">
           <label>Altura entre pisos (m)</label>
-          <input type="number" id="altura_entrepiso" step="0.05" min="2.2" max="4.5" placeholder="2.80">
+          <div class="alimenta-hint">→ <em>Proyección de materiales</em> — calibra volumen de concreto en columnas</div>
+          <input type="number" id="altura_entrepiso" step="0.05" min="2.2" placeholder="2.80">
         </div>
         <div class="field">
-          <label>Área construida aprox. (m²)</label>
+          <label>Área construida (m²)</label>
+          <div class="alimenta-hint">→ <em>Presupuesto</em> · <em>Misiones</em> — estima cantidades de mampostería, pisos y pañetes</div>
           <input type="number" id="area_construida" step="10" placeholder="1800">
-          <span class="hint">Lote × pisos × 0.85 aprox.</span>
-        </div>
-      </div>
-
-      <div class="row-divider"></div>
-      <div class="sub-label">Retrocesos y vacíos (opcional — mejora precisión del modelo)</div>
-      <div class="field-grid grid-4">
-        <div class="field">
-          <label>Antejardín (m)</label>
-          <input type="number" id="antejardín" step="0.25" min="0" placeholder="3.0">
-        </div>
-        <div class="field">
-          <label>Patio interior (m)</label>
-          <input type="number" id="patio" step="0.25" min="0" placeholder="3.0">
-        </div>
-        <div class="field">
-          <label>Voladizo frontal (m)</label>
-          <input type="number" id="voladizo_f" step="0.10" min="0" placeholder="0.80">
-          <span class="hint">Losa vuela sobre el antejardín</span>
-        </div>
-        <div class="field">
-          <label>Voladizo posterior (m)</label>
-          <input type="number" id="voladizo_p" step="0.10" min="0" placeholder="0.50">
+          <span class="hint">Lote × pisos × 0.85</span>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- SECCIÓN 3: SISTEMA CONSTRUCTIVO -->
-  <div class="section">
-    <div class="section-head">
-      <span class="section-num">03</span>
-      <span class="section-title">Sistema constructivo</span>
-      <span class="badge badge-req">Obligatorio</span>
-    </div>
-    <div class="section-body">
-      <div class="field-grid grid-2">
-        <div class="field">
-          <label>Estructura principal</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'sistema_constructivo','porticos')">Pórticos concreto</div>
-            <div class="chip" onclick="toggleChip(this,'sistema_constructivo','ipe')">Perfiles IPE acero</div>
-            <div class="chip" onclick="toggleChip(this,'sistema_constructivo','mixto')">Mixto</div>
-            <div class="chip" onclick="toggleChip(this,'sistema_constructivo','muros')">Muros portantes</div>
-          </div>
-          <input type="hidden" id="sistema_constructivo">
-        </div>
-        <div class="field">
-          <label>Cerramiento / fachada</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'cerramiento','bloque')">Bloque</div>
-            <div class="chip" onclick="toggleChip(this,'cerramiento','ladrillo')">Ladrillo</div>
-            <div class="chip" onclick="toggleChip(this,'cerramiento','drywall')">Drywall</div>
-            <div class="chip" onclick="toggleChip(this,'cerramiento','vidrio')">Muro cortina / vidrio</div>
-          </div>
-          <input type="hidden" id="cerramiento">
-        </div>
-        <div class="field">
-          <label>Cubierta</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'cubierta','placa')">Placa maciza</div>
-            <div class="chip" onclick="toggleChip(this,'cubierta','nervada')">Losa nervada</div>
-            <div class="chip" onclick="toggleChip(this,'cubierta','aligerada')">Aligerada / casetón</div>
-            <div class="chip" onclick="toggleChip(this,'cubierta','steel_deck')">Steel deck</div>
-          </div>
-          <input type="hidden" id="cubierta">
-        </div>
-        <div class="field">
-          <label>Cimentación</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'cimentacion','zapatas')">Zapatas aisladas</div>
-            <div class="chip" onclick="toggleChip(this,'cimentacion','viga_cimiento')">Vigas de cimiento</div>
-            <div class="chip" onclick="toggleChip(this,'cimentacion','pilotes')">Pilotes</div>
-            <div class="chip" onclick="toggleChip(this,'cimentacion','placa_flotante')">Placa flotante</div>
-          </div>
-          <input type="hidden" id="cimentacion">
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SECCIÓN 03-B: ESPECIFICACIONES ESTRUCTURALES -->
-  <div class="section">
-    <div class="section-head">
-      <span class="section-num">03B</span>
-      <span class="section-title">Especificaciones estructurales</span>
-      <span class="badge badge-req">Obligatorio — calibra presupuesto de materiales</span>
-    </div>
-    <div class="section-body">
-
-      <div class="info-row">
-        <span class="info-icon">ℹ</span>
-        <div class="info-text">Esta información calibra los rendimientos de materiales para que el presupuesto sea específico para <strong>esta obra</strong> y no una estimación genérica CAMACOL. Con sección de columnas y tipo de concreto, la precisión sube significativamente.</div>
-      </div>
-
-      <div class="sub-label">Concreto estructural</div>
-      <div class="field-grid grid-2" style="margin-bottom:14px;">
-        <div class="field">
-          <label>Tipo de concreto</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'tipo_concreto','premezclado')">Premezclado (mixer)</div>
-            <div class="chip" onclick="toggleChip(this,'tipo_concreto','manual')">Mezcla manual en obra</div>
-            <div class="chip" onclick="toggleChip(this,'tipo_concreto','mixto')">Mixto según elemento</div>
-          </div>
-          <input type="hidden" id="tipo_concreto">
-          <span class="hint">Afecta qué materiales se proyectan (cemento+arena vs concreto premezclado)</span>
-        </div>
-        <div class="field">
-          <label>Resistencia del concreto estructural</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'resistencia_concreto','21mpa')">21 MPa (3000 PSI)</div>
-            <div class="chip" onclick="toggleChip(this,'resistencia_concreto','28mpa')">28 MPa (4000 PSI)</div>
-            <div class="chip" onclick="toggleChip(this,'resistencia_concreto','35mpa')">35 MPa (5000 PSI)</div>
-          </div>
-          <input type="hidden" id="resistencia_concreto">
-        </div>
-      </div>
-
-      <div class="row-divider"></div>
-      <div class="sub-label">Columnas</div>
-      <div class="field-grid grid-4" style="margin-bottom:14px;">
-        <div class="field">
-          <label>Sección ancho (cm)</label>
-          <input type="number" id="col_ancho" min="20" max="80" step="5" placeholder="30">
-          <span class="hint">Ej: 30, 35, 40</span>
-        </div>
-        <div class="field">
-          <label>Sección alto (cm)</label>
-          <input type="number" id="col_alto" min="20" max="80" step="5" placeholder="30">
-          <span class="hint">Igual al ancho si es cuadrada</span>
-        </div>
-        <div class="field">
-          <label>N.º columnas por piso</label>
-          <input type="number" id="col_cantidad" min="1" max="100" placeholder="16">
-          <span class="hint">Columnas típicas por piso</span>
-        </div>
-        <div class="field">
-          <label>Varilla principal</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'col_varilla','3/8')">3/8"</div>
-            <div class="chip" onclick="toggleChip(this,'col_varilla','1/2')">1/2"</div>
-            <div class="chip" onclick="toggleChip(this,'col_varilla','5/8')">5/8"</div>
-          </div>
-          <input type="hidden" id="col_varilla">
-        </div>
-      </div>
-
-      <div class="row-divider"></div>
-      <div class="sub-label">Vigas</div>
-      <div class="field-grid grid-4" style="margin-bottom:14px;">
-        <div class="field">
-          <label>Ancho de viga (cm)</label>
-          <input type="number" id="viga_ancho" min="15" max="60" step="5" placeholder="30">
-        </div>
-        <div class="field">
-          <label>Altura de viga (cm)</label>
-          <input type="number" id="viga_alto" min="20" max="100" step="5" placeholder="50">
-        </div>
-        <div class="field">
-          <label>ML vigas por piso (aprox.)</label>
-          <input type="number" id="viga_ml_piso" min="0" step="5" placeholder="72">
-          <span class="hint">Suma de vigas principales</span>
-        </div>
-        <div class="field">
-          <label>Tipo de viga</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'tipo_viga','descolgada')">Descolgada</div>
-            <div class="chip" onclick="toggleChip(this,'tipo_viga','plana')">Plana (oculta en placa)</div>
-          </div>
-          <input type="hidden" id="tipo_viga">
-        </div>
-      </div>
-
-      <div class="row-divider"></div>
-      <div class="sub-label">Placa entrepiso</div>
-      <div class="field-grid grid-3" style="margin-bottom:14px;">
-        <div class="field">
-          <label>Tipo de placa</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'tipo_placa','maciza')">Maciza</div>
-            <div class="chip" onclick="toggleChip(this,'tipo_placa','nervada')">Nervada / casetón</div>
-            <div class="chip" onclick="toggleChip(this,'tipo_placa','prefabricada')">Prefabricada</div>
-            <div class="chip" onclick="toggleChip(this,'tipo_placa','steel_deck')">Steel deck</div>
-          </div>
-          <input type="hidden" id="tipo_placa">
-        </div>
-        <div class="field">
-          <label>Espesor de placa (cm)</label>
-          <input type="number" id="placa_espesor" min="8" max="30" step="1" placeholder="12">
-          <span class="hint">Maciza: 10–20cm típico</span>
-        </div>
-        <div class="field">
-          <label>¿Tiene muros de contención?</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'muros_contencion','si')">Sí</div>
-            <div class="chip" onclick="toggleChip(this,'muros_contencion','no')">No</div>
-          </div>
-          <input type="hidden" id="muros_contencion">
-          <span class="hint">Requiere impermeabilizante adicional</span>
-        </div>
-      </div>
-
-      <div class="row-divider"></div>
-      <div class="sub-label">Mampostería y acabados</div>
-      <div class="field-grid grid-4">
-        <div class="field">
-          <label>Tipo de ladrillo interior</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'ladrillo_interior','bloque4')">Bloque No.4</div>
-            <div class="chip" onclick="toggleChip(this,'ladrillo_interior','bloque5')">Bloque No.5</div>
-            <div class="chip" onclick="toggleChip(this,'ladrillo_interior','bloque6')">Bloque No.6</div>
-            <div class="chip" onclick="toggleChip(this,'ladrillo_interior','tolete')">Tolete</div>
-          </div>
-          <input type="hidden" id="ladrillo_interior">
-        </div>
-        <div class="field">
-          <label>Espesor pañete (cm)</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'espesor_panete','1')">1 cm</div>
-            <div class="chip" onclick="toggleChip(this,'espesor_panete','1.5')">1.5 cm</div>
-            <div class="chip" onclick="toggleChip(this,'espesor_panete','2')">2 cm</div>
-          </div>
-          <input type="hidden" id="espesor_panete">
-        </div>
-        <div class="field">
-          <label>Tipo de piso</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'tipo_piso','ceramica')">Cerámica</div>
-            <div class="chip" onclick="toggleChip(this,'tipo_piso','porcelana')">Porcelana</div>
-            <div class="chip" onclick="toggleChip(this,'tipo_piso','vinilico')">Vinílico</div>
-            <div class="chip" onclick="toggleChip(this,'tipo_piso','madera')">Madera</div>
-          </div>
-          <input type="hidden" id="tipo_piso">
-        </div>
-        <div class="field">
-          <label>Acabado de muros</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'acabado_muros','estuco_pintura')">Estuco + pintura</div>
-            <div class="chip" onclick="toggleChip(this,'acabado_muros','solo_pintura')">Solo pintura</div>
-            <div class="chip" onclick="toggleChip(this,'acabado_muros','enchape')">Enchape</div>
-          </div>
-          <input type="hidden" id="acabado_muros">
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- SECCIÓN 4: USO Y UNIDADES -->
-  <div class="section">
-    <div class="section-head">
-      <span class="section-num">04</span>
-      <span class="section-title">Uso del edificio y unidades</span>
-      <span class="badge badge-req">Obligatorio</span>
-    </div>
-    <div class="section-body">
-      <div class="field-grid grid-2" style="margin-bottom:12px;">
+    <div class="field-group">
+      <div class="field-group-title">Uso y unidades <span class="opt-badge">Opcional</span></div>
+      <div class="grid-4">
         <div class="field">
           <label>Uso principal</label>
-          <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'uso','vivienda')">Vivienda</div>
-            <div class="chip" onclick="toggleChip(this,'uso','oficinas')">Oficinas</div>
-            <div class="chip" onclick="toggleChip(this,'uso','comercio')">Comercio</div>
-            <div class="chip" onclick="toggleChip(this,'uso','mixto')">Mixto</div>
-            <div class="chip" onclick="toggleChip(this,'uso','bodega')">Bodega / industrial</div>
+          <div class="chips" style="margin-top:0">
+            <div class="chip" onclick="chip(this,'uso','vivienda')">Vivienda</div>
+            <div class="chip" onclick="chip(this,'uso','oficinas')">Oficinas</div>
+            <div class="chip" onclick="chip(this,'uso','comercio')">Comercio</div>
+            <div class="chip" onclick="chip(this,'uso','mixto')">Mixto</div>
           </div>
           <input type="hidden" id="uso">
         </div>
         <div class="field">
           <label>Estrato</label>
           <div class="chips">
-            <div class="chip" onclick="toggleChip(this,'estrato','1')">1</div>
-            <div class="chip" onclick="toggleChip(this,'estrato','2')">2</div>
-            <div class="chip" onclick="toggleChip(this,'estrato','3')">3</div>
-            <div class="chip" onclick="toggleChip(this,'estrato','4')">4</div>
-            <div class="chip" onclick="toggleChip(this,'estrato','5')">5</div>
-            <div class="chip" onclick="toggleChip(this,'estrato','6')">6</div>
+            <div class="chip" onclick="chip(this,'estrato','1')">1</div>
+            <div class="chip" onclick="chip(this,'estrato','2')">2</div>
+            <div class="chip" onclick="chip(this,'estrato','3')">3</div>
+            <div class="chip" onclick="chip(this,'estrato','4')">4</div>
+            <div class="chip" onclick="chip(this,'estrato','5')">5</div>
+            <div class="chip" onclick="chip(this,'estrato','6')">6</div>
           </div>
           <input type="hidden" id="estrato">
         </div>
-      </div>
-      <div class="field-grid grid-4">
         <div class="field">
           <label>Unidades totales</label>
           <input type="number" id="unidades_total" min="1" placeholder="24">
@@ -886,446 +427,893 @@ body {
           <label>Área por unidad (m²)</label>
           <input type="number" id="area_unidad" step="5" placeholder="65">
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ STEP 3: SISTEMA CONSTRUCTIVO ══ -->
+  <div class="step" id="step-3">
+    <div class="step-header">
+      <div class="step-num">Paso 03 de 06</div>
+      <div class="step-title">¿Cómo se construye?</div>
+      <div class="step-sub">El sistema constructivo define las misiones, los materiales y las restricciones de avance.</div>
+      <div style="display:flex;align-items:center;gap:10px;background:var(--ink);color:#fff;border-radius:var(--radius);padding:12px 16px;margin-top:12px">
+        <div style="font-size:20px">🎯</div>
+        <div>
+          <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gold)">Entre más datos, más precisión</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;line-height:1.5">Los campos básicos dan estimaciones CAMACOL. Las secciones reales de columnas y vigas calibran el presupuesto para <em>esta obra específica</em>. Si no tienes los planos ahora, los valores por defecto funcionan y se pueden actualizar después.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title fgt-mvp">Sistema estructural</div>
+      <div class="field">
+        <label>Estructura principal <span class="req">*</span></label>
+        <div class="chips">
+          <div class="chip" onclick="chip(this,'sistema_constructivo','porticos')">Pórticos concreto</div>
+          <div class="chip" onclick="chip(this,'sistema_constructivo','ipe')">Perfiles IPE acero</div>
+          <div class="chip" onclick="chip(this,'sistema_constructivo','mixto')">Mixto</div>
+          <div class="chip" onclick="chip(this,'sistema_constructivo','muros')">Muros portantes</div>
+        </div>
+        <input type="hidden" id="sistema_constructivo">
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Tipo de concreto <span class="req">*</span></label>
+        <div class="chips">
+          <div class="chip" onclick="chip(this,'tipo_concreto','premezclado')">Premezclado (mixer)</div>
+          <div class="chip" onclick="chip(this,'tipo_concreto','manual')">Mezcla manual en obra</div>
+          <div class="chip" onclick="chip(this,'tipo_concreto','mixto')">Mixto según elemento</div>
+        </div>
+        <input type="hidden" id="tipo_concreto">
+        <span class="hint">Define qué materiales se proyectan en bodega</span>
+      </div>
+      <div class="field" style="margin-top:12px">
+        <label>Resistencia del concreto estructural <span class="req">*</span></label>
+        <div class="chips">
+          <div class="chip" onclick="chip(this,'resistencia_concreto','21mpa')">21 MPa · 3000 PSI</div>
+          <div class="chip active" onclick="chip(this,'resistencia_concreto','28mpa')">28 MPa · 4000 PSI</div>
+          <div class="chip" onclick="chip(this,'resistencia_concreto','35mpa')">35 MPa · 5000 PSI</div>
+        </div>
+        <input type="hidden" id="resistencia_concreto" value="28mpa">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title fgt-mvp">Secciones estructurales — calibran el presupuesto</div>
+
+      <div class="info-box" style="margin-bottom:1rem">
+        <div class="info-icon">📐</div>
+        <div class="info-text">Con estas dimensiones el sistema calcula el concreto, acero y formaleta exacto para <strong>esta obra</strong> — no estimaciones genéricas. Si no tienes los planos ahora, usa los valores por defecto y actualiza luego.</div>
+      </div>
+
+      <div style="font-size:11px;color:var(--ink3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Columnas</div>
+      <div class="grid-4" style="margin-bottom:14px">
         <div class="field">
-          <label>Locales comerciales</label>
-          <input type="number" id="locales" min="0" placeholder="0">
+          <label>Ancho (cm) <span class="req">*</span></label>
+          <input type="number" id="col_ancho" min="20" max="80" step="5" placeholder="30">
         </div>
         <div class="field">
-          <label>Parqueaderos</label>
-          <input type="number" id="parqueaderos" min="0" placeholder="12">
+          <label>Alto (cm) <span class="req">*</span></label>
+          <input type="number" id="col_alto" min="20" max="80" step="5" placeholder="30">
+        </div>
+        <div class="field">
+          <label>N.º col/piso <span class="req">*</span></label>
+          <input type="number" id="col_cantidad" min="1" max="100" placeholder="16">
+        </div>
+        <div class="field">
+          <label>Varilla principal</label>
+          <div class="chips">
+            <div class="chip" onclick="chip(this,'col_varilla','3/8')">3/8"</div>
+            <div class="chip active" onclick="chip(this,'col_varilla','1/2')">1/2"</div>
+            <div class="chip" onclick="chip(this,'col_varilla','5/8')">5/8"</div>
+          </div>
+          <input type="hidden" id="col_varilla" value="1/2">
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:var(--ink3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Vigas</div>
+      <div class="grid-4" style="margin-bottom:14px">
+        <div class="field">
+          <label>Ancho (cm) <span class="req">*</span></label>
+          <input type="number" id="viga_ancho" min="15" max="60" step="5" placeholder="30">
+        </div>
+        <div class="field">
+          <label>Alto (cm) <span class="req">*</span></label>
+          <input type="number" id="viga_alto" min="20" max="100" step="5" placeholder="50">
+        </div>
+        <div class="field">
+          <label>ML vigas/piso</label>
+          <input type="number" id="viga_ml_piso" min="0" step="5" placeholder="72">
+          <span class="hint">Suma vigas principales</span>
+        </div>
+        <div class="field">
+          <label>Tipo de viga</label>
+          <div class="chips">
+            <div class="chip active" onclick="chip(this,'tipo_viga','descolgada')">Descolgada</div>
+            <div class="chip" onclick="chip(this,'tipo_viga','plana')">Plana</div>
+          </div>
+          <input type="hidden" id="tipo_viga" value="descolgada">
+        </div>
+      </div>
+
+      <div style="font-size:11px;color:var(--ink3);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Placa entrepiso</div>
+      <div class="grid-4">
+        <div class="field">
+          <label>Tipo de placa <span class="req">*</span></label>
+          <div class="chips">
+            <div class="chip active" onclick="chip(this,'tipo_placa','maciza')">Maciza</div>
+            <div class="chip" onclick="chip(this,'tipo_placa','nervada')">Nervada</div>
+            <div class="chip" onclick="chip(this,'tipo_placa','prefabricada')">Prefabricada</div>
+          </div>
+          <input type="hidden" id="tipo_placa" value="maciza">
+        </div>
+        <div class="field">
+          <label>Espesor (cm) <span class="req">*</span></label>
+          <input type="number" id="placa_espesor" min="8" max="30" step="1" placeholder="12">
+          <span class="hint">Maciza típica: 10–20cm</span>
+        </div>
+        <div class="field">
+          <label>Cimentación</label>
+          <div class="chips">
+            <div class="chip" onclick="chip(this,'cimentacion','zapatas')">Zapatas</div>
+            <div class="chip" onclick="chip(this,'cimentacion','viga_cimiento')">Vigas cimiento</div>
+            <div class="chip" onclick="chip(this,'cimentacion','pilotes')">Pilotes</div>
+          </div>
+          <input type="hidden" id="cimentacion">
+        </div>
+        <div class="field">
+          <label>¿Muros de contención?</label>
+          <div class="chips">
+            <div class="chip" onclick="chip(this,'muros_contencion','si')">Sí</div>
+            <div class="chip" onclick="chip(this,'muros_contencion','no')">No</div>
+          </div>
+          <input type="hidden" id="muros_contencion">
+          <span class="hint">Requiere impermeabilizante</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title">Mampostería y acabados <span class="opt-badge">Opcional</span></div>
+      <div class="grid-4">
+        <div class="field">
+          <label>Ladrillo interior</label>
+          <div class="chips">
+            <div class="chip active" onclick="chip(this,'ladrillo_interior','bloque4')">Bloque No.4</div>
+            <div class="chip" onclick="chip(this,'ladrillo_interior','bloque6')">Bloque No.6</div>
+            <div class="chip" onclick="chip(this,'ladrillo_interior','tolete')">Tolete</div>
+          </div>
+          <input type="hidden" id="ladrillo_interior" value="bloque4">
+        </div>
+        <div class="field">
+          <label>Espesor pañete</label>
+          <div class="chips">
+            <div class="chip" onclick="chip(this,'espesor_panete','1')">1 cm</div>
+            <div class="chip active" onclick="chip(this,'espesor_panete','1.5')">1.5 cm</div>
+            <div class="chip" onclick="chip(this,'espesor_panete','2')">2 cm</div>
+          </div>
+          <input type="hidden" id="espesor_panete" value="1.5">
+        </div>
+        <div class="field">
+          <label>Tipo de piso</label>
+          <div class="chips">
+            <div class="chip active" onclick="chip(this,'tipo_piso','ceramica')">Cerámica</div>
+            <div class="chip" onclick="chip(this,'tipo_piso','porcelana')">Porcelana</div>
+            <div class="chip" onclick="chip(this,'tipo_piso','vinilico')">Vinílico</div>
+          </div>
+          <input type="hidden" id="tipo_piso" value="ceramica">
+        </div>
+        <div class="field">
+          <label>Acabado muros</label>
+          <div class="chips">
+            <div class="chip active" onclick="chip(this,'acabado_muros','estuco_pintura')">Estuco + pintura</div>
+            <div class="chip" onclick="chip(this,'acabado_muros','solo_pintura')">Solo pintura</div>
+          </div>
+          <input type="hidden" id="acabado_muros" value="estuco_pintura">
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SECCIÓN 5: ESTADO ACTUAL -->
-  <div class="section">
-    <div class="section-head">
-      <span class="section-num">05</span>
-      <span class="section-title">Estado actual de la obra</span>
-      <span class="badge badge-req">Obligatorio — define misiones en el gemelo</span>
+  <!-- ══ STEP 4: ESTADO ACTUAL ══ -->
+  <div class="step" id="step-4">
+    <div class="step-header">
+      <div class="step-num">Paso 04 de 06</div>
+      <div class="step-title">¿En qué va la obra?</div>
+      <div class="step-sub">El estado actual genera las misiones activas en el gemelo. Las etapas completadas quedan registradas desde el día 1.</div>
     </div>
-    <div class="section-body">
 
-      <div class="info-row">
-        <span class="info-icon">ℹ</span>
-        <div class="info-text">Marque el estado de cada etapa. Las etapas <strong>completadas</strong> se marcan en verde, la <strong>etapa activa</strong> en naranja con % de avance. Esto genera automáticamente las misiones en el gemelo digital.</div>
-      </div>
+    <div class="info-box">
+      <div class="info-icon">ℹ️</div>
+      <div class="info-text">Marca <strong>Completada</strong> para etapas ya terminadas, <strong>En curso</strong> para la etapa activa con su porcentaje. Las etapas siguientes quedan como pendientes automáticamente.</div>
+    </div>
 
-      <div class="field-grid grid-3" style="margin-bottom:14px;">
+    <div class="field-group">
+      <div class="field-group-title fgt-mvp">Fechas</div>
+      <div class="grid-3">
         <div class="field">
-          <label>Fecha inicio de obra</label>
+          <label>Fecha inicio de obra <span class="req">*</span></label>
+          <div class="alimenta-hint">→ <em>Dashboard</em> · <em>Cronograma</em> — calcula semana actual, avance esperado y semáforo de retraso</div>
           <input type="date" id="fecha_inicio">
         </div>
         <div class="field">
-          <label>Fecha estimada de entrega</label>
+          <label>Entrega estimada</label>
+          <div class="alimenta-hint">→ <em>Dashboard</em> — muestra días de retraso o adelanto en el banner principal</div>
           <input type="date" id="fecha_entrega">
         </div>
         <div class="field">
-          <label>Piso actual de estructura</label>
+          <label>Piso actual estructura</label>
+          <div class="alimenta-hint">→ <em>Misiones</em> · <em>Proyección</em> — define qué pisos están completados y cuáles están pendientes</div>
           <input type="number" id="piso_estructura_actual" min="0" placeholder="3">
-          <span class="hint">0 = no ha iniciado estructura</span>
+          <span class="hint">0 si no ha iniciado</span>
         </div>
       </div>
+    </div>
 
+    <div class="field-group">
+      <div class="field-group-title fgt-mvp">Estado por etapa</div>
+      <div class="alimenta-hint" style="margin-bottom:12px">→ <em>Dashboard</em> · <em>Alertas</em> · <em>Cronograma</em> — el semáforo, las misiones vencidas y el avance global dependen de esto</div>
       <div class="etapas">
         <div class="etapa-header">
-          <div></div>
-          <div>Etapa</div>
-          <div>Estado</div>
-          <div>% avance</div>
+          <div></div><div>Etapa</div><div>Estado</div><div>% avance</div>
         </div>
         <div id="etapas-container"></div>
       </div>
     </div>
   </div>
 
-  <!-- SECCIÓN 6: PRESUPUESTO -->
-  <div class="section">
-    <div class="section-head">
-      <span class="section-num">06</span>
-      <span class="section-title">Presupuesto y financiero</span>
-      <span class="badge badge-opt">Opcional — activa semáforo de costos</span>
+  <!-- ══ STEP 5: PRESUPUESTO ══ -->
+  <div class="step" id="step-5">
+    <div class="step-header">
+      <div class="step-num">Paso 05 de 06</div>
+      <div class="step-title">¿Cuánto cuesta la obra?</div>
+      <div class="step-sub">El presupuesto activa el semáforo financiero y las alertas de sobrecosto.</div>
     </div>
-    <div class="section-body">
-      <div class="field-grid grid-3">
+
+    <div class="info-box amber">
+      <div class="info-icon">💰</div>
+      <div class="info-text">Sin presupuesto el gemelo funciona, pero el semáforo financiero queda inactivo. <strong>Puedes ingresarlo ahora o después desde la pestaña Presupuesto.</strong></div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title">Financiero <span class="opt-badge">Opcional pero recomendado</span></div>
+      <div class="grid-3">
         <div class="field">
           <label>Presupuesto total (COP)</label>
-          <input type="number" id="presupuesto_total" step="1000000" placeholder="2500000000">
+          <div class="alimenta-hint">→ <em>Dashboard</em> · <em>Presupuesto</em> — activa el semáforo financiero y la proyección de sobrecosto</div>
+          <input type="number" id="presupuesto_total" step="1000000" placeholder="1850000000">
+          <span class="hint">Bogotá estrato 3-4: ~$1.5M–$2.2M/m²</span>
         </div>
         <div class="field">
           <label>Costo ejecutado a hoy (COP)</label>
-          <input type="number" id="costo_ejecutado" step="1000000" placeholder="800000000">
+          <div class="alimenta-hint">→ <em>Presupuesto</em> — muestra el % gastado vs avance real al abrir por primera vez</div>
+          <input type="number" id="costo_ejecutado" step="1000000" placeholder="500000000">
         </div>
         <div class="field">
-          <label>Costo m² construido esperado</label>
+          <label>Costo m² esperado</label>
           <input type="number" id="costo_m2" step="50000" placeholder="1800000">
-          <span class="hint">Bogotá estrato 3-4: $1.5M–$2.2M/m²</span>
         </div>
-        <div class="field">
-          <label>¿Tiene libro de obra?</label>
-          <div class="chips" style="margin-top:4px;">
-            <div class="chip" onclick="toggleChip(this,'libro_obra','si')">Sí</div>
-            <div class="chip" onclick="toggleChip(this,'libro_obra','no')">No</div>
-            <div class="chip" onclick="toggleChip(this,'libro_obra','parcial')">Parcial</div>
-          </div>
-          <input type="hidden" id="libro_obra">
-        </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title">Documentación <span class="opt-badge">Opcional</span></div>
+      <div class="grid-3">
         <div class="field">
           <label>Licencia de construcción</label>
-          <div class="chips" style="margin-top:4px;">
-            <div class="chip" onclick="toggleChip(this,'tiene_licencia','si')">Vigente</div>
-            <div class="chip" onclick="toggleChip(this,'tiene_licencia','no')">No tiene</div>
-            <div class="chip" onclick="toggleChip(this,'tiene_licencia','tramite')">En trámite</div>
+          <div class="alimenta-hint">→ <em>Pestaña Obra</em> — dato legal visible para el dueño en el gemelo</div>
+          <div class="chips">
+            <div class="chip" onclick="chip(this,'tiene_licencia','si')">Vigente</div>
+            <div class="chip" onclick="chip(this,'tiene_licencia','no')">No tiene</div>
+            <div class="chip" onclick="chip(this,'tiene_licencia','tramite')">En trámite</div>
           </div>
           <input type="hidden" id="tiene_licencia">
         </div>
         <div class="field">
-          <label>N.º de licencia (si tiene)</label>
+          <label>N.º de licencia</label>
           <input type="text" id="num_licencia" placeholder="LC-15-3-0001234">
+        </div>
+        <div class="field">
+          <label>¿Tiene libro de obra?</label>
+          <div class="chips">
+            <div class="chip" onclick="chip(this,'libro_obra','si')">Sí</div>
+            <div class="chip" onclick="chip(this,'libro_obra','no')">No</div>
+            <div class="chip" onclick="chip(this,'libro_obra','parcial')">Parcial</div>
+          </div>
+          <input type="hidden" id="libro_obra">
         </div>
       </div>
     </div>
   </div>
 
-  <!-- SECCIÓN 7: EQUIPO -->
-  <div class="section">
-    <div class="section-head">
-      <span class="section-num">07</span>
-      <span class="section-title">Equipo de obra</span>
-      <span class="badge badge-opt">Opcional</span>
+  <!-- ══ STEP 6: EQUIPO ══ -->
+  <div class="step" id="step-6">
+    <div class="step-header">
+      <div class="step-num">Paso 06 de 06</div>
+      <div class="step-title">¿Quién está en obra?</div>
+      <div class="step-sub">Registra el contratista y el equipo principal. Puedes agregar más personas después desde la pestaña Equipo.</div>
     </div>
-    <div class="section-body">
-      <div class="field-grid grid-3">
+
+    <div class="field-group">
+      <div class="field-group-title">Contratista <span class="opt-badge">Opcional</span></div>
+      <div class="grid-3">
         <div class="field">
           <label>Contratista / Constructor</label>
           <input type="text" id="contratista" placeholder="Nombre o empresa">
         </div>
         <div class="field">
-          <label>Tel. contratista</label>
+          <label>Teléfono</label>
           <input type="tel" id="contratista_tel" placeholder="+57 300 000 0000">
         </div>
         <div class="field">
-          <label>Arquitecto director de obra</label>
+          <label>Arquitecto director</label>
           <input type="text" id="arquitecto" placeholder="">
         </div>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-group-title">Equipo en obra <span class="opt-badge">Opcional</span></div>
+      <div class="grid-3">
         <div class="field">
-          <label>Cuántos obreros en obra hoy</label>
+          <label>N.º obreros hoy</label>
+          <div class="alimenta-hint">→ <em>Equipo</em> — referencia inicial para el calendario de asistencia</div>
           <input type="number" id="num_obreros" min="0" placeholder="8">
         </div>
         <div class="field">
           <label>Jornada de trabajo</label>
-          <div class="chips" style="margin-top:4px;">
-            <div class="chip" onclick="toggleChip(this,'jornada','diurna')">Diurna</div>
-            <div class="chip" onclick="toggleChip(this,'jornada','nocturna')">Nocturna</div>
-            <div class="chip" onclick="toggleChip(this,'jornada','mixta')">Mixta</div>
+          <div class="chips">
+            <div class="chip" onclick="chip(this,'jornada','diurna')">Diurna</div>
+            <div class="chip" onclick="chip(this,'jornada','mixta')">Mixta</div>
+            <div class="chip" onclick="chip(this,'jornada','nocturna')">Nocturna</div>
           </div>
           <input type="hidden" id="jornada">
         </div>
         <div class="field">
-          <label>Trabajan fines de semana</label>
-          <div class="chips" style="margin-top:4px;">
-            <div class="chip" onclick="toggleChip(this,'trabaja_fds','si')">Sí</div>
-            <div class="chip" onclick="toggleChip(this,'trabaja_fds','no')">No</div>
-            <div class="chip" onclick="toggleChip(this,'trabaja_fds','sabados')">Solo sábados</div>
+          <label>¿Trabajan fines de semana?</label>
+          <div class="chips">
+            <div class="chip" onclick="chip(this,'trabaja_fds','si')">Sí</div>
+            <div class="chip" onclick="chip(this,'trabaja_fds','no')">No</div>
+            <div class="chip" onclick="chip(this,'trabaja_fds','sabados')">Solo sábados</div>
           </div>
           <input type="hidden" id="trabaja_fds">
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- SECCIÓN 8: CROQUIS -->
-  <div class="section">
-    <div class="section-head">
-      <span class="section-num">08</span>
-      <span class="section-title">Croquis de planta</span>
-      <span class="badge badge-opt">Opcional — referencia visual</span>
-    </div>
-    <div class="section-body">
-      <div class="info-row">
-        <span class="info-icon">ℹ</span>
-        <div class="info-text">Dibujo libre a mano alzada de la forma del lote, accesos, patio, ubicación de columnas y núcleo de circulación. No necesita ser preciso — sirve de referencia para el gemelo 3D.</div>
-      </div>
-      <div class="sketch-box">
-        Espacio para croquis a mano<br>
-        (imprimir y dibujar aquí)
-      </div>
-      <div style="margin-top:10px;">
-        <div class="field">
-          <label>Observaciones del croquis / notas de campo</label>
-          <textarea class="notes-area" id="notas_croquis" rows="3" placeholder="Ej: lote irregular, retroceso lateral derecho de 1.5m, columnas cada 5m en fachada…"></textarea>
-        </div>
-      </div>
-    </div>
-  </div>
+    <div class="field-group">
+      <div class="field-group-title">¿Cuál es el dolor principal de este dueño?</div>
 
-  <!-- SECCIÓN 9: DOLOR / MOTIVACIÓN -->
-  <div class="section">
-    <div class="section-head">
-      <span class="section-num">09</span>
-      <span class="section-title">Contexto del dueño</span>
-      <span class="badge badge-opt">Solo para asesor</span>
-    </div>
-    <div class="section-body">
-      <div class="field-grid grid-2">
-        <div class="field">
-          <label>Principal dolor expresado</label>
-          <div class="chips" style="margin-top:4px;">
-            <div class="chip" onclick="toggleChip(this,'dolor','no_sabe_avance')">No sabe el avance real</div>
-            <div class="chip" onclick="toggleChip(this,'dolor','costos')">Costos fuera de control</div>
-            <div class="chip" onclick="toggleChip(this,'dolor','retrasos')">Retrasos frecuentes</div>
-            <div class="chip" onclick="toggleChip(this,'dolor','contratista')">No confía en el contratista</div>
-            <div class="chip" onclick="toggleChip(this,'dolor','materiales')">Materiales mal manejados</div>
-            <div class="chip" onclick="toggleChip(this,'dolor','viaje')">No puede visitar seguido</div>
+      <div style="font-size:12px;color:var(--ink3);margin-bottom:12px;line-height:1.6">
+        Selecciona uno o más. El primero que marques se toma como prioridad — arrastra para reordenar o simplemente marca en orden de importancia.
+      </div>
+
+      <div id="dolores-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem">
+        <div class="dolor-item" data-val="no_sabe_avance" onclick="toggleDolor(this)">
+          <div class="dolor-num" id="dnum-no_sabe_avance"></div>
+          <div class="dolor-ico">👁</div>
+          <div class="dolor-body">
+            <div class="dolor-title">No sabe el avance real</div>
+            <div class="dolor-sub">El contratista reporta lo que quiere. No hay forma de verificar.</div>
           </div>
-          <input type="hidden" id="dolor">
+          <div class="dolor-check">○</div>
         </div>
-        <div class="field">
-          <label>Nivel de interés</label>
-          <div class="chips" style="margin-top:4px;">
-            <div class="chip" onclick="toggleChip(this,'interes','alto')">Alto — quiere demo ya</div>
-            <div class="chip" onclick="toggleChip(this,'interes','medio')">Medio — pide más info</div>
-            <div class="chip" onclick="toggleChip(this,'interes','bajo')">Bajo — solo escuchó</div>
+        <div class="dolor-item" data-val="costos" onclick="toggleDolor(this)">
+          <div class="dolor-num" id="dnum-costos"></div>
+          <div class="dolor-ico">💸</div>
+          <div class="dolor-body">
+            <div class="dolor-title">Costos fuera de control</div>
+            <div class="dolor-sub">Siempre hay "extras" que no estaban en el presupuesto.</div>
           </div>
-          <input type="hidden" id="interes">
+          <div class="dolor-check">○</div>
         </div>
-        <div class="field" style="grid-column: span 2;">
-          <label>Notas del asesor (quedan internas)</label>
-          <textarea class="notes-area" id="notas_asesor" rows="3" placeholder="Actitud del dueño, objeciones mencionadas, próximo paso acordado…"></textarea>
+        <div class="dolor-item" data-val="retrasos" onclick="toggleDolor(this)">
+          <div class="dolor-num" id="dnum-retrasos"></div>
+          <div class="dolor-ico">⏰</div>
+          <div class="dolor-body">
+            <div class="dolor-title">Retrasos frecuentes</div>
+            <div class="dolor-sub">La fecha de entrega se ha movido más de una vez sin explicación.</div>
+          </div>
+          <div class="dolor-check">○</div>
         </div>
+        <div class="dolor-item" data-val="contratista" onclick="toggleDolor(this)">
+          <div class="dolor-num" id="dnum-contratista"></div>
+          <div class="dolor-ico">🤝</div>
+          <div class="dolor-body">
+            <div class="dolor-title">No confía en el contratista</div>
+            <div class="dolor-sub">Siente que le ocultan información o que hay malversación.</div>
+          </div>
+          <div class="dolor-check">○</div>
+        </div>
+        <div class="dolor-item" data-val="materiales" onclick="toggleDolor(this)">
+          <div class="dolor-num" id="dnum-materiales"></div>
+          <div class="dolor-ico">🧱</div>
+          <div class="dolor-body">
+            <div class="dolor-title">Materiales mal manejados</div>
+            <div class="dolor-sub">Falta material, llega tarde o desaparece sin explicación.</div>
+          </div>
+          <div class="dolor-check">○</div>
+        </div>
+        <div class="dolor-item" data-val="viaje" onclick="toggleDolor(this)">
+          <div class="dolor-num" id="dnum-viaje"></div>
+          <div class="dolor-ico">✈️</div>
+          <div class="dolor-body">
+            <div class="dolor-title">No puede visitar la obra seguido</div>
+            <div class="dolor-sub">Vive en otra ciudad o tiene poco tiempo para ir a obra.</div>
+          </div>
+          <div class="dolor-check">○</div>
+        </div>
+        <div class="dolor-item" data-val="calidad" onclick="toggleDolor(this)">
+          <div class="dolor-num" id="dnum-calidad"></div>
+          <div class="dolor-ico">🔍</div>
+          <div class="dolor-body">
+            <div class="dolor-title">Dudas sobre la calidad de ejecución</div>
+            <div class="dolor-sub">No sabe si lo que se está construyendo cumple con los planos.</div>
+          </div>
+          <div class="dolor-check">○</div>
+        </div>
+      </div>
+      <input type="hidden" id="dolor">
+
+      <div class="field" style="margin-top:8px">
+        <label>Nivel de interés</label>
+        <div class="chips">
+          <div class="chip" onclick="chip(this,'interes','alto')">🔥 Alto — quiere empezar ya</div>
+          <div class="chip" onclick="chip(this,'interes','medio')">👍 Medio — pide más info</div>
+          <div class="chip" onclick="chip(this,'interes','bajo')">👀 Bajo — solo escuchó</div>
+        </div>
+        <input type="hidden" id="interes">
+      </div>
+
+      <div class="field" style="margin-top:12px">
+        <label>Notas del asesor</label>
+        <textarea id="notas_asesor" rows="3" placeholder="Objeciones mencionadas, próximo paso acordado, contexto relevante…" style="resize:vertical;min-height:80px"></textarea>
       </div>
     </div>
   </div>
 
-  <!-- ACTIONS -->
-  <div class="actions no-print">
-    <button class="btn btn-outline" onclick="limpiarFormulario()">Limpiar</button>
-    <button class="btn btn-print" onclick="window.print()">Imprimir / Guardar PDF</button>
-    <button class="btn btn-primary" onclick="exportarJSON()">Exportar JSON para GO Obra</button>
+  <!-- ══ SUCCESS ══ -->
+  <div class="step" id="step-success">
+    <div class="success-ico">✅</div>
+    <div class="success-title">Proyecto activado</div>
+    <div class="success-sub">El gemelo digital está listo. El dueño recibirá su link por WhatsApp y el residente recibirá el código de obra por Telegram.</div>
+    <div class="link-box" id="gemelo-link">Generando link…</div>
+    <button class="btn btn-success" onclick="copiarLink()">Copiar link del gemelo</button>
+    <div style="margin-top:1.5rem;font-size:12px;color:var(--ink3)">También puedes abrir el gemelo directamente →</div>
+    <a id="gemelo-href" href="#" target="_blank" style="display:inline-block;margin-top:8px;color:var(--gold);font-family:'DM Mono',monospace;font-size:12px;text-decoration:none">Abrir gemelo →</a>
   </div>
 
+</div><!-- /main -->
+
+<!-- NAV BAR -->
+<div class="nav-bar">
+  <button class="btn btn-outline" id="btn-back" onclick="prevStep()" style="display:none">← Atrás</button>
+  <div class="nav-info" id="nav-info"></div>
+  <button class="btn btn-primary" id="btn-next" onclick="nextStep()">Continuar →</button>
 </div>
 
 <script>
-// ── Fecha automática ──
-const hoy = new Date();
-document.getElementById('fecha-display').textContent =
-  hoy.toLocaleDateString('es-CO', {day:'2-digit', month:'long', year:'numeric'});
+// ── CONFIG ──
+const SUPA_URL='https://muyezsssnzlxavchabum.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
+const GEMELO_BASE='https://goobradashboardrepository-production.up.railway.app/gemelo.html';
+const PCTS={prel:.03,mvt:.05,cim:.12,estr:.35,mamp:.18,redes:.10,acab:.12,urb:.03,entr:.02};
 
-// ── Etapas de obra ──
-const ETAPAS = [
-  'Preliminares y demoliciones',
-  'Movimiento de tierras',
-  'Cimentación',
-  'Estructura — sótano(s)',
-  'Estructura — piso 1',
-  'Estructura — piso 2',
-  'Estructura — piso 3',
-  'Estructura — piso 4',
-  'Estructura — piso 5',
-  'Estructura — piso 6+',
-  'Mampostería y divisiones',
-  'Cubierta y terraza',
-  'Instalaciones hidrosanitarias',
-  'Instalaciones eléctricas y voz/datos',
-  'Redes de gas',
-  'Pisos y enchapes',
-  'Pañetes y revoques',
-  'Pintura interior',
-  'Carpintería metálica (ventanas/puertas)',
-  'Carpintería de madera (closets/cocinas)',
-  'Aparatos sanitarios y grifería',
-  'Equipos especiales (ACME, ascensores)',
-  'Fachada y pintura exterior',
-  'Zonas comunes y jardines',
-  'Entrega y escrituración',
+async function supa(path,opts={}){
+  const r=await fetch(SUPA_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})},
+    ...opts
+  });
+  if(!r.ok){const e=await r.text();throw new Error(e);}
+  return r.status===204?null:r.json();
+}
+
+// ── STEPS ──
+const STEPS=['step-1','step-2','step-3','step-4','step-5','step-6','step-success'];
+let cur=0;
+
+function buildDots(){
+  const c=document.getElementById('step-dots');
+  c.innerHTML=STEPS.slice(0,-1).map((_,i)=>`<div class="step-dot${i===0?' active':''}" onclick="goStep(${i})"></div>`).join('');
+}
+
+function goStep(n){
+  if(n>cur&&!validateStep(cur)) return;
+  document.getElementById(STEPS[cur]).classList.remove('active');
+  cur=n;
+  document.getElementById(STEPS[cur]).classList.add('active');
+  updateNav();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function nextStep(){
+  if(cur===STEPS.length-2){activar();return;}
+  if(!validateStep(cur)) return;
+  goStep(cur+1);
+}
+function prevStep(){if(cur>0) goStep(cur-1);}
+
+function updateNav(){
+  const dots=document.querySelectorAll('.step-dot');
+  dots.forEach((d,i)=>{
+    d.classList.toggle('active',i===cur);
+    d.classList.toggle('done',i<cur);
+  });
+  const pct=Math.round((cur/(STEPS.length-1))*100);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('btn-back').style.display=cur>0&&cur<STEPS.length-1?'flex':'none';
+  const btnNext=document.getElementById('btn-next');
+  if(cur===STEPS.length-1){btnNext.style.display='none';}
+  else if(cur===STEPS.length-2){btnNext.textContent='Activar proyecto ✓';btnNext.className='btn btn-success';}
+  else{btnNext.textContent='Continuar →';btnNext.className='btn btn-primary';}
+  const infos=['Datos de contacto','Geometría','Sistema constructivo','Estado actual','Presupuesto','Equipo',''];
+  document.getElementById('nav-info').textContent=infos[cur]||'';
+}
+
+// ── VALIDATION ──
+function validateStep(n){
+  const required={
+    0:['nombre_obra','dueno_wa','residente_tel'],
+    1:['frente','fondo','pisos'],
+    2:[],
+    3:['fecha_inicio'],
+    4:[],5:[],
+  };
+  const fields=required[n]||[];
+  let ok=true;
+  fields.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(!el.value.trim()){
+      el.classList.add('error');
+      el.focus();
+      ok=false;
+    } else el.classList.remove('error');
+  });
+  // Check chips for step 2
+  if(n===2){
+    const sc=document.getElementById('sistema_constructivo').value;
+    const tc=document.getElementById('tipo_concreto').value;
+    if(!sc){alert('Selecciona el sistema constructivo.');ok=false;}
+    else if(!tc){alert('Selecciona el tipo de concreto.');ok=false;}
+  }
+  if(!ok) return false;
+  return true;
+}
+
+// ── CHIPS ──
+function chip(el,fieldId,value){
+  el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(fieldId).value=value;
+}
+function chipMulti(el,fieldId,value){
+  el.classList.toggle('active');
+  const vals=[...el.parentElement.querySelectorAll('.chip.active')].map(c=>c.textContent.trim());
+  document.getElementById(fieldId).value=vals.join(',');
+}
+
+// ── ETAPAS ──
+const ETAPAS=[
+  {id:'prel',nombre:'Preliminares y demoliciones'},
+  {id:'mvt',nombre:'Movimiento de tierras'},
+  {id:'cim',nombre:'Cimentación'},
+  {id:'estr_s',nombre:'Estructura — sótano(s)'},
+  {id:'estr_p1',nombre:'Estructura — piso 1'},
+  {id:'estr_p2',nombre:'Estructura — piso 2'},
+  {id:'estr_p3',nombre:'Estructura — piso 3'},
+  {id:'estr_p4',nombre:'Estructura — piso 4'},
+  {id:'estr_p5',nombre:'Estructura — piso 5'},
+  {id:'estr_p6',nombre:'Estructura — piso 6+'},
+  {id:'mamp',nombre:'Mampostería y divisiones'},
+  {id:'redes_h',nombre:'Instalaciones hidrosanitarias'},
+  {id:'redes_e',nombre:'Instalaciones eléctricas'},
+  {id:'acab',nombre:'Pisos, enchapes y pañetes'},
+  {id:'pintura',nombre:'Pintura interior y exterior'},
+  {id:'entr',nombre:'Entrega y escrituración'},
 ];
 
-function renderEtapas() {
-  const c = document.getElementById('etapas-container');
-  c.innerHTML = ETAPAS.map((e,i) => `
+function renderEtapas(){
+  const c=document.getElementById('etapas-container');
+  c.innerHTML=ETAPAS.map((e,i)=>`
     <div class="etapa-row" id="erow-${i}">
-      <div class="etapa-check">
-        <input type="checkbox" id="ech-${i}" onchange="updateEtapa(${i})">
-      </div>
-      <div class="etapa-name">${e}</div>
-      <div class="etapa-estado">
-        <select id="eest-${i}" onchange="updateEtapa(${i})">
-          <option value="">—</option>
-          <option value="pendiente">Pendiente</option>
-          <option value="en_curso">En curso</option>
-          <option value="completada">Completada</option>
-          <option value="no_aplica">No aplica</option>
-        </select>
-      </div>
-      <div class="etapa-pct">
-        <input type="number" id="epct-${i}" min="0" max="100" step="5" placeholder="—" style="width:60px;">
-      </div>
-    </div>
-  `).join('');
+      <div class="etapa-check"><input type="checkbox" id="ech-${i}" onchange="updateEtapa(${i})"></div>
+      <div class="etapa-name">${e.nombre}</div>
+      <div class="etapa-estado"><select id="eest-${i}" onchange="updateEtapa(${i})">
+        <option value="">—</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="en_curso">En curso</option>
+        <option value="completada">Completada</option>
+        <option value="no_aplica">No aplica</option>
+      </select></div>
+      <div class="etapa-pct"><input type="number" id="epct-${i}" min="0" max="100" step="5" placeholder="—" style="width:56px"></div>
+    </div>`).join('');
 }
 
-function updateEtapa(i) {
-  const row = document.getElementById(`erow-${i}`);
-  const est = document.getElementById(`eest-${i}`).value;
-  const chk = document.getElementById(`ech-${i}`);
-  row.className = 'etapa-row' + (est === 'completada' ? ' completada' : est === 'en_curso' ? ' en_curso' : '');
-  if (est === 'completada') chk.checked = true;
-  if (est === 'en_curso') chk.checked = false;
+function updateEtapa(i){
+  const row=document.getElementById(`erow-${i}`);
+  const est=document.getElementById(`eest-${i}`).value;
+  const chk=document.getElementById(`ech-${i}`);
+  row.className='etapa-row'+(est==='completada'?' completada':est==='en_curso'?' en_curso':'');
+  if(est==='completada') chk.checked=true;
+  if(est==='en_curso') chk.checked=false;
 }
 
-renderEtapas();
-
-// ── Chips ──
-function toggleChip(el, fieldId, value) {
-  const parent = el.parentElement;
-  const isMulti = fieldId === 'dolor';
-  if (isMulti) {
-    el.classList.toggle('active');
-    const vals = [...parent.querySelectorAll('.chip.active')].map(c => c.dataset.val || c.textContent.trim());
-    document.getElementById(fieldId).value = vals.join(',');
-  } else {
-    parent.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-    document.getElementById(fieldId).value = value;
-  }
-}
-
-// ── Auto-calc área lote ──
-['frente','fondo'].forEach(id => {
-  document.getElementById(id).addEventListener('input', () => {
-    const f = parseFloat(document.getElementById('frente').value) || 0;
-    const fo = parseFloat(document.getElementById('fondo').value) || 0;
-    if (f && fo) document.getElementById('area_lote').value = (f*fo).toFixed(0);
+// ── AUTO CALCS ──
+['frente','fondo'].forEach(id=>{
+  document.addEventListener('input',e=>{
+    if(e.target.id!==id) return;
+    const f=parseFloat(document.getElementById('frente').value)||0;
+    const fo=parseFloat(document.getElementById('fondo').value)||0;
+    if(f&&fo) document.getElementById('area_lote').value=(f*fo).toFixed(0);
   });
 });
 
-// ── Export JSON ──
-function recogerDatos() {
-  const g = id => document.getElementById(id)?.value || '';
-  const etapas = ETAPAS.map((nombre, i) => ({
-    nombre,
-    estado: document.getElementById(`eest-${i}`)?.value || '',
-    pct_avance: parseInt(document.getElementById(`epct-${i}`)?.value) || 0
-  })).filter(e => e.estado && e.estado !== '');
+// ── ACTIVAR ──
+async function activar(){
+  if(!validateStep(cur)) return;
+  const overlay=document.getElementById('saving-overlay');
+  overlay.classList.add('active');
 
-  return {
-    _meta: { fecha_levantamiento: new Date().toISOString(), asesor: 'Gustavo Oyuela' },
-    identificacion: {
-      nombre_obra: g('nombre_obra'),
-      direccion: g('direccion'),
-      barrio: g('barrio'),
-      dueno_nombre: g('dueno_nombre'),
-      dueno_wa: g('dueno_wa'),
-      residente_nombre: g('residente_nombre'),
-      residente_tel: g('residente_tel'),
-    },
-    geometria: {
-      frente: parseFloat(g('frente')) || null,
-      fondo: parseFloat(g('fondo')) || null,
-      area_lote: parseFloat(g('area_lote')) || null,
-      forma_lote: g('forma_lote'),
-      pisos: parseInt(g('pisos')) || null,
-      sotanos: parseInt(g('sotanos')) || 0,
-      altura_entrepiso: parseFloat(g('altura_entrepiso')) || null,
-      area_construida: parseFloat(g('area_construida')) || null,
-      antejardín: parseFloat(g('antejardín')) || null,
-      patio: parseFloat(g('patio')) || null,
-      voladizo_f: parseFloat(g('voladizo_f')) || null,
-      voladizo_p: parseFloat(g('voladizo_p')) || null,
-    },
-    sistema_constructivo: {
-      estructura: g('sistema_constructivo'),
-      cerramiento: g('cerramiento'),
-      cubierta: g('cubierta'),
-      cimentacion: g('cimentacion'),
-    },
-    especificaciones_estructurales: {
-      tipo_concreto: g('tipo_concreto'),
-      resistencia_concreto: g('resistencia_concreto'),
-      columnas: {
-        ancho_cm: parseFloat(g('col_ancho')) || null,
-        alto_cm: parseFloat(g('col_alto')) || null,
-        cantidad_por_piso: parseInt(g('col_cantidad')) || null,
-        varilla_principal: g('col_varilla'),
-      },
-      vigas: {
-        ancho_cm: parseFloat(g('viga_ancho')) || null,
-        alto_cm: parseFloat(g('viga_alto')) || null,
-        ml_por_piso: parseFloat(g('viga_ml_piso')) || null,
-        tipo: g('tipo_viga'),
-      },
-      placa: {
-        tipo: g('tipo_placa'),
-        espesor_cm: parseFloat(g('placa_espesor')) || null,
-        muros_contencion: g('muros_contencion'),
-      },
-      mamposteria: {
-        ladrillo_interior: g('ladrillo_interior'),
-        espesor_panete_cm: parseFloat(g('espesor_panete')) || null,
-        tipo_piso: g('tipo_piso'),
-        acabado_muros: g('acabado_muros'),
-      }
-    },
-    uso: {
-      uso_principal: g('uso'),
-      estrato: g('estrato'),
-      unidades_total: parseInt(g('unidades_total')) || null,
-      area_unidad: parseFloat(g('area_unidad')) || null,
-      locales: parseInt(g('locales')) || 0,
-      parqueaderos: parseInt(g('parqueaderos')) || 0,
-    },
-    cronograma: {
-      fecha_inicio: g('fecha_inicio'),
-      fecha_entrega: g('fecha_entrega'),
-      piso_estructura_actual: parseInt(g('piso_estructura_actual')) || 0,
-      etapas,
-    },
-    financiero: {
-      presupuesto_total: parseFloat(g('presupuesto_total')) || null,
-      costo_ejecutado: parseFloat(g('costo_ejecutado')) || null,
-      costo_m2: parseFloat(g('costo_m2')) || null,
-      tiene_licencia: g('tiene_licencia'),
-      num_licencia: g('num_licencia'),
-      libro_obra: g('libro_obra'),
-    },
-    equipo: {
-      contratista: g('contratista'),
-      contratista_tel: g('contratista_tel'),
-      arquitecto: g('arquitecto'),
-      num_obreros: parseInt(g('num_obreros')) || null,
-      jornada: g('jornada'),
-      trabaja_fds: g('trabaja_fds'),
-    },
-    asesor: {
-      dolor_expresado: g('dolor'),
-      nivel_interes: g('interes'),
-      notas_croquis: g('notas_croquis'),
-      notas_asesor: g('notas_asesor'),
+  try{
+    const g=id=>document.getElementById(id)?.value?.trim()||null;
+
+    // Generate project ID
+    const codigo=g('nombre_obra')?.toLowerCase().replace(/\s+/g,'').slice(0,3).replace(/[^a-z0-9]/g,'')||'obr';
+    const ts=Date.now();
+    const pid=`${codigo}${Math.floor(Math.random()*900+100)}_${ts}`;
+    const codigoCorto=String(Math.floor(Math.random()*900+100));
+    const token=Math.random().toString(36).slice(2,10).toUpperCase();
+
+    // Etapas activas
+    const etapasActivas=ETAPAS.map((e,i)=>({
+      etapa_id:e.id,nombre:e.nombre,
+      estado:document.getElementById(`eest-${i}`)?.value||'',
+      pct_avance:parseInt(document.getElementById(`epct-${i}`)?.value)||0
+    })).filter(e=>e.estado&&e.estado!=='');
+
+    // 1. Insert proyecto
+    const proyData={
+      id:pid,
+      nombre:g('nombre_obra'),
+      direccion:g('direccion'),
+      codigo_corto:codigoCorto,
+      dueno_wa:g('dueno_wa'),
+      numero_pisos:parseInt(g('pisos'))||8,
+      sotanos:parseInt(g('sotanos'))||0,
+      frente:parseFloat(g('frente'))||null,
+      fondo:parseFloat(g('fondo'))||null,
+      altura_piso:parseFloat(g('altura_entrepiso'))||2.8,
+      area_construida:parseFloat(g('area_construida'))||null,
+      sistema_constructivo:g('sistema_constructivo')||'porticos',
+      tipo_concreto:g('tipo_concreto')||'premezclado',
+      resistencia_concreto:g('resistencia_concreto')||'28mpa',
+      col_ancho_cm:parseFloat(g('col_ancho'))||30,
+      col_alto_cm:parseFloat(g('col_alto'))||30,
+      col_cantidad_por_piso:parseInt(g('col_cantidad'))||16,
+      col_varilla:g('col_varilla')||'1/2',
+      viga_ancho_cm:parseFloat(g('viga_ancho'))||30,
+      viga_alto_cm:parseFloat(g('viga_alto'))||50,
+      viga_ml_por_piso:parseFloat(g('viga_ml_piso'))||72,
+      tipo_viga:g('tipo_viga')||'descolgada',
+      tipo_placa:g('tipo_placa')||'maciza',
+      placa_espesor_cm:parseFloat(g('placa_espesor'))||12,
+      muros_contencion:g('muros_contencion')==='si',
+      ladrillo_interior:g('ladrillo_interior')||'bloque4',
+      espesor_panete_cm:parseFloat(g('espesor_panete'))||1.5,
+      tipo_piso:g('tipo_piso')||'ceramica',
+      acabado_muros:g('acabado_muros')||'estuco_pintura',
+      fecha_inicio:g('fecha_inicio')||null,
+      fecha_fin_estimada:g('fecha_entrega')||null,
+      presupuesto_total:parseFloat(g('presupuesto_total'))||0,
+      estado:'activo',
+      moneda:'COP',
+    };
+    await supa('proyectos',{method:'POST',body:JSON.stringify(proyData)});
+
+    // 2. Insert token
+    await supa('proyecto_tokens',{method:'POST',body:JSON.stringify({proyecto_id:pid,token,activo:true})});
+
+    // 3. Insert worker (residente)
+    const residente_nombre=g('residente_nombre');
+    const residente_tel=g('residente_tel');
+    if(residente_nombre&&residente_tel){
+      await supa('workers',{method:'POST',body:JSON.stringify({
+        proyecto_id:pid,nombre:residente_nombre,rol:'res',
+        numero_wa:residente_tel,telegram_id:residente_tel,activo:true
+      })});
     }
+
+    // 4. Insert presupuesto version
+    if(proyData.presupuesto_total>0){
+      await supa('presupuesto_versiones',{method:'POST',body:JSON.stringify({
+        proyecto_id:pid,version:1,
+        presupuesto_total:proyData.presupuesto_total,
+        motivo_cambio:'Presupuesto inicial del onboarding'
+      })});
+      // Insert etapas presupuesto
+      const etapasRows=Object.entries(PCTS).map(([e,p])=>({
+        proyecto_id:pid,etapa_id:e,pct_camacol:p,
+        monto_base:Math.round(proyData.presupuesto_total*p),version:1
+      }));
+      await supa('presupuesto_etapas',{method:'POST',body:JSON.stringify(etapasRows),headers:{'Prefer':'resolution=ignore-duplicates,return=minimal'}});
+    }
+
+    // 5. Generate missions using n8n or direct insert
+    // Insert basic missions based on etapas activas
+    await generarMisiones(pid,proyData,etapasActivas);
+
+    // 6. Show success
+    overlay.classList.remove('active');
+    const link=`${GEMELO_BASE}#proyecto=${pid}&codigo=${codigoCorto}&token=${token}`;
+    document.getElementById('gemelo-link').innerHTML=`<span>${link}</span>`;
+    document.getElementById('gemelo-href').href=link;
+    window._glink=link;
+    goStep(STEPS.length-1);
+
+  }catch(err){
+    overlay.classList.remove('active');
+    alert('Error al activar: '+err.message+'\n\nRevisa la consola para más detalles.');
+    console.error(err);
+  }
+}
+
+async function generarMisiones(pid,proy,etapasActivas){
+  // Mission templates per etapa
+  const MISIONES={
+    prel:[
+      {id:'limpieza_descapote',nombre:'Limpieza y descapote',unidad:'m2',meta_fn:p=>p.frente*p.fondo||288,dias:3},
+      {id:'localizacion_replanteo',nombre:'Localización y replanteo',unidad:'m2',meta_fn:p=>p.frente*p.fondo||288,dias:3},
+      {id:'cerramiento_provisional',nombre:'Cerramiento provisional',unidad:'ml',meta_fn:p=>2*(p.frente+p.fondo)||72,dias:5},
+    ],
+    mvt:[
+      {id:'excavacion_mecanica',nombre:'Excavación mecánica',unidad:'m3',meta_fn:p=>(p.frente*p.fondo*(p.sotanos||1)*3)||576,dias:8},
+      {id:'retiro_material',nombre:'Retiro de material',unidad:'m3',meta_fn:p=>(p.frente*p.fondo*(p.sotanos||1)*3)||576,dias:6},
+    ],
+    cim:[
+      {id:'armado_zapatas',nombre:'Armado de zapatas',unidad:'kg',meta_fn:p=>Math.round((p.col_cantidad_por_piso||16)*p.numero_pisos*15)||3456,dias:15},
+      {id:'vaciado_zapatas',nombre:'Vaciado de zapatas',unidad:'m3',meta_fn:p=>Math.round((p.col_cantidad_por_piso||16)*0.5)||101,dias:7},
+      {id:'contrapiso',nombre:'Contrapiso',unidad:'m2',meta_fn:p=>p.frente*p.fondo||288,dias:8},
+    ],
+    mamp:[
+      {id:'levante_muros_interiores',nombre:'Levante muros interiores',unidad:'m2',meta_fn:p=>Math.round(p.numero_pisos*(p.area_construida||p.frente*p.fondo*0.85)*0.35)||911,dias:90},
+      {id:'panete_interior',nombre:'Pañete interior',unidad:'m2',meta_fn:p=>Math.round(p.numero_pisos*(p.area_construida||p.frente*p.fondo*0.85)*0.7)||1822,dias:90},
+    ],
+    redes:[
+      {id:'hidrosanitarias',nombre:'Redes hidrosanitarias',unidad:'ml',meta_fn:p=>Math.round(p.numero_pisos*20)||600,dias:80},
+      {id:'electricas',nombre:'Redes eléctricas',unidad:'ml',meta_fn:p=>Math.round(p.numero_pisos*26)||960,dias:80},
+    ],
+    acab:[
+      {id:'pisos_enchapes',nombre:'Pisos y enchapes',unidad:'m2',meta_fn:p=>Math.round((p.area_construida||p.frente*p.fondo*0.85)*p.numero_pisos*0.55)||1325,dias:90},
+      {id:'pintura_final',nombre:'Pintura final',unidad:'m2',meta_fn:p=>Math.round((p.area_construida||p.frente*p.fondo*0.85)*p.numero_pisos*1.1)||2650,dias:90},
+    ],
+    entr:[
+      {id:'aseo_fino',nombre:'Aseo fino',unidad:'m2',meta_fn:p=>Math.round((p.area_construida||p.frente*p.fondo*0.85)*p.numero_pisos*0.69)||1656,dias:15},
+      {id:'actas_entrega',nombre:'Actas de entrega',unidad:'un',meta_fn:p=>Math.round(p.numero_pisos*3)||24,dias:10},
+    ],
   };
+
+  const rows=[];
+  let fechaCursor=new Date(proy.fecha_inicio||new Date());
+  let idx=0;
+
+  // Non-structural etapas
+  for(const[etapaKey,misiones] of Object.entries(MISIONES)){
+    const estadoEtapa=etapasActivas.find(e=>e.etapa_id===etapaKey||e.etapa_id.startsWith(etapaKey));
+    const estado=estadoEtapa?.estado||'pendiente';
+    const pctEtapa=estadoEtapa?.pct_avance||0;
+    for(const m of misiones){
+      const meta=m.meta_fn(proy);
+      const ejecutado=estado==='completada'?meta:Math.round(meta*pctEtapa/100);
+      const fi=new Date(fechaCursor);
+      const ff=new Date(fechaCursor);ff.setDate(ff.getDate()+m.dias);
+      rows.push({
+        id:`${pid}_${etapaKey}_${m.id}__${idx}`,
+        proyecto_id:pid,etapa_id:etapaKey,mision_id:m.id,nivel:null,
+        cantidad_meta:meta,unidad_primaria:m.unidad,
+        cantidad_ejecutada:estado==='completada'?meta:ejecutado,
+        fecha_inicio_plan:fi.toISOString().split('T')[0],
+        fecha_fin_plan:ff.toISOString().split('T')[0],
+        dias_plan:m.dias,
+        estado:estado==='completada'?'completada':estado==='en_curso'?'en_curso':'pendiente',
+      });
+      if(estado==='completada') fechaCursor=new Date(ff);
+      idx++;
+    }
+  }
+
+  // Structural missions per piso
+  const ESTR_MISIONES=[
+    {id:'columnas_armado',unidad:'kg',meta_fn:p=>(p.col_cantidad_por_piso||16)*Math.ceil(((p.col_ancho_cm||30)/100)*((p.col_alto_cm||30)/100)*(p.altura_piso||2.8)*7850*0.02)||288,dias:6},
+    {id:'columnas_vaciado',unidad:'un',meta_fn:p=>p.col_cantidad_por_piso||16,dias:5},
+    {id:'vigas',unidad:'ml',meta_fn:p=>p.viga_ml_por_piso||72,dias:6},
+    {id:'placa_entrepiso',unidad:'m2',meta_fn:p=>p.frente*p.fondo||288,dias:6},
+  ];
+
+  const pisos=parseInt(proy.numero_pisos)||8;
+  const pisoEstr=parseInt(document.getElementById('piso_estructura_actual')?.value)||0;
+  let fechaEstr=new Date(proy.fecha_inicio||new Date());
+  // advance fecha past cim
+  fechaEstr.setDate(fechaEstr.getDate()+60);
+
+  for(let p=1;p<=pisos;p++){
+    const nivel=`piso ${p}`;
+    const estadoPiso=p<pisoEstr?'completada':p===pisoEstr?'en_curso':'pendiente';
+    for(const m of ESTR_MISIONES){
+      const meta=m.meta_fn(proy);
+      const ejecutado=estadoPiso==='completada'?meta:estadoPiso==='en_curso'?Math.round(meta*0.3):0;
+      const fi=new Date(fechaEstr);
+      const ff=new Date(fechaEstr);ff.setDate(ff.getDate()+m.dias);
+      rows.push({
+        id:`${pid}_estr_${m.id}_${nivel}_${idx}`,
+        proyecto_id:pid,etapa_id:'estr',mision_id:m.id,nivel,
+        cantidad_meta:meta,unidad_primaria:m.unidad,
+        cantidad_ejecutada:ejecutado,
+        fecha_inicio_plan:fi.toISOString().split('T')[0],
+        fecha_fin_plan:ff.toISOString().split('T')[0],
+        dias_plan:m.dias,
+        estado:estadoPiso,
+      });
+      fechaEstr.setDate(fechaEstr.getDate()+m.dias);
+      idx++;
+    }
+    // Gap between pisos
+    fechaEstr.setDate(fechaEstr.getDate()+2);
+  }
+
+  // Batch insert missions
+  const batchSize=20;
+  for(let i=0;i<rows.length;i+=batchSize){
+    await supa('proyecto_misiones',{
+      method:'POST',
+      body:JSON.stringify(rows.slice(i,i+batchSize)),
+      headers:{'Prefer':'resolution=ignore-duplicates,return=minimal'}
+    });
+  }
 }
 
-function exportarJSON() {
-  const data = recogerDatos();
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  const nombre = (data.identificacion.nombre_obra || 'obra').toLowerCase().replace(/\s+/g,'-');
-  a.download = `levantamiento-${nombre}-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
+function copiarLink(){
+  if(navigator.clipboard&&window._glink){
+    navigator.clipboard.writeText(window._glink).then(()=>{
+      const btn=document.querySelector('.btn-success');
+      btn.textContent='✓ Copiado';
+      setTimeout(()=>btn.textContent='Copiar link del gemelo',2000);
+    });
+  }
 }
 
-function limpiarFormulario() {
-  if (!confirm('¿Limpiar todos los campos?')) return;
-  document.querySelectorAll('input, select, textarea').forEach(el => {
-    if (el.type === 'checkbox') el.checked = false;
-    else el.value = '';
+// ── DOLORES ──
+let doloresOrder=[];
+
+function toggleDolor(el){
+  const val=el.dataset.val;
+  if(el.classList.contains('active')){
+    el.classList.remove('active');
+    el.querySelector('.dolor-check').textContent='○';
+    doloresOrder=doloresOrder.filter(v=>v!==val);
+  } else {
+    el.classList.add('active');
+    el.querySelector('.dolor-check').textContent='✓';
+    doloresOrder.push(val);
+  }
+  // Update numbers
+  doloresOrder.forEach((v,i)=>{
+    const num=document.getElementById('dnum-'+v);
+    if(num) num.textContent=i+1;
   });
-  document.querySelectorAll('.chip.active').forEach(c => c.classList.remove('active'));
-  renderEtapas();
+  document.getElementById('dolor').value=doloresOrder.join(',');
 }
+
+// ── INIT ──
+buildDots();
+renderEtapas();
+updateNav();
+
+// Set today as default fecha_inicio
+document.getElementById('fecha_inicio').value=new Date().toISOString().split('T')[0];
+// Default resistencia
+document.querySelector('[onclick="chip(this,\'resistencia_concreto\',\'28mpa\')"]')?.classList.add('active');
 </script>
 </body>
 </html>

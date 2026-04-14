@@ -1,572 +1,785 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GO Obra — Activa tu obra</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#0c0c0c;--bg2:#131313;--bg3:#1a1a1a;--bg4:#222;
-  --border:#1e1e1e;--border2:#2a2a2a;--border3:#333;
-  --text:#f0ede8;--text2:#888;--text3:#444;
-  --amber:#e8a020;--amber-d:rgba(232,160,32,.1);--amber-b:rgba(232,160,32,.25);
-  --green:#27ae60;--red:#c0392b;
-}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif}
+:root{
+  --gold:#c8780a;--gold-bg:#fdf3e3;--gold-b:rgba(200,120,10,.18);
+  --ink:#111;--ink2:#333;--ink3:#777;
+  --surface:#f7f5f0;--page:#fff;
+  --line:#ddd;--line2:#eee;
+  --red:#c0392b;
+  --radius:12px;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--surface);color:var(--ink);
+  min-height:100vh;font-size:15px;
+}
 
-/* NAV */
-nav{height:50px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.5rem;gap:12px;position:sticky;top:0;z-index:100}
-.logo{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;color:var(--amber);letter-spacing:3px}
-.logo span{color:var(--text)}
-.nav-sep{width:1px;height:18px;background:var(--border2)}
-.nav-tag{font-size:10px;color:var(--text3);letter-spacing:.5px}
-
-/* HERO */
-.hero{padding:4rem 1.5rem 3rem;max-width:600px;margin:0 auto;text-align:center}
-.hero-eyebrow{display:inline-flex;align-items:center;gap:6px;font-family:'DM Mono',monospace;font-size:10px;color:var(--amber);border:1px solid var(--amber-b);background:var(--amber-d);padding:4px 12px;border-radius:20px;margin-bottom:1.5rem;letter-spacing:.5px}
-.hero-eyebrow::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--amber)}
-h1{font-family:'Syne',sans-serif;font-size:clamp(2rem,5vw,3rem);font-weight:800;line-height:1.1;margin-bottom:1rem}
-h1 em{font-style:normal;color:var(--amber)}
-.hero-sub{font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:2rem}
-
-/* FORM CARD */
-.form-wrap{max-width:560px;margin:0 auto;padding:0 1.5rem 4rem}
-.form-card{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;overflow:hidden}
+/* TOP */
+.top{
+  background:var(--ink);padding:1rem 1.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.brand{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.5px}
+.brand em{color:var(--gold);font-style:normal}
+.step-pills{display:flex;gap:5px}
+.pill{
+  width:28px;height:5px;border-radius:3px;
+  background:rgba(255,255,255,.15);transition:all .3s;
+}
+.pill.active{background:var(--gold);width:36px}
+.pill.done{background:rgba(255,255,255,.4)}
 
 /* PROGRESS */
-.prog-wrap{height:2px;background:var(--border);position:relative}
-.prog-fill{height:100%;background:var(--amber);transition:width .4s ease}
+.prog-bar{height:3px;background:rgba(200,120,10,.15)}
+.prog-fill{height:100%;background:var(--gold);transition:width .5s cubic-bezier(.16,1,.3,1)}
 
-/* STEP HEADER */
-.step-hd{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
-.step-num{width:28px;height:28px;border-radius:50%;background:var(--amber);color:#000;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;flex-shrink:0}
-.step-info h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-bottom:2px}
-.step-info p{font-size:11px;color:var(--text3)}
+/* WRAPPER */
+.wrap{max-width:520px;margin:0 auto;padding:2rem 1.25rem 7rem}
 
-/* STEP BODY */
-.step-body{display:none;padding:1.5rem}
-.step-body.on{display:block}
+/* STEP */
+.step{display:none}
+.step.active{display:block;animation:up .4s cubic-bezier(.16,1,.3,1)}
+@keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
-/* FIELDS */
-.fg{display:grid;gap:.75rem;margin-bottom:.75rem}
-.fg2{grid-template-columns:1fr 1fr}
-.field{display:flex;flex-direction:column;gap:5px}
-.field label{font-size:11px;font-weight:500;color:var(--text2);letter-spacing:.3px;text-transform:uppercase}
-.field input,.field select{
-  padding:10px 12px;border:1px solid var(--border2);border-radius:7px;
-  font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg3);
-  color:var(--text);outline:none;transition:border-color .15s
+/* HERO PER STEP */
+.step-hero{
+  text-align:center;padding:2rem 0 1.5rem;
 }
-.field input:focus,.field select:focus{border-color:var(--amber)}
-.field-hint{font-size:11px;color:var(--text3);line-height:1.5}
+.step-emoji{font-size:52px;margin-bottom:.75rem;display:block}
+.step-title{
+  font-family:'Syne',sans-serif;font-size:26px;font-weight:800;
+  line-height:1.2;margin-bottom:.5rem;
+}
+.step-desc{font-size:14px;color:var(--ink3);line-height:1.7;max-width:380px;margin:0 auto}
 
-/* CHIPS */
-.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
-.chip{padding:5px 11px;border-radius:20px;border:1px solid var(--border2);font-size:11px;cursor:pointer;color:var(--text2);background:none;transition:all .15s;font-family:'DM Sans',sans-serif}
-.chip:hover{border-color:var(--amber);color:var(--amber)}
-.chip.on{background:var(--amber-d);border-color:var(--amber-b);color:var(--amber);font-weight:500}
+/* CARD */
+.card{
+  background:var(--page);border-radius:var(--radius);
+  border:1.5px solid var(--line2);
+  padding:1.25rem;margin-bottom:1rem;
+}
+.card-title{
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:2px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:1rem;font-weight:700;
+}
 
-/* ADVANCED TOGGLE */
-.adv-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 0;color:var(--text3);font-size:12px;border-top:1px solid var(--border);margin-top:.75rem;transition:color .15s}
-.adv-toggle:hover{color:var(--text2)}
-.adv-toggle svg{width:14px;height:14px;transition:transform .2s}
-.adv-toggle.open svg{transform:rotate(180deg)}
-.adv-body{overflow:hidden;transition:max-height .3s ease;max-height:0}
-.adv-body.open{max-height:600px}
-.adv-label{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--amber);margin-bottom:.75rem;padding-top:.75rem}
+/* FIELD */
+.field{margin-bottom:1rem}
+.field:last-child{margin-bottom:0}
+.field label{
+  display:block;font-size:12px;font-weight:600;
+  color:var(--ink2);margin-bottom:6px;
+}
+.field label .req{color:var(--gold)}
+.field .hint{font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.5}
+.field input,.field select,.field textarea{
+  width:100%;font-family:'DM Sans',sans-serif;font-size:15px;
+  color:var(--ink);background:var(--surface);
+  border:1.5px solid var(--line);border-radius:8px;
+  padding:12px 14px;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+  -webkit-appearance:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px var(--gold-bg);
+  background:var(--page);
+}
+.field input.error{border-color:var(--red)!important}
+.field input[type="number"]{font-family:'DM Mono',monospace}
 
-/* NAV BUTTONS */
-.step-nav{display:flex;justify-content:space-between;align-items:center;padding:1.25rem 1.5rem;border-top:1px solid var(--border)}
-.btn-back{background:none;border:1px solid var(--border2);padding:9px 18px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all .15s}
-.btn-back:hover{border-color:var(--text2);color:var(--text)}
-.btn-next{background:var(--amber);color:#000;border:none;padding:10px 22px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;display:flex;align-items:center;gap:7px}
-.btn-next:hover{background:#cf8f1a}
-.btn-next:disabled{background:var(--text3);cursor:not-allowed;color:var(--bg)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
-/* STEP INDICATORS */
-.steps-ind{display:flex;justify-content:center;gap:6px;margin-bottom:2rem}
-.si{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:all .2s}
-.si.on{background:var(--amber);width:20px;border-radius:3px}
-.si.done{background:var(--green)}
+/* BIG CHIPS */
+.big-chips{display:grid;gap:8px;margin-top:4px}
+.big-chips.cols-2{grid-template-columns:1fr 1fr}
+.big-chips.cols-3{grid-template-columns:1fr 1fr 1fr}
+.big-chip{
+  padding:14px 12px;border:1.5px solid var(--line);border-radius:10px;
+  text-align:center;cursor:pointer;transition:all .15s;
+  background:var(--page);user-select:none;
+}
+.big-chip:hover{border-color:var(--gold);background:var(--gold-bg)}
+.big-chip.active{border-color:var(--gold);background:var(--gold-bg);font-weight:600}
+.big-chip .chip-ico{font-size:24px;margin-bottom:4px;display:block}
+.big-chip .chip-txt{font-size:13px;color:var(--ink2)}
+.big-chip.active .chip-txt{color:var(--gold)}
+
+/* SMALL CHIPS */
+.s-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.s-chip{
+  padding:8px 14px;border:1.5px solid var(--line);border-radius:20px;
+  font-size:13px;cursor:pointer;transition:all .12s;
+  background:var(--page);color:var(--ink2);user-select:none;
+}
+.s-chip:hover{border-color:var(--gold);color:var(--gold)}
+.s-chip.active{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:500}
+
+/* NUMBER INPUT WITH ARROWS */
+.num-input{
+  display:flex;align-items:center;gap:0;
+  border:1.5px solid var(--line);border-radius:8px;overflow:hidden;
+  background:var(--surface);
+}
+.num-btn{
+  width:48px;height:48px;border:none;background:none;
+  font-size:22px;cursor:pointer;color:var(--ink3);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .1s;flex-shrink:0;
+}
+.num-btn:hover{background:var(--gold-bg);color:var(--gold)}
+.num-val{
+  flex:1;text-align:center;font-family:'Syne',sans-serif;
+  font-size:22px;font-weight:800;color:var(--ink);
+  border:none;background:none;outline:none;
+}
+input[type="hidden"]{display:none}
+
+/* ETAPAS SIMPLE */
+.etapa-simple{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;border:1.5px solid var(--line2);
+  border-radius:10px;margin-bottom:8px;cursor:pointer;
+  transition:all .15s;background:var(--page);
+  user-select:none;
+}
+.etapa-simple.completada{border-color:var(--gold);background:var(--gold-bg)}
+.etapa-simple.en_curso{border-color:var(--gold);background:var(--gold-bg);box-shadow:0 0 0 2px var(--gold-b)}
+.etapa-ico{font-size:22px;flex-shrink:0}
+.etapa-info{flex:1}
+.etapa-nom{font-size:14px;font-weight:500}
+.etapa-est{font-size:11px;color:var(--ink3);margin-top:2px}
+.etapa-badge{
+  font-family:'DM Mono',monospace;font-size:10px;font-weight:700;
+  padding:3px 8px;border-radius:4px;flex-shrink:0;
+}
+.etapa-badge.completada{background:var(--gold);color:#fff}
+.etapa-badge.en_curso{background:var(--ink);color:var(--gold)}
+.etapa-badge.pendiente{background:var(--line2);color:var(--ink3)}
+
+/* PCT SLIDER */
+.pct-slider-wrap{margin-top:12px;display:none;padding:12px 14px;background:var(--gold-bg);border-radius:8px}
+.pct-slider-wrap.show{display:block}
+.pct-label{font-size:12px;color:var(--ink2);margin-bottom:8px;font-weight:500}
+input[type="range"]{
+  width:100%;accent-color:var(--gold);height:6px;
+  -webkit-appearance:none;cursor:pointer;
+}
+.pct-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--gold);text-align:center;margin-top:6px}
+
+/* NAV */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--page);border-top:1px solid var(--line2);
+  padding:1rem 1.25rem;display:flex;gap:10px;z-index:100;
+}
+.btn-back{
+  width:48px;height:48px;border-radius:10px;border:1.5px solid var(--line);
+  background:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .15s;
+}
+.btn-back:hover{border-color:var(--gold)}
+.btn-next{
+  flex:1;height:48px;border-radius:10px;border:none;
+  background:var(--gold);color:#fff;
+  font-family:'Syne',sans-serif;font-size:15px;font-weight:800;
+  cursor:pointer;transition:all .15s;letter-spacing:.5px;
+}
+.btn-next:hover{background:#a86508}
+.btn-next.final{background:var(--ink);font-size:16px}
+.btn-next:disabled{opacity:.4;cursor:not-allowed}
 
 /* SUCCESS */
-#success{display:none;padding:2.5rem 1.5rem;text-align:center}
-#success h2{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;margin-bottom:.75rem}
-#success p{font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:1.5rem}
-.codigo-display{font-family:'DM Mono',monospace;font-size:3rem;font-weight:700;color:var(--amber);letter-spacing:8px;margin:1rem 0}
-.codigo-hint{font-size:12px;color:var(--text3);margin-bottom:1.5rem;line-height:1.6}
-.btn-gemelo{display:inline-flex;align-items:center;gap:8px;background:var(--amber);color:#000;padding:13px 24px;border-radius:9px;font-size:14px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .15s;text-decoration:none}
-.btn-gemelo:hover{background:#cf8f1a}
-.url-box{margin-top:1rem;padding:10px 14px;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);word-break:break-all;text-align:left}
+#step-ok{text-align:center;padding:2rem 0}
+.ok-circle{
+  width:96px;height:96px;border-radius:50%;
+  background:var(--gold-bg);border:3px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-size:44px;margin:0 auto 1.5rem;
+}
+.ok-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:.75rem}
+.ok-sub{font-size:14px;color:var(--ink3);line-height:1.7;margin-bottom:1.5rem}
+.link-card{
+  background:var(--ink);color:#fff;border-radius:var(--radius);
+  padding:16px;margin:1rem 0;text-align:left;
+}
+.link-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:6px}
+.link-val{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);word-break:break-all;line-height:1.5}
+.btn-copy{
+  width:100%;margin-top:.75rem;padding:14px;border-radius:10px;
+  border:none;background:var(--gold);color:#fff;
+  font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;
+}
+.btn-open{
+  width:100%;margin-top:.5rem;padding:14px;border-radius:10px;
+  border:1.5px solid var(--line);background:none;color:var(--ink);
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;
+}
 
-/* SPINNER */
-.spin{width:16px;height:16px;border:2px solid rgba(0,0,0,.2);border-top-color:#000;border-radius:50%;animation:sp .7s linear infinite}
+/* SAVING */
+#overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
+  z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+}
+#overlay.on{display:flex}
+.spin{
+  width:44px;height:44px;border:3px solid rgba(200,120,10,.3);
+  border-top-color:var(--gold);border-radius:50%;
+  animation:sp 1s linear infinite;
+}
 @keyframes sp{to{transform:rotate(360deg)}}
+.spin-txt{font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);letter-spacing:2px}
 
-/* TELEGRAM BOX */
-.tg-info{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:1rem 1.1rem;margin-top:.5rem}
-.tg-info p{font-size:12px;color:var(--text3);line-height:1.7}
-.tg-info strong{color:var(--amber)}
-.tg-step{display:flex;align-items:flex-start;gap:8px;margin-top:.5rem}
-.tg-step-n{width:18px;height:18px;border-radius:50%;background:var(--amber-d);border:1px solid var(--amber-b);color:var(--amber);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
-.tg-step-t{font-size:12px;color:var(--text3);line-height:1.5}
-
-@media(max-width:500px){.fg2{grid-template-columns:1fr}}
+@media(max-width:400px){
+  .big-chips.cols-3{grid-template-columns:1fr 1fr}
+  .grid-2{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
 
-<nav>
-  <div class="logo">GO<span> OBRA</span></div>
-  <div class="nav-sep"></div>
-  <div class="nav-tag">ACTIVA TU OBRA</div>
-</nav>
+<div id="overlay"><div class="spin"></div><div class="spin-txt">Activando tu obra...</div></div>
 
-<div class="hero">
-  <div class="hero-eyebrow">Configuración · 2 pasos · 3 minutos</div>
-  <h1>Tu obra,<br><em>bajo control</em><br>desde hoy</h1>
-  <p class="hero-sub">Ingresa los datos básicos y en minutos tu residente recibe las misiones del día. Tú ves el avance real sin llamar a nadie.</p>
+<!-- TOP -->
+<div class="top">
+  <div class="brand">GO<em>Obra</em></div>
+  <div class="step-pills" id="pills"></div>
 </div>
+<div class="prog-bar"><div class="prog-fill" id="prog" style="width:0%"></div></div>
 
-<div class="form-wrap">
+<div class="wrap">
 
-  <div class="steps-ind">
-    <div class="si on" id="si-0"></div>
-    <div class="si" id="si-1"></div>
+  <!-- STEP 1: BIENVENIDA / CONTACTO -->
+  <div class="step active" id="cs-1">
+    <div class="step-hero">
+      <span class="step-emoji">👋</span>
+      <div class="step-title">Hola. Vamos a<br>activar tu obra.</div>
+      <div class="step-desc">En 5 minutos tu obra tendrá su gemelo digital. El residente reporta por Telegram, tú ves todo en tiempo real.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Tus datos</div>
+      <div class="field">
+        <label>¿Cómo se llama la obra? <span class="req">*</span></label>
+        <input type="text" id="c-nombre" placeholder="Ej: Casa La Esperanza, Edificio Simón…">
+      </div>
+      <div class="field">
+        <label>Tu nombre <span class="req">*</span></label>
+        <input type="text" id="c-dueno" placeholder="Nombre del dueño">
+      </div>
+      <div class="field">
+        <label>Tu WhatsApp <span class="req">*</span></label>
+        <input type="tel" id="c-wa" placeholder="+57 300 000 0000">
+        <div class="hint">Te enviamos el link de tu gemelo por aquí</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">El residente o maestro de obra</div>
+      <div class="field">
+        <label>Nombre del residente <span class="req">*</span></label>
+        <input type="text" id="c-res-nombre" placeholder="Quien dirige la obra día a día">
+      </div>
+      <div class="field">
+        <label>Su número de Telegram o celular <span class="req">*</span></label>
+        <input type="tel" id="c-res-tel" placeholder="+57 310 000 0000">
+        <div class="hint">Recibe las misiones y reporta avances por ahí</div>
+      </div>
+    </div>
   </div>
 
-  <div class="form-card">
-    <div class="prog-wrap"><div class="prog-fill" id="prog" style="width:50%"></div></div>
+  <!-- STEP 2: DÓNDE ESTÁ LA OBRA -->
+  <div class="step" id="cs-2">
+    <div class="step-hero">
+      <span class="step-emoji">📍</span>
+      <div class="step-title">¿Dónde está<br>la obra?</div>
+      <div class="step-desc">La dirección y ciudad nos ayudan a ubicar la obra en el mapa del gemelo.</div>
+    </div>
 
-    <!-- PASO 1: La obra -->
-    <div class="step-body on" id="step-1">
-      <div class="step-hd">
-        <div class="step-num">1</div>
-        <div class="step-info"><h3>La obra</h3><p>Nombre, ubicación y estado actual</p></div>
+    <div class="card">
+      <div class="card-title">Ubicación</div>
+      <div class="field">
+        <label>Dirección <span class="req">*</span></label>
+        <input type="text" id="c-dir" placeholder="Cra 50 # 12-34">
       </div>
-      <div style="padding:1.5rem">
-
-        <div class="fg">
-          <div class="field">
-            <label>Nombre de la obra *</label>
-            <input type="text" id="f-nombre" placeholder="Ej: Edificio Muzú 45" autocomplete="off">
-          </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Barrio</label>
+          <input type="text" id="c-barrio" placeholder="Ciudad Montes">
         </div>
-
-        <div class="fg fg2">
-          <div class="field">
-            <label>Dirección</label>
-            <input type="text" id="f-dir" placeholder="Calle 45 # 23-12, Bogotá">
-          </div>
-          <div class="field">
-            <label>Total de pisos *</label>
-            <input type="number" id="f-pisos" value="8" min="1" max="30">
-          </div>
+        <div class="field">
+          <label>Ciudad</label>
+          <input type="text" id="c-ciudad" placeholder="Bogotá">
         </div>
-
-        <div class="fg fg2">
-          <div class="field">
-            <label>Presupuesto total de la obra</label>
-            <input type="number" id="f-presupuesto" placeholder="800000000" step="1000000" min="0">
-            <div class="field-hint">Opcional. Se usa para el semáforo financiero. Ej: 800000000 = $800 millones</div>
-          </div>
-          <div class="field">
-            <label>Moneda</label>
-            <select id="f-moneda">
-              <option value="COP">Cesos colombianos (COP)</option>
-              <option value="USD">Dólares (USD)</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field" style="margin-bottom:.75rem">
-          <label>Etapa más avanzada activa *</label>
-          <div class="chips" id="chips-etapa">
-            <div class="chip" data-v="prel">Preliminares</div>
-            <div class="chip" data-v="mvt">Mov. tierras</div>
-            <div class="chip" data-v="cim">Cimentación</div>
-            <div class="chip on" data-v="estr">Estructura</div>
-            <div class="chip" data-v="mamp">Mampostería</div>
-            <div class="chip" data-v="redes">Redes</div>
-            <div class="chip" data-v="acab">Acabados</div>
-          </div>
-          <div class="field-hint" style="margin-top:6px">Las etapas anteriores quedan marcadas como completadas automáticamente.</div>
-        </div>
-
-        <div class="fg fg2" id="piso-actual-wrap">
-          <div class="field">
-            <label>Piso actual de estructura</label>
-            <input type="number" id="f-piso-actual" value="3" min="1" max="30">
-          </div>
-          <div class="field">
-            <label>Sistema constructivo</label>
-            <select id="f-sistema">
-              <option value="porticos">Pórticos concreto</option>
-              <option value="ipe">Acero / IPE</option>
-              <option value="mixto">Mixto</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- MODO ESTÁNDAR -->
-        <div class="adv-toggle" id="adv-toggle" onclick="toggleAdv()">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4"/></svg>
-          <span>Agregar más datos (modo estándar)</span>
-        </div>
-        <div class="adv-body" id="adv-body">
-          <div class="adv-label">Datos adicionales</div>
-          <div class="fg fg2">
-            <div class="field">
-              <label>Frente del lote (m)</label>
-              <input type="number" id="f-frente" value="12" min="4" max="50" step="0.5">
-            </div>
-            <div class="field">
-              <label>Fondo del lote (m)</label>
-              <input type="number" id="f-fondo" value="24" min="8" max="80" step="0.5">
-            </div>
-          </div>
-          <div class="fg fg2">
-            <div class="field">
-              <label>Sótanos</label>
-              <input type="number" id="f-sotanos" value="0" min="0" max="5">
-            </div>
-            <div class="field">
-              <label>Unidades por piso</label>
-              <input type="number" id="f-uds" value="4" min="1" max="20">
-            </div>
-          </div>
-          <div class="fg fg2">
-            <div class="field">
-              <label>Altura piso a piso (m)</label>
-              <input type="number" id="f-altura" value="2.8" min="2.2" max="4.0" step="0.1">
-            </div>
-            <div class="field">
-              <label>Entrega estimada</label>
-              <input type="month" id="f-fecha">
-            </div>
-          </div>
-          <div class="field">
-            <label>Misiones activas esta semana</label>
-            <div class="chips" id="chips-misiones">
-              <div class="chip on" data-v="columnas_vaciado">Vaciado columnas</div>
-              <div class="chip" data-v="columnas_armado">Armado columnas</div>
-              <div class="chip" data-v="placa_entrepiso">Placa entrepiso</div>
-              <div class="chip on" data-v="levante_muros_interiores">Levante muros</div>
-              <div class="chip" data-v="panete_interior">Pañete interior</div>
-              <div class="chip on" data-v="hidrosanitarias">Hidrosanitarias</div>
-              <div class="chip on" data-v="electricas">Eléctricas</div>
-              <div class="chip" data-v="pisos_enchapes">Pisos/enchapes</div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <div class="step-nav">
-        <div></div>
-        <button class="btn-next" onclick="goStep2()">
-          Siguiente
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8h10M9 4l4 4-4 4"/></svg>
-        </button>
       </div>
     </div>
 
-    <!-- PASO 2: Contacto -->
-    <div class="step-body" id="step-2">
-      <div class="step-hd">
-        <div class="step-num">2</div>
-        <div class="step-info"><h3>Contacto y Telegram</h3><p>Quién recibe las misiones y quién ve el avance</p></div>
-      </div>
-      <div style="padding:1.5rem">
-
-        <div class="field" style="margin-bottom:.75rem">
-          <label>Número Telegram del residente *</label>
-          <input type="text" id="f-telegram" placeholder="+573100000000">
-          <div class="tg-info" style="margin-top:.5rem">
-            <div class="tg-step"><div class="tg-step-n">1</div><div class="tg-step-t">El residente debe escribirle <strong>/start</strong> al bot <strong>@Goobra_avance_bot</strong> primero.</div></div>
-            <div class="tg-step"><div class="tg-step-n">2</div><div class="tg-step-t">Ingresa su número con indicativo. El sistema lo usa como referencia.</div></div>
-            <div class="tg-step"><div class="tg-step-n">3</div><div class="tg-step-t">Responde con el código de obra + número de misión: <strong>CAS 1: hice 25 m²</strong></div></div>
-          </div>
+    <div class="card">
+      <div class="card-title">¿Qué es lo que estás construyendo?</div>
+      <div class="big-chips cols-2" id="chips-uso">
+        <div class="big-chip" onclick="bigChip('c-uso','vivienda',this)">
+          <span class="chip-ico">🏠</span>
+          <div class="chip-txt">Casa o apartamentos</div>
         </div>
-
-        <div class="field" style="margin-bottom:.75rem">
-          <label>Tu número WhatsApp (dueño) *</label>
-          <input type="text" id="f-wa" placeholder="+573200000000">
-          <div class="field-hint" style="margin-top:4px">Aquí recibirás el resumen diario de la obra a las 6pm.</div>
+        <div class="big-chip" onclick="bigChip('c-uso','oficinas',this)">
+          <span class="chip-ico">🏢</span>
+          <div class="chip-txt">Oficinas</div>
         </div>
-
-        <div class="fg fg2">
-          <div class="field">
-            <label>Nombre del residente</label>
-            <input type="text" id="f-residente" placeholder="Carlos Mendoza">
-          </div>
-          <div class="field">
-            <label>Tu nombre</label>
-            <input type="text" id="f-dueno" placeholder="Gustavo Oyuela">
-          </div>
+        <div class="big-chip" onclick="bigChip('c-uso','comercio',this)">
+          <span class="chip-ico">🏪</span>
+          <div class="chip-txt">Comercio / local</div>
         </div>
-
+        <div class="big-chip" onclick="bigChip('c-uso','mixto',this)">
+          <span class="chip-ico">🏗</span>
+          <div class="chip-txt">Mixto</div>
+        </div>
       </div>
-      <div class="step-nav">
-        <button class="btn-back" onclick="goStep1()">← Atrás</button>
-        <button class="btn-next" id="btn-activar" onclick="activar()">
-          <span id="btn-txt">Activar Gemelo Digital</span>
-          <span id="btn-spin" style="display:none"><div class="spin"></div></span>
-        </button>
-      </div>
+      <input type="hidden" id="c-uso">
     </div>
-
-    <!-- SUCCESS -->
-    <div id="success">
-      <div style="font-size:2.5rem;margin-bottom:1rem">🏗</div>
-      <h2>¡Obra activada!</h2>
-      <p>Tu Gemelo Digital está listo.<br>El residente recibirá las primeras misiones mañana a las 6:30am.</p>
-      <div style="margin:1.5rem 0">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px">Código de tu obra</div>
-        <div class="codigo-display" id="codigo-show">—</div>
-        <div class="codigo-hint">El residente responde así:<br><strong id="codigo-ejemplo" style="color:var(--amber)">— 1: hice 25 m², 3 bultos cemento</strong></div>
-      </div>
-      <a id="btn-gemelo" href="#" class="btn-gemelo">Abrir Gemelo Digital →</a>
-      <div class="url-box" id="url-box" style="display:none"></div>
-    </div>
-
   </div>
+
+  <!-- STEP 3: TAMAÑO DE LA OBRA -->
+  <div class="step" id="cs-3">
+    <div class="step-hero">
+      <span class="step-emoji">📐</span>
+      <div class="step-title">¿Qué tan grande<br>es la obra?</div>
+      <div class="step-desc">Estos datos generan las misiones automáticamente. Si no tienes los datos exactos, estima.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Dimensiones</div>
+      <div class="grid-2" style="margin-bottom:1rem">
+        <div class="field">
+          <label>Frente del lote (m) <span class="req">*</span></label>
+          <input type="number" id="c-frente" step="0.5" min="3" placeholder="12">
+        </div>
+        <div class="field">
+          <label>Fondo del lote (m) <span class="req">*</span></label>
+          <input type="number" id="c-fondo" step="0.5" min="5" placeholder="24">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>¿Cuántos pisos? <span class="req">*</span></label>
+        <div class="num-input">
+          <button class="num-btn" onclick="changeNum('c-pisos',-1)">−</button>
+          <input class="num-val" type="number" id="c-pisos" value="4" min="1" max="30">
+          <button class="num-btn" onclick="changeNum('c-pisos',1)">+</button>
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:1rem">
+        <label>¿Tiene sótano?</label>
+        <div class="s-chips">
+          <div class="s-chip" onclick="sChip('c-sotanos','0',this)">No</div>
+          <div class="s-chip" onclick="sChip('c-sotanos','1',this)">1 sótano</div>
+          <div class="s-chip" onclick="sChip('c-sotanos','2',this)">2 sótanos</div>
+        </div>
+        <input type="hidden" id="c-sotanos" value="0">
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sistema de construcción</div>
+      <div class="big-chips cols-2" id="chips-sistema">
+        <div class="big-chip" onclick="bigChip('c-sistema','porticos',this)">
+          <span class="chip-ico">🏛</span>
+          <div class="chip-txt">Pórticos en concreto</div>
+        </div>
+        <div class="big-chip" onclick="bigChip('c-sistema','ipe',this)">
+          <span class="chip-ico">⚙️</span>
+          <div class="chip-txt">Estructura metálica</div>
+        </div>
+        <div class="big-chip" onclick="bigChip('c-sistema','muros',this)">
+          <span class="chip-ico">🧱</span>
+          <div class="chip-txt">Muros portantes</div>
+        </div>
+        <div class="big-chip" onclick="bigChip('c-sistema','mixto',this)">
+          <span class="chip-ico">🔧</span>
+          <div class="chip-txt">Mixto</div>
+        </div>
+      </div>
+      <input type="hidden" id="c-sistema" value="porticos">
+    </div>
+  </div>
+
+  <!-- STEP 4: EN QUÉ VA LA OBRA -->
+  <div class="step" id="cs-4">
+    <div class="step-hero">
+      <span class="step-emoji">🏗</span>
+      <div class="step-title">¿En qué punto<br>va la obra?</div>
+      <div class="step-desc">Toca cada etapa para marcarla. El gemelo arranca desde donde está la obra hoy.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Estado actual</div>
+      <div id="etapas-cliente"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Fechas</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Inicio de obra</label>
+          <input type="date" id="c-inicio">
+        </div>
+        <div class="field">
+          <label>Entrega estimada</label>
+          <input type="date" id="c-entrega">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5: PRESUPUESTO -->
+  <div class="step" id="cs-5">
+    <div class="step-hero">
+      <span class="step-emoji">💰</span>
+      <div class="step-title">¿Cuánto cuesta<br>tu obra?</div>
+      <div class="step-desc">Con el presupuesto activamos el semáforo financiero — te avisamos si los costos se salen del plan.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Presupuesto total</div>
+      <div class="field">
+        <label>¿Cuánto presupuestaste en total? (COP)</label>
+        <input type="number" id="c-presupuesto" step="10000000" placeholder="Ej: 1850000000">
+        <div class="hint">Si no lo sabes exacto, pon un aproximado. Bogotá estrato 3-4: ~$1.5M–$2.2M por m²</div>
+      </div>
+      <div class="field">
+        <label>¿Cuánto llevas gastado? (COP)</label>
+        <input type="number" id="c-gastado" step="10000000" placeholder="Opcional">
+        <div class="hint">Suma de todo lo que has pagado hasta hoy</div>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:1rem;background:var(--gold-bg);border-radius:var(--radius);border:1px solid var(--gold-b)">
+      <div style="font-size:13px;color:var(--ink3)">Puedes saltar este paso y completarlo después<br>desde la pestaña <strong style="color:var(--ink)">💰 Presupuesto</strong> del gemelo.</div>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="step" id="step-ok">
+    <div class="ok-circle">✅</div>
+    <div class="ok-title">¡Tu obra está activa!</div>
+    <div class="ok-sub">El gemelo digital está listo. Comparte el link con quien quieras que tenga acceso al seguimiento de tu obra.</div>
+    <div class="link-card">
+      <div class="link-label">Tu link del gemelo</div>
+      <div class="link-val" id="ok-link">Generando…</div>
+    </div>
+    <button class="btn-copy" onclick="copiar()">📋 Copiar link</button>
+    <button class="btn-open" onclick="abrir()">Abrir gemelo →</button>
+    <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--line2);text-align:left">
+      <div style="font-size:13px;font-weight:600;margin-bottom:.75rem">¿Qué sigue?</div>
+      <div style="font-size:13px;color:var(--ink3);line-height:1.8">
+        1. El residente recibe el código de obra por Telegram<br>
+        2. Empieza a reportar avances con mensajes simples<br>
+        3. Tú ves todo en tu gemelo en tiempo real
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- NAV -->
+<div class="nav" id="nav-bar">
+  <button class="btn-back" id="btn-back" onclick="prev()" style="display:none">←</button>
+  <button class="btn-next" id="btn-next" onclick="next()">Continuar →</button>
 </div>
 
 <script>
-const SB='https://muyezsssnzlxavchabum.supabase.co';
-const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
-const db=supabase.createClient(SB,SK);
+// ── CONFIG ──
+const SUPA_URL='https://muyezsssnzlxavchabum.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
+const GEMELO='https://goobradashboardrepository-production.up.railway.app/gemelo.html';
+const PCTS={prel:.03,mvt:.05,cim:.12,estr:.35,mamp:.18,redes:.10,acab:.12,urb:.03,entr:.02};
 
-// Step navigation
-function goStep2(){
-  const nom=document.getElementById('f-nombre').value.trim();
-  const pisos=document.getElementById('f-pisos').value;
-  if(!nom){alert('Ingresa el nombre de la obra');return;}
-  if(!pisos||pisos<1){alert('Ingresa el número de pisos');return;}
-  document.getElementById('step-1').classList.remove('on');
-  document.getElementById('step-2').classList.add('on');
-  document.getElementById('prog').style.width='100%';
-  document.getElementById('si-0').classList.remove('on');
-  document.getElementById('si-0').classList.add('done');
-  document.getElementById('si-1').classList.add('on');
+async function supa(path,opts={}){
+  const r=await fetch(SUPA_URL+'/rest/v1/'+path,{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation',...(opts.headers||{})},
+    ...opts
+  });
+  if(!r.ok) throw new Error(await r.text());
+  return r.status===204?null:r.json();
+}
+
+// ── STEPS ──
+const STEPS=['cs-1','cs-2','cs-3','cs-4','cs-5','step-ok'];
+let cur=0;
+
+function buildUI(){
+  const p=document.getElementById('pills');
+  p.innerHTML=STEPS.slice(0,-1).map((_,i)=>`<div class="pill${i===0?' active':''}"></div>`).join('');
+  renderEtapasCliente();
+  document.getElementById('c-inicio').value=new Date().toISOString().split('T')[0];
+}
+
+function updateUI(){
+  const pills=document.querySelectorAll('.pill');
+  pills.forEach((p,i)=>{
+    p.classList.remove('active','done');
+    if(i===cur) p.classList.add('active');
+    else if(i<cur) p.classList.add('done');
+  });
+  const pct=Math.round(cur/(STEPS.length-1)*100);
+  document.getElementById('prog').style.width=pct+'%';
+  document.getElementById('btn-back').style.display=cur>0&&cur<STEPS.length-1?'flex':'none';
+  const nb=document.getElementById('btn-next');
+  const nb2=document.getElementById('nav-bar');
+  if(cur===STEPS.length-1){nb2.style.display='none';}
+  else{
+    nb2.style.display='flex';
+    nb.className=cur===STEPS.length-2?'btn-next final':'btn-next';
+    nb.textContent=cur===STEPS.length-2?'Activar mi obra ✓':'Continuar →';
+  }
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-function goStep1(){
-  document.getElementById('step-2').classList.remove('on');
-  document.getElementById('step-1').classList.add('on');
-  document.getElementById('prog').style.width='50%';
-  document.getElementById('si-1').classList.remove('on');
-  document.getElementById('si-0').classList.remove('done');
-  document.getElementById('si-0').classList.add('on');
-  window.scrollTo({top:0,behavior:'smooth'});
+function next(){
+  if(!validate(cur)) return;
+  if(cur===STEPS.length-2){activar();return;}
+  document.getElementById(STEPS[cur]).classList.remove('active');
+  cur++;
+  document.getElementById(STEPS[cur]).classList.add('active');
+  updateUI();
+}
+function prev(){
+  if(cur<=0) return;
+  document.getElementById(STEPS[cur]).classList.remove('active');
+  cur--;
+  document.getElementById(STEPS[cur]).classList.add('active');
+  updateUI();
 }
 
-// Chips — single select for etapa
-document.getElementById('chips-etapa').addEventListener('click',e=>{
-  const c=e.target.closest('.chip');if(!c)return;
-  document.querySelectorAll('#chips-etapa .chip').forEach(x=>x.classList.remove('on'));
-  c.classList.add('on');
-  // Show/hide piso actual
-  const showPiso=['estr','mamp','redes','acab'].includes(c.dataset.v);
-  document.getElementById('piso-actual-wrap').style.display=showPiso?'grid':'none';
-});
-
-// Chips — multi select for misiones
-document.getElementById('chips-misiones').addEventListener('click',e=>{
-  const c=e.target.closest('.chip');if(!c)return;
-  c.classList.toggle('on');
-});
-
-function getChip(id){
-  const el=document.querySelector('#'+id+' .chip.on');
-  return el?el.dataset.v:null;
-}
-function getChips(id){
-  return [...document.querySelectorAll('#'+id+' .chip.on')].map(c=>c.dataset.v);
+// ── VALIDATION ──
+function validate(n){
+  const req={
+    0:['c-nombre','c-dueno','c-wa','c-res-nombre','c-res-tel'],
+    1:['c-dir'],
+    2:['c-frente','c-fondo','c-pisos'],
+    3:['c-inicio'],
+    4:[],
+  };
+  let ok=true;
+  (req[n]||[]).forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    if(!el.value.trim()){el.classList.add('error');if(ok){el.focus();}ok=false;}
+    else el.classList.remove('error');
+  });
+  return ok;
 }
 
-// Advanced toggle
-function toggleAdv(){
-  const t=document.getElementById('adv-toggle');
-  const b=document.getElementById('adv-body');
-  t.classList.toggle('open');
-  b.classList.toggle('open');
+// ── CHIPS ──
+function bigChip(fieldId,val,el){
+  el.closest('.big-chips').querySelectorAll('.big-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(fieldId).value=val;
+}
+function sChip(fieldId,val,el){
+  el.parentElement.querySelectorAll('.s-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(fieldId).value=val;
 }
 
-// ACTIVAR
+// ── NUM INPUT ──
+function changeNum(id,delta){
+  const el=document.getElementById(id);
+  const cur=parseInt(el.value)||1;
+  const min=parseInt(el.min)||1;
+  const max=parseInt(el.max)||99;
+  el.value=Math.max(min,Math.min(max,cur+delta));
+}
+
+// ── ETAPAS CLIENTE ──
+const ETAPAS_C=[
+  {id:'prel',nom:'Preliminares',ico:'🚧'},
+  {id:'mvt',nom:'Movimiento de tierras',ico:'🚜'},
+  {id:'cim',nom:'Cimentación',ico:'🪨'},
+  {id:'estr',nom:'Estructura',ico:'🏗'},
+  {id:'mamp',nom:'Mampostería / muros',ico:'🧱'},
+  {id:'redes',nom:'Redes (agua, luz, gas)',ico:'🔧'},
+  {id:'acab',nom:'Acabados y pisos',ico:'🪟'},
+  {id:'entr',nom:'Entrega',ico:'🔑'},
+];
+const estadosE={};
+
+function renderEtapasCliente(){
+  const c=document.getElementById('etapas-cliente');
+  c.innerHTML=ETAPAS_C.map(e=>`
+    <div class="etapa-simple" id="et-${e.id}" onclick="cycleEtapa('${e.id}')">
+      <div class="etapa-ico">${e.ico}</div>
+      <div class="etapa-info">
+        <div class="etapa-nom">${e.nom}</div>
+        <div class="etapa-est" id="et-sub-${e.id}">Toca para cambiar estado</div>
+      </div>
+      <div class="etapa-badge pendiente" id="et-badge-${e.id}">Pendiente</div>
+    </div>
+    <div class="pct-slider-wrap" id="et-pct-wrap-${e.id}">
+      <div class="pct-label">¿Qué porcentaje va?</div>
+      <input type="range" min="0" max="100" step="5" value="50" id="et-pct-${e.id}"
+        oninput="document.getElementById('et-pct-val-${e.id}').textContent=this.value+'%'">
+      <div class="pct-val" id="et-pct-val-${e.id}">50%</div>
+    </div>`).join('');
+}
+
+function cycleEtapa(id){
+  const ciclo=['pendiente','en_curso','completada'];
+  const cur=estadosE[id]||'pendiente';
+  const next=ciclo[(ciclo.indexOf(cur)+1)%ciclo.length];
+  estadosE[id]=next;
+  const row=document.getElementById('et-'+id);
+  const badge=document.getElementById('et-badge-'+id);
+  const sub=document.getElementById('et-sub-'+id);
+  const pctWrap=document.getElementById('et-pct-wrap-'+id);
+  row.className='etapa-simple '+next;
+  badge.className='etapa-badge '+next;
+  badge.textContent=next==='completada'?'Completada ✓':next==='en_curso'?'En curso…':'Pendiente';
+  sub.textContent=next==='completada'?'Ya terminada':next==='en_curso'?'Trabajando en esto':'Aún no empieza';
+  pctWrap.classList.toggle('show',next==='en_curso');
+}
+
+// ── ACTIVAR ──
 async function activar(){
-  const tg=document.getElementById('f-telegram').value.trim();
-  const wa=document.getElementById('f-wa').value.trim();
-  if(!tg){alert('Ingresa el número Telegram del residente');return;}
-  if(!wa){alert('Ingresa tu número WhatsApp');return;}
-
-  const btn=document.getElementById('btn-activar');
-  btn.disabled=true;
-  document.getElementById('btn-txt').style.display='none';
-  document.getElementById('btn-spin').style.display='flex';
-
+  document.getElementById('overlay').classList.add('on');
   try{
-    const nombre=document.getElementById('f-nombre').value.trim();
-    const pisos=parseInt(document.getElementById('f-pisos').value)||8;
-    const etapa=getChip('chips-etapa')||'estr';
-    const pisoActual=parseInt(document.getElementById('f-piso-actual').value)||3;
-    const sistema=document.getElementById('f-sistema').value||'porticos';
-    const residente=document.getElementById('f-residente').value.trim()||'Residente';
-    const dueno=document.getElementById('f-dueno').value.trim()||'Dueño';
+    const g=id=>document.getElementById(id)?.value?.trim()||null;
+    const nombrecorto=(g('c-nombre')||'obr').toLowerCase().replace(/\s+/g,'').slice(0,3).replace(/[^a-z0-9]/g,'')||'obr';
+    const ts=Date.now();
+    const pid=`${nombrecorto}${Math.floor(Math.random()*900+100)}_${ts}`;
+    const codigo=String(Math.floor(Math.random()*900+100));
+    const token=Math.random().toString(36).slice(2,10).toUpperCase();
+    const pisos=parseInt(g('c-pisos'))||4;
+    const frente=parseFloat(g('c-frente'))||10;
+    const fondo=parseFloat(g('c-fondo'))||20;
 
-    // Modo estándar (si está abierto)
-    const isEstandar=document.getElementById('adv-body').classList.contains('open');
-    const fr=isEstandar?parseFloat(document.getElementById('f-frente').value)||12:12;
-    const fo=isEstandar?parseFloat(document.getElementById('f-fondo').value)||24:24;
-    const sotanos=isEstandar?parseInt(document.getElementById('f-sotanos').value)||0:0;
-    const uds=isEstandar?parseInt(document.getElementById('f-uds').value)||4:4;
-    const altura=isEstandar?parseFloat(document.getElementById('f-altura').value)||2.8:2.8;
-    const fecha=isEstandar?document.getElementById('f-fecha').value:'';
-    const misionesSelec=isEstandar?getChips('chips-misiones'):[];
+    // Proyecto
+    await supa('proyectos',{method:'POST',body:JSON.stringify({
+      id:pid,nombre:g('c-nombre'),direccion:g('c-dir'),
+      codigo_corto:codigo,dueno_wa:g('c-wa'),
+      numero_pisos:pisos,sotanos:parseInt(g('c-sotanos'))||0,
+      frente,fondo,altura_piso:2.8,
+      sistema_constructivo:g('c-sistema')||'porticos',
+      tipo_concreto:'premezclado',resistencia_concreto:'28mpa',
+      col_ancho_cm:30,col_alto_cm:30,col_cantidad_por_piso:16,col_varilla:'1/2',
+      viga_ancho_cm:30,viga_alto_cm:50,viga_ml_por_piso:Math.round(frente*fondo/4),
+      tipo_viga:'descolgada',tipo_placa:'maciza',placa_espesor_cm:12,
+      muros_contencion:false,ladrillo_interior:'bloque4',
+      espesor_panete_cm:1.5,tipo_piso:'ceramica',acabado_muros:'estuco_pintura',
+      fecha_inicio:g('c-inicio')||null,fecha_fin_estimada:g('c-entrega')||null,
+      presupuesto_total:parseFloat(g('c-presupuesto'))||0,
+      estado:'activo',moneda:'COP',
+    })});
 
-    // Generar código corto 3 dígitos
-    const codigoNum=String(Math.floor(100+Math.random()*900));
-    const pid='obr'+codigoNum+'_'+Date.now();
+    // Token
+    await supa('proyecto_tokens',{method:'POST',body:JSON.stringify({proyecto_id:pid,token,activo:true})});
 
-    // Crear proyecto
-    const {error:eProj}=await db.from('proyectos').insert({
-      id:pid, nombre,
-      direccion:document.getElementById('f-dir').value.trim()||'Bogotá D.C.',
-      numero_pisos:pisos,
-      m2_por_piso:Math.round(fr*fo*0.72),
-      sistema_constructivo:sistema,
-      uso:'mixto',
-      fecha_inicio:new Date().toISOString().split('T')[0],
-      fecha_fin_estimada:fecha?fecha+'-01':null,
-      estado:'activo',
-      dueno_wa:wa,
-      codigo_corto:codigoNum
-    });
-    if(eProj) throw eProj;
+    // Worker residente
+    const rn=g('c-res-nombre');const rt=g('c-res-tel');
+    if(rn&&rt) await supa('workers',{method:'POST',body:JSON.stringify({
+      proyecto_id:pid,nombre:rn,rol:'res',numero_wa:rt,telegram_id:rt,activo:true
+    })});
 
-    // Generar misiones completas con estados inteligentes
-    const ORDEN=['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
-    const idxActual=ORDEN.indexOf(etapa);
-    const areaUtil=Math.round(fr*fo*0.72);
-    const hoy=new Date();
-    let fechaCursor=new Date(hoy);fechaCursor.setMonth(fechaCursor.getMonth()-6);
-
-    const TODAS=[
-      {e:'prel',m:'limpieza_descapote',meta:fr*fo,u:'m2',d:3},
-      {e:'prel',m:'localizacion_replanteo',meta:fr*fo,u:'m2',d:3},
-      {e:'prel',m:'cerramiento_provisional',meta:(fr+fo)*2,u:'ml',d:5},
-      {e:'mvt',m:'excavacion_mecanica',meta:Math.round(fr*fo*2),u:'m3',d:8},
-      {e:'mvt',m:'retiro_material',meta:Math.round(fr*fo*2),u:'m3',d:6},
-      {e:'cim',m:'armado_zapatas',meta:Math.round(fr*fo*12),u:'kg',d:15},
-      {e:'cim',m:'vaciado_zapatas',meta:Math.round(fr*fo*0.35),u:'m3',d:7},
-      {e:'cim',m:'contrapiso',meta:fr*fo,u:'m2',d:8},
-      ...Array.from({length:pisos},(_,i)=>[
-        {e:'estr',m:'columnas_armado',nv:'piso '+(i+1),meta:Math.round(fr/3)*4*18,u:'kg',d:6},
-        {e:'estr',m:'columnas_vaciado',nv:'piso '+(i+1),meta:Math.round(fr/3)*4,u:'un',d:5},
-        {e:'estr',m:'vigas',nv:'piso '+(i+1),meta:Math.round((fr+fo)*2),u:'ml',d:6},
-        {e:'estr',m:'placa_entrepiso',nv:'piso '+(i+1),meta:fr*fo,u:'m2',d:6},
-      ]).flat(),
-      {e:'mamp',m:'levante_muros_interiores',meta:Math.round(areaUtil*pisos*0.55),u:'m2',d:90},
-      {e:'mamp',m:'panete_interior',meta:Math.round(areaUtil*pisos*1.1),u:'m2',d:90},
-      {e:'redes',m:'hidrosanitarias',meta:Math.round(pisos*75),u:'ml',d:80},
-      {e:'redes',m:'electricas',meta:Math.round(pisos*120),u:'ml',d:80},
-      {e:'acab',m:'pisos_enchapes',meta:Math.round(areaUtil*pisos*0.8),u:'m2',d:90},
-      {e:'acab',m:'pintura_final',meta:Math.round(areaUtil*pisos*1.6),u:'m2',d:90},
-      {e:'entr',m:'aseo_fino',meta:areaUtil*pisos,u:'m2',d:15},
-      {e:'entr',m:'actas_entrega',meta:uds*Math.max(1,pisos-2),u:'un',d:10},
-    ];
-
-    const rows=TODAS.map((m,idx)=>{
-      const iE=ORDEN.indexOf(m.e);
-      let estado,cantEj=0;
-      if(iE<idxActual){estado='completada';cantEj=m.meta;}
-      else if(iE===idxActual){
-        if(m.e==='estr'&&m.nv){
-          const np=parseInt(m.nv.replace('piso ',''));
-          if(np<pisoActual){estado='completada';cantEj=m.meta;}
-          else if(np===pisoActual){
-            if(m.m==='columnas_armado'){estado='completada';cantEj=m.meta;}
-            else if(misionesSelec.includes(m.m)||['columnas_vaciado','vigas'].includes(m.m)){estado='en_curso';cantEj=Math.round(m.meta*0.4);}
-            else{estado='pendiente';cantEj=0;}
-          }else{estado='pendiente';cantEj=0;}
-        }else{
-          if(misionesSelec.includes(m.m)){estado='en_curso';cantEj=Math.round(m.meta*0.3);}
-          else{estado='pendiente';cantEj=0;}
-        }
-      }else{estado='pendiente';cantEj=0;}
-
-      const fI=new Date(fechaCursor);
-      const fF=new Date(fechaCursor);fF.setDate(fF.getDate()+m.d);
-      if(estado!=='pendiente')fechaCursor.setDate(fechaCursor.getDate()+m.d);
-
-      return{
-        id:pid+'_'+m.e+'_'+m.m+'_'+(m.nv||'')+'_'+idx,
-        proyecto_id:pid,etapa_id:m.e,mision_id:m.m,
-        nivel:m.nv||null,cantidad_meta:m.meta,unidad_primaria:m.u,
-        fecha_inicio_plan:fI.toISOString().split('T')[0],
-        fecha_fin_plan:fF.toISOString().split('T')[0],
-        dias_plan:m.d,estado,cantidad_ejecutada:cantEj
-      };
-    });
-
-    // Insertar en lotes de 20
-    for(let i=0;i<rows.length;i+=20){
-      const {error}=await db.from('proyecto_misiones').insert(rows.slice(i,i+20));
-      if(error)console.warn('lote error:',error);
+    // Presupuesto
+    const pres=parseFloat(g('c-presupuesto'))||0;
+    if(pres>0){
+      await supa('presupuesto_versiones',{method:'POST',body:JSON.stringify({
+        proyecto_id:pid,version:1,presupuesto_total:pres,motivo_cambio:'Presupuesto inicial'
+      })});
     }
 
-    // Crear worker (residente)
-    // telegram_id stays NULL — the /start workflow fills it
-    await db.from('workers').insert({
-      proyecto_id:pid,
-      nombre:residente,
-      rol:'res',
-      numero_wa:tg,
-      telegram_id:null,
-      activo:true,
-      mision_activa:misionesSelec[0]?(etapa+'.'+misionesSelec[0]):null
-    });
+    // Misiones básicas
+    await generarMisionesBásicas(pid,{frente,fondo,pisos,sistema:g('c-sistema')||'porticos',
+      fecha_inicio:g('c-inicio'),presupuesto_total:pres});
 
-    // SUCCESS
-    const simURL=`/gemelo.html#proyecto=${pid}&codigo=${codigoNum}&frente=${fr}&fondo=${fo}&pisos=${pisos}&sotanos=${sotanos}&altura=${altura}`;
-    localStorage.setItem('goobra_sim_url',simURL);
-    localStorage.setItem('goobra_last_proj',pid);
+    // Link
+    const link=`${GEMELO}#proyecto=${pid}&codigo=${codigo}&token=${token}`;
+    document.getElementById('ok-link').textContent=link;
+    window._link=link;
 
-    document.querySelectorAll('.step-body').forEach(s=>s.style.display='none');
-    document.getElementById('success').style.display='block';
-    document.getElementById('codigo-show').textContent=codigoNum;
-    document.getElementById('codigo-ejemplo').textContent=codigoNum+' 1: hice 25 m², 3 bultos cemento';
-    document.getElementById('btn-gemelo').href=simURL;
-    document.getElementById('url-box').textContent=window.location.origin+simURL;
-    document.getElementById('url-box').style.display='block';
-    window.scrollTo({top:0,behavior:'smooth'});
+    document.getElementById('overlay').classList.remove('on');
+    document.getElementById(STEPS[cur]).classList.remove('active');
+    cur=STEPS.length-1;
+    document.getElementById(STEPS[cur]).classList.add('active');
+    updateUI();
 
-  }catch(err){
-    console.error(err);
-    alert('Error: '+(err.message||JSON.stringify(err)));
-    document.getElementById('btn-activar').disabled=false;
-    document.getElementById('btn-txt').style.display='inline';
-    document.getElementById('btn-spin').style.display='none';
+  }catch(e){
+    document.getElementById('overlay').classList.remove('on');
+    alert('Error: '+e.message);console.error(e);
   }
 }
 
-// Init
-document.getElementById('piso-actual-wrap').style.display='grid';
-const d=new Date();d.setMonth(d.getMonth()+14);
-document.getElementById('f-fecha').value=d.toISOString().slice(0,7);
-// Resume button
-const saved=localStorage.getItem('goobra_sim_url');
-if(saved){
-  const rb=document.createElement('a');
-  rb.href=saved;
-  rb.style.cssText='position:fixed;bottom:20px;right:20px;background:var(--amber);color:#000;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:500;text-decoration:none;z-index:999;font-family:"DM Sans",sans-serif';
-  rb.textContent='↗ Mi Gemelo Digital';
-  document.body.appendChild(rb);
+async function generarMisionesBásicas(pid,p){
+  const TMPL={
+    prel:[{id:'limpieza_descapote',u:'m2',m:p.frente*p.fondo,d:3},{id:'cerramiento_provisional',u:'ml',m:2*(p.frente+p.fondo),d:5}],
+    mvt:[{id:'excavacion_mecanica',u:'m3',m:p.frente*p.fondo*2,d:8}],
+    cim:[{id:'armado_zapatas',u:'kg',m:16*p.pisos*15,d:15},{id:'vaciado_zapatas',u:'m3',m:16*0.5,d:7},{id:'contrapiso',u:'m2',m:p.frente*p.fondo,d:8}],
+    mamp:[{id:'levante_muros_interiores',u:'m2',m:Math.round(p.pisos*p.frente*p.fondo*0.35),d:90},{id:'panete_interior',u:'m2',m:Math.round(p.pisos*p.frente*p.fondo*0.7),d:90}],
+    redes:[{id:'hidrosanitarias',u:'ml',m:p.pisos*20,d:80},{id:'electricas',u:'ml',m:p.pisos*26,d:80}],
+    acab:[{id:'pisos_enchapes',u:'m2',m:Math.round(p.pisos*p.frente*p.fondo*0.55),d:90},{id:'pintura_final',u:'m2',m:Math.round(p.pisos*p.frente*p.fondo*1.1),d:90}],
+    entr:[{id:'aseo_fino',u:'m2',m:Math.round(p.pisos*p.frente*p.fondo*0.69),d:15},{id:'actas_entrega',u:'un',m:p.pisos*3,d:10}],
+  };
+  const rows=[];let i=0;
+  let fc=new Date(p.fecha_inicio||new Date());
+  for(const[eid,ms] of Object.entries(TMPL)){
+    const est=estadosE[eid]||'pendiente';
+    const pctEl=document.getElementById('et-pct-'+eid);
+    const pct=est==='en_curso'?(parseInt(pctEl?.value)||50):est==='completada'?100:0;
+    for(const m of ms){
+      const fi=new Date(fc);const ff=new Date(fc);ff.setDate(ff.getDate()+m.d);
+      rows.push({id:`${pid}_${eid}_${m.id}__${i}`,proyecto_id:pid,etapa_id:eid,mision_id:m.id,nivel:null,
+        cantidad_meta:Math.round(m.m),unidad_primaria:m.u,
+        cantidad_ejecutada:Math.round(m.m*pct/100),
+        fecha_inicio_plan:fi.toISOString().split('T')[0],
+        fecha_fin_plan:ff.toISOString().split('T')[0],dias_plan:m.d,
+        estado:est==='completada'?'completada':est==='en_curso'?'en_curso':'pendiente'});
+      if(est==='completada') fc=new Date(ff);
+      i++;
+    }
+  }
+  // Structural
+  const ESTR=[{id:'columnas_armado',u:'kg',m:16*18,d:6},{id:'columnas_vaciado',u:'un',m:16,d:5},{id:'vigas',u:'ml',m:Math.round(p.frente*p.fondo/4),d:6},{id:'placa_entrepiso',u:'m2',m:p.frente*p.fondo,d:6}];
+  let fe=new Date(p.fecha_inicio||new Date());fe.setDate(fe.getDate()+60);
+  const pisoEstr=parseInt(document.getElementById('et-pct-estr')?.value/100*p.pisos)||0;
+  for(let pp=1;pp<=p.pisos;pp++){
+    const estP=pp<pisoEstr?'completada':pp===pisoEstr?'en_curso':'pendiente';
+    for(const m of ESTR){
+      const fi=new Date(fe);const ff=new Date(fe);ff.setDate(ff.getDate()+m.d);
+      rows.push({id:`${pid}_estr_${m.id}_piso ${pp}_${i}`,proyecto_id:pid,etapa_id:'estr',mision_id:m.id,nivel:`piso ${pp}`,
+        cantidad_meta:m.m,unidad_primaria:m.u,cantidad_ejecutada:estP==='completada'?m.m:0,
+        fecha_inicio_plan:fi.toISOString().split('T')[0],fecha_fin_plan:ff.toISOString().split('T')[0],
+        dias_plan:m.d,estado:estP});
+      fe.setDate(fe.getDate()+m.d);i++;
+    }
+    fe.setDate(fe.getDate()+2);
+  }
+  for(let b=0;b<rows.length;b+=20){
+    await supa('proyecto_misiones',{method:'POST',body:JSON.stringify(rows.slice(b,b+20)),
+      headers:{'Prefer':'resolution=ignore-duplicates,return=minimal'}});
+  }
 }
+
+function copiar(){
+  if(navigator.clipboard&&window._link){
+    navigator.clipboard.writeText(window._link).then(()=>{
+      const b=document.querySelector('.btn-copy');b.textContent='✓ Copiado';
+      setTimeout(()=>b.textContent='📋 Copiar link',2000);
+    });
+  }
+}
+function abrir(){if(window._link) window.open(window._link,'_blank');}
+
+buildUI();updateUI();
 </script>
 </body>
 </html>
