@@ -1022,7 +1022,16 @@ function renderGantt(){
   const wCols=weeks.map(w=>{const isCur=today>=w&&today<new Date(w.getTime()+7*864e5);return`<div class="gantt-wk ${isCur?'cur':''}">${w.getDate()}</div>`;}).join('');
   let rows='';
   EO.forEach(eid=>{
-    const ms=MDATA.filter(m=>m.etapa_id===eid&&m.fecha_inicio_plan&&m.fecha_fin_plan);
+    const MISION_ORDER_G={'columnas_armado':1,'columnas_vaciado':2,'vigas':3,'placa_entrepiso':4};
+    const ms=MDATA.filter(m=>m.etapa_id===eid&&m.fecha_inicio_plan&&m.fecha_fin_plan)
+      .sort((a,b)=>{
+        const pa=pisoNum(a.nivel)||0;
+        const pb=pisoNum(b.nivel)||0;
+        if(pa!==pb) return pa-pb;
+        const ma=MISION_ORDER_G[a.mision_id]||9;
+        const mb=MISION_ORDER_G[b.mision_id]||9;
+        return ma-mb;
+      });
     if(!ms.length) return;
     rows+=`<div class="gantt-etapa">${EN[eid]||eid}</div>`;
     ms.forEach(m=>{
