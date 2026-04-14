@@ -884,8 +884,13 @@ async function loadAlertas(){
   // Sort: rojas primero, luego ambar
   als.sort((a,b)=>a.t==='r'&&b.t!=='r'?-1:b.t==='r'&&a.t!=='r'?1:0);
 
-  const cnt=als.filter(a=>a.t==='r').length;
-  document.getElementById('al-cnt').textContent=cnt?`· ${cnt}`:'';
+  const cntR=als.filter(a=>a.t==='r').length;
+  const cntA=als.filter(a=>a.t==='a').length;
+  const cntTotal=als.length;
+  document.getElementById('al-cnt').textContent=cntTotal?`· ${cntTotal}`:'';
+  // Also update dashboard alertas activas badge
+  const sDesv=document.getElementById('s-desv');
+  if(sDesv) sDesv.textContent=cntTotal||0;
 
   // Group by category
   const cats={};
