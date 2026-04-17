@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>GO Obra — Health Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0a0a0a;--bg2:#111;--bg3:#181818;--bg4:#1e1e1e;
+  --border:#1e1e1e;--border2:#2a2a2a;
+  --text:#f0ede8;--text2:#777;--text3:#3a3a3a;
+  --amber:#e8a020;--amber-d:rgba(232,160,32,.1);--amber-b:rgba(232,160,32,.25);
+  --green:#27ae60;--green-d:rgba(39,174,96,.12);
+  --red:#c0392b;--red-d:rgba(192,57,43,.12);
+  --blue:#2980b9;--blue-d:rgba(41,128,185,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif}
+#hdr{height:48px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 1.25rem;gap:10px;position:sticky;top:0;z-index:200}
+.logo{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--amber);letter-spacing:3px}
+.logo span{color:var(--text)}
+.hdr-sep{width:1px;height:18px;background:var(--border2)}
+.hdr-title{font-size:12px;color:var(--text2)}
+.hdr-r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.live{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)}
+.live-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hdr-btn{font-size:10px;padding:4px 9px;border-radius:5px;border:1px solid var(--border2);color:var(--text3);background:none;cursor:pointer;font-family:'DM Sans',sans-serif}
+.hdr-btn:hover{border-color:var(--amber);color:var(--amber)}
+.main{padding:1rem 1.25rem 2rem;max-width:1400px;margin:0 auto}
+.main::-webkit-scrollbar{width:2px}
+.main::-webkit-scrollbar-thumb{background:var(--border2)}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;margin-bottom:.875rem}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.875rem 1rem;position:relative;overflow:hidden}
+.sc::before{content:'';position:absolute;top:0;left:0;width:2px;height:100%;background:var(--amber)}
+.sc.g::before{background:var(--green)}.sc.r::before{background:var(--red)}.sc.b::before{background:var(--blue)}
+.sl{font-size:9px;font-weight:500;letter-spacing:1.2px;text-transform:uppercase;color:var(--text3);margin-bottom:.3rem}
+.sv{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;line-height:1}
+.ss{font-size:10px;color:var(--text3);margin-top:2px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:.75rem}
+.ch{padding:9px 13px;border-bottom:1px solid var(--border);font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);display:flex;justify-content:space-between;align-items:center}
+.cb{padding:.875rem}
+.proj-row{display:grid;grid-template-columns:12px 1fr auto auto auto auto;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.proj-row:last-child{border:none}
+.proj-dot{width:10px;height:10px;border-radius:50%}
+.proj-dot.saludable{background:var(--green);box-shadow:0 0 8px rgba(39,174,96,.4)}
+.proj-dot.degradado{background:var(--amber)}
+.proj-dot.critico{background:var(--red);animation:pulse 1s infinite}
+.proj-dot.sin_reportes{background:var(--text3)}
+.proj-nom{font-size:12px;font-weight:500}
+.proj-meta{font-size:10px;color:var(--text3);margin-top:2px}
+.proj-stat{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;min-width:40px;text-align:right}
+.proj-stat-lbl{font-size:9px;color:var(--text3);text-align:right}
+.event-row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:11px;align-items:center}
+.event-row:last-child{border:none}
+.sev-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;font-family:'DM Mono',monospace}
+.sev-info{background:var(--blue-d);color:var(--blue);border:1px solid rgba(41,128,185,.3)}
+.sev-warn{background:var(--amber-d);color:var(--amber);border:1px solid var(--amber-b)}
+.sev-error{background:var(--red-d);color:var(--red);border:1px solid rgba(192,57,43,.3)}
+.sev-critical{background:var(--red);color:#fff;border:1px solid var(--red);animation:pulse 1s infinite}
+.event-body{overflow:hidden}
+.event-msg{font-size:11px;color:var(--text)}
+.event-meta{font-size:9px;color:var(--text3);margin-top:2px;font-family:'DM Mono',monospace}
+.event-time{font-size:9px;color:var(--text3);white-space:nowrap;font-family:'DM Mono',monospace}
+.empty{text-align:center;padding:2rem;color:var(--text3);font-size:12px}
+.spin{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto .5rem}
+@keyframes sp{to{transform:rotate(360deg)}}
+.filter-bar{display:flex;gap:8px;margin-bottom:.75rem;flex-wrap:wrap}
+.filter-chip{padding:5px 12px;border-radius:20px;font-size:11px;cursor:pointer;border:1px solid var(--border2);color:var(--text2);background:none;font-family:'DM Sans',sans-serif}
+.filter-chip.active{background:var(--amber);color:#000;border-color:var(--amber);font-weight:600}
+.workflow-card{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px;background:var(--bg3);border-radius:6px;margin-bottom:6px;align-items:center}
+.workflow-name{font-family:'Syne',sans-serif;font-size:12px;font-weight:700}
+.workflow-stats{font-size:10px;color:var(--text3);margin-top:2px}
+.workflow-rate{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;text-align:right}
+@media(max-width:700px){.sg{grid-template-columns:repeat(2,1fr)}.proj-row{grid-template-columns:12px 1fr auto}}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div class="logo">GO<span> OBRA</span></div>
+  <div class="hdr-sep"></div>
+  <div class="hdr-title">Health · Observabilidad del pipeline</div>
+  <div class="hdr-r">
+    <div class="live"><div class="live-dot"></div>En vivo</div>
+    <button class="hdr-btn" onclick="loadAll()">↻</button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- Stats globales -->
+<div class="sg">
+  <div class="sc g"><div class="sl">Proyectos sanos</div><div class="sv" id="s-ok">—</div><div class="ss" id="s-ok-sub">de activos</div></div>
+  <div class="sc"><div class="sl">Proyectos degradados</div><div class="sv" id="s-deg">—</div><div class="ss">necesitan atención</div></div>
+  <div class="sc r"><div class="sl">Críticos / sin reportes</div><div class="sv" id="s-crit">—</div><div class="ss">pipeline roto</div></div>
+  <div class="sc b"><div class="sl">Errores 24h</div><div class="sv" id="s-err">—</div><div class="ss">del pipeline</div></div>
+</div>
+
+<!-- Estado por proyecto -->
+<div class="card">
+  <div class="ch">Estado del pipeline por proyecto
+    <div class="filter-bar" style="margin:0">
+      <button class="filter-chip active" onclick="filterProj('todos',this)">Todos</button>
+      <button class="filter-chip" onclick="filterProj('problemas',this)">Solo problemas</button>
+    </div>
+  </div>
+  <div class="cb" id="proj-list"><div class="empty"><div class="spin"></div></div></div>
+</div>
+
+<!-- Tasa de éxito por workflow -->
+<div class="card">
+  <div class="ch">Tasa de éxito por workflow (últimas 24h)</div>
+  <div class="cb" id="workflow-stats"><div class="empty"><div class="spin"></div></div></div>
+</div>
+
+<!-- Eventos recientes -->
+<div class="card">
+  <div class="ch">Eventos recientes
+    <div class="filter-bar" style="margin:0">
+      <button class="filter-chip active" onclick="filterSev('todos',this)">Todos</button>
+      <button class="filter-chip" onclick="filterSev('error',this)">Errores</button>
+      <button class="filter-chip" onclick="filterSev('warn',this)">Warnings</button>
+    </div>
+  </div>
+  <div class="cb" id="events-list"><div class="empty"><div class="spin"></div></div></div>
+</div>
+
+</div>
+
+<script>
+const SB = 'https://muyezsssnzlxavchabum.supabase.co';
+const SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
+const db = supabase.createClient(SB, SK);
+
+let PROJECTS = [];
+let EVENTS = [];
+let projFilter = 'todos';
+let sevFilter = 'todos';
+
+const ESTADO_LABEL = {
+  saludable: 'Saludable',
+  degradado: 'Degradado',
+  critico: 'Crítico',
+  sin_reportes: 'Sin reportes'
+};
+
+function timeAgo(ts) {
+  const d = Math.round((Date.now() - new Date(ts)) / 60000);
+  if (d < 1) return 'ahora';
+  if (d < 60) return `hace ${d}m`;
+  if (d < 1440) return `hace ${Math.round(d/60)}h`;
+  return new Date(ts).toLocaleDateString('es-CO', {day:'numeric', month:'short'});
+}
+
+async function loadHealth() {
+  const { data, error } = await db.from('vw_health_proyectos').select('*');
+  if (error) {
+    console.error('Health error:', error);
+    document.getElementById('proj-list').innerHTML = `<div class="empty">Error: ${error.message}<br><br>Verifica que la migración SQL haya sido aplicada.</div>`;
+    return;
+  }
+  PROJECTS = data || [];
+  renderStats();
+  renderProjects();
+}
+
+async function loadEvents() {
+  const { data, error } = await db.from('observabilidad_eventos')
+    .select('*')
+    .order('timestamp', { ascending: false })
+    .limit(50);
+  if (error) {
+    console.error('Events error:', error);
+    document.getElementById('events-list').innerHTML = '<div class="empty">La tabla observabilidad_eventos no existe aún. Aplica la migración SQL primero.</div>';
+    return;
+  }
+  EVENTS = data || [];
+  renderEvents();
+  renderWorkflowStats();
+}
+
+function renderStats() {
+  const ok = PROJECTS.filter(p => p.estado_pipeline === 'saludable').length;
+  const deg = PROJECTS.filter(p => p.estado_pipeline === 'degradado').length;
+  const crit = PROJECTS.filter(p => p.estado_pipeline === 'critico' || p.estado_pipeline === 'sin_reportes').length;
+  const errTot = PROJECTS.reduce((s, p) => s + (p.errores_24h || 0), 0);
+  
+  document.getElementById('s-ok').textContent = ok;
+  document.getElementById('s-ok-sub').textContent = `de ${PROJECTS.length} activos`;
+  document.getElementById('s-deg').textContent = deg;
+  document.getElementById('s-crit').textContent = crit;
+  document.getElementById('s-err').textContent = errTot;
+}
+
+function renderProjects() {
+  const list = projFilter === 'problemas'
+    ? PROJECTS.filter(p => p.estado_pipeline !== 'saludable')
+    : PROJECTS;
+  
+  // Ordenar: críticos primero
+  const order = {critico:0, sin_reportes:1, degradado:2, saludable:3};
+  list.sort((a,b) => (order[a.estado_pipeline] ?? 99) - (order[b.estado_pipeline] ?? 99));
+  
+  if (!list.length) {
+    document.getElementById('proj-list').innerHTML = '<div class="empty">✓ Todos los proyectos saludables</div>';
+    return;
+  }
+  
+  document.getElementById('proj-list').innerHTML = list.map(p => {
+    const subLabel = p.estado_pipeline === 'sin_reportes'
+      ? (p.ultimo_avance ? `Último reporte: ${timeAgo(p.ultimo_avance)}` : 'Nunca ha reportado')
+      : `Último reporte: ${p.ultimo_avance ? timeAgo(p.ultimo_avance) : '—'}`;
+    return `<div class="proj-row">
+      <div class="proj-dot ${p.estado_pipeline}" title="${ESTADO_LABEL[p.estado_pipeline]}"></div>
+      <div>
+        <div class="proj-nom">${p.nombre} <span style="color:var(--text3);font-family:'DM Mono',monospace;font-size:10px;margin-left:4px">${p.codigo_corto}</span></div>
+        <div class="proj-meta">${subLabel}</div>
+      </div>
+      <div>
+        <div class="proj-stat" style="color:${p.avances_24h > 0 ? 'var(--green)' : 'var(--text3)'}">${p.avances_24h || 0}</div>
+        <div class="proj-stat-lbl">avances 24h</div>
+      </div>
+      <div>
+        <div class="proj-stat" style="color:${p.errores_24h > 0 ? 'var(--red)' : 'var(--text3)'}">${p.errores_24h || 0}</div>
+        <div class="proj-stat-lbl">errores</div>
+      </div>
+      <div>
+        <div class="proj-stat" style="color:${p.misiones_hoy > 0 ? 'var(--amber)' : 'var(--text3)'}">${p.misiones_hoy || 0}</div>
+        <div class="proj-stat-lbl">misiones hoy</div>
+      </div>
+      <div>
+        <div class="proj-stat" style="color:${p.workers_vinculados > 0 ? 'var(--blue)' : 'var(--red)'}">${p.workers_vinculados || 0}</div>
+        <div class="proj-stat-lbl">workers</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderEvents() {
+  const list = sevFilter === 'todos'
+    ? EVENTS
+    : EVENTS.filter(e => e.severidad === sevFilter);
+  
+  if (!list.length) {
+    document.getElementById('events-list').innerHTML = '<div class="empty">Sin eventos con ese filtro</div>';
+    return;
+  }
+  
+  document.getElementById('events-list').innerHTML = list.slice(0, 40).map(e => {
+    const proj = PROJECTS.find(p => p.proyecto_id === e.proyecto_id);
+    const projTag = proj ? `<span style="color:var(--amber);font-family:'DM Mono',monospace;font-size:9px">${proj.codigo_corto}</span>` : '';
+    return `<div class="event-row">
+      <span class="sev-badge sev-${e.severidad}">${e.severidad.toUpperCase()}</span>
+      <div class="event-body">
+        <div class="event-msg">${e.mensaje || '(sin mensaje)'}</div>
+        <div class="event-meta">${e.workflow} · ${e.step} ${projTag}</div>
+      </div>
+      <div class="event-time">${timeAgo(e.timestamp)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderWorkflowStats() {
+  const last24h = EVENTS.filter(e => new Date(e.timestamp) > new Date(Date.now() - 24*60*60*1000));
+  const byWorkflow = {};
+  last24h.forEach(e => {
+    if (!byWorkflow[e.workflow]) byWorkflow[e.workflow] = {total:0, ok:0, warn:0, err:0};
+    byWorkflow[e.workflow].total++;
+    if (e.severidad === 'info') byWorkflow[e.workflow].ok++;
+    else if (e.severidad === 'warn') byWorkflow[e.workflow].warn++;
+    else byWorkflow[e.workflow].err++;
+  });
+  
+  const entries = Object.entries(byWorkflow);
+  if (!entries.length) {
+    document.getElementById('workflow-stats').innerHTML = '<div class="empty">Sin actividad en las últimas 24 horas</div>';
+    return;
+  }
+  
+  const LABELS = {
+    telegram_agente: 'Agente IA (Telegram)',
+    misiones_cron: 'Envío de misiones',
+    bodega_auto: 'Descuento de bodega'
+  };
+  
+  document.getElementById('workflow-stats').innerHTML = entries.map(([wf, s]) => {
+    const rate = s.total > 0 ? Math.round((s.ok / s.total) * 100) : 0;
+    const col = rate >= 95 ? 'var(--green)' : rate >= 80 ? 'var(--amber)' : 'var(--red)';
+    return `<div class="workflow-card">
+      <div>
+        <div class="workflow-name">${LABELS[wf] || wf}</div>
+        <div class="workflow-stats">${s.total} eventos · ${s.ok} ok · ${s.warn} warn · ${s.err} err</div>
+      </div>
+      <div class="workflow-rate" style="color:${col}">${rate}%</div>
+    </div>`;
+  }).join('');
+}
+
+function filterProj(f, btn) {
+  projFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    if (c.parentElement === btn.parentElement) c.classList.remove('active');
+  });
+  btn.classList.add('active');
+  renderProjects();
+}
+
+function filterSev(f, btn) {
+  sevFilter = f;
+  document.querySelectorAll('.filter-chip').forEach(c => {
+    if (c.parentElement === btn.parentElement) c.classList.remove('active');
+  });
+  btn.classList.add('active');
+  renderEvents();
+}
+
+async function loadAll() {
+  await Promise.all([loadHealth(), loadEvents()]);
+}
+
+// Realtime: nuevos eventos
+db.channel('obs-eventos')
+  .on('postgres_changes', {event:'INSERT', schema:'public', table:'observabilidad_eventos'}, loadEvents)
+  .subscribe();
+
+// Refresh cada 30s
+setInterval(loadAll, 30000);
+loadAll();
+</script>
+</body>
+</html>
