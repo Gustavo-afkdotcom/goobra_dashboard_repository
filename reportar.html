@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>GO Obra — Reportar</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiR08gT2JyYSIsInNob3J0X25hbWUiOiJHT09icmEiLCJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsInN0YXJ0X3VybCI6Ii4iLCJ0aGVtZV9jb2xvciI6IiMwYTBhMGEiLCJiYWNrZ3JvdW5kX2NvbG9yIjoiIzBhMGEwYSIsImljb25zIjpbXX0="/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0a0a0a;--bg2:#111;--bg3:#181818;--bg4:#1e1e1e;
+  --border:#1e1e1e;--border2:#2a2a2a;
+  --text:#f0ede8;--text2:#777;--text3:#3a3a3a;
+  --amber:#e8a020;--amber-d:rgba(232,160,32,.1);--amber-b:rgba(232,160,32,.25);
+  --green:#27ae60;--green-d:rgba(39,174,96,.12);
+  --red:#c0392b;--red-d:rgba(192,57,43,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+body{padding:0 0 env(safe-area-inset-bottom)}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;gap:10px;padding:14px 16px 14px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);z-index:100}
+.logo{font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--amber);letter-spacing:2.5px}
+.logo span{color:var(--text)}
+.hdr-sep{width:1px;height:16px;background:var(--border2)}
+.hdr-tag{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+.hdr-back{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:0 6px 0 0;font-family:inherit}
+.hdr-title{flex:1;font-family:'Syne',sans-serif;font-size:14px;font-weight:800}
+.hdr-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:2px}
+
+/* SCREEN WRAPPER */
+.screen{display:none;padding:18px 16px 100px;min-height:calc(100vh - 56px)}
+.screen.on{display:block}
+
+/* HERO */
+.hero-label{font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.hero-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;line-height:1.2;margin-bottom:6px}
+.hero-sub{font-size:12px;color:var(--text2)}
+
+/* CARD MISION */
+.mcard{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;border-left:3px solid var(--bg4)}
+.mcard.active{border-left-color:var(--amber)}
+.mcard.blocked{opacity:.45;cursor:not-allowed}
+.mcard:active{border-color:var(--border2)}
+.mcard-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.mcard-hd-info{flex:1;min-width:0}
+.mcard-etapa{font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;color:var(--text2)}
+.mcard.active .mcard-etapa{color:var(--amber)}
+.mcard-nom{font-size:14px;font-weight:500;margin-bottom:6px;line-height:1.3}
+.mcard-progress{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.mcard-bar{flex:1;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden}
+.mcard-bf{height:100%;background:var(--amber);border-radius:2px;transition:width .3s}
+.mcard-pct{font-family:'Syne',sans-serif;font-size:11px;font-weight:800;min-width:32px;text-align:right}
+.mcard-sub{font-size:11px;color:var(--text2)}
+.mcard-btn{background:var(--amber);color:#000;padding:8px 14px;border-radius:6px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;align-self:center}
+.mcard:not(.active) .mcard-btn{background:transparent;color:var(--text2);border:1px solid var(--border2);font-weight:500}
+.mcard.blocked .mcard-btn{display:none}
+
+/* NOVEDAD CTA */
+.novedad-cta{margin-top:18px;padding:14px;background:var(--bg3);border-radius:10px;text-align:center;border:1px dashed var(--border2);cursor:pointer}
+.novedad-cta-title{font-size:11px;color:var(--text2);margin-bottom:2px}
+.novedad-cta-sub{font-size:13px;color:var(--amber);font-weight:500}
+
+/* REPORTAR — CANTIDAD */
+.mision-info{padding:4px 4px 16px}
+.mision-info .mcard-etapa{color:var(--amber);margin-bottom:4px}
+.mision-info-nom{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:8px}
+.mision-info-sub{font-size:11px;color:var(--text2);margin-top:2px}
+
+.qty-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px 16px;margin-bottom:14px}
+.qty-label{font-size:11px;color:var(--text2);text-align:center;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px}
+.qty-stepper{display:flex;align-items:center;justify-content:center;gap:18px}
+.qty-btn{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;user-select:none;flex-shrink:0;border:none;font-family:inherit}
+.qty-btn.minus{background:transparent;border:1px solid var(--border2);color:var(--text2)}
+.qty-btn.minus:active{background:var(--bg3)}
+.qty-btn.plus{background:var(--amber);color:#000;font-weight:500}
+.qty-btn.plus:active{background:#c88a18}
+.qty-btn:disabled{opacity:.3;cursor:not-allowed}
+.qty-val{text-align:center;min-width:90px}
+.qty-num{font-family:'Syne',sans-serif;font-size:52px;font-weight:800;color:var(--amber);line-height:1}
+.qty-unit{font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-top:3px}
+.qty-chips{display:flex;gap:6px;margin-top:16px;justify-content:center;flex-wrap:wrap}
+.qty-chip{padding:7px 14px;background:var(--bg4);color:var(--text2);border-radius:20px;font-size:11px;cursor:pointer;border:none;font-family:inherit}
+.qty-chip.active{background:var(--amber);color:#000;font-weight:600}
+
+.preview-card{background:var(--amber-d);border:1px solid var(--amber-b);border-radius:8px;padding:11px 14px;margin-bottom:12px;font-size:12px}
+.preview-title{color:var(--amber);font-weight:500;margin-bottom:4px}
+.preview-body{color:var(--text)}
+
+.optional-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:14px}
+.optional-label{font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.optional-chips{display:flex;gap:6px;flex-wrap:wrap}
+.opt-chip{padding:7px 11px;border:1px solid var(--border2);border-radius:16px;font-size:11px;color:var(--text2);cursor:pointer;background:none;font-family:inherit}
+.opt-chip.desviacion{border-color:rgba(192,57,43,.3);background:var(--red-d);color:var(--red)}
+.opt-chip.active{background:var(--amber-d);border-color:var(--amber-b);color:var(--amber)}
+.opt-chip.desviacion.active{background:var(--red-d);border-color:var(--red);color:var(--red);font-weight:600}
+.opt-chip:disabled{opacity:.4;cursor:not-allowed}
+
+textarea.nota{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:10px;font-size:13px;font-family:inherit;resize:vertical;min-height:70px;margin-top:10px;display:none}
+textarea.nota.show{display:block}
+
+/* SEND BUTTON */
+.send-btn{width:100%;background:var(--amber);color:#000;padding:16px;border-radius:10px;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;letter-spacing:0.5px;cursor:pointer;border:none;margin-top:8px}
+.send-btn:active{background:#c88a18}
+.send-btn:disabled{opacity:.5;cursor:not-allowed}
+.send-btn.saving{pointer-events:none}
+
+/* CONFIRMACION */
+.ok-wrap{text-align:center;padding:32px 8px 16px}
+.ok-circle{width:76px;height:76px;border-radius:50%;background:var(--green-d);border:3px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--green);margin:0 auto 18px}
+.ok-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;margin-bottom:6px}
+.ok-sub{font-size:12px;color:var(--text2);line-height:1.5}
+
+.delta-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;margin:16px 0}
+.delta-title{font-size:11px;color:var(--amber);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.delta-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.delta-lbl{font-size:10px;color:var(--text2)}
+.delta-val{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin:2px 0}
+.delta-sub{font-size:10px;color:var(--text2)}
+.delta-arrow{color:var(--amber);font-size:20px}
+
+.bodega-card{background:var(--amber-d);border:1px solid var(--amber-b);border-radius:8px;padding:12px;margin:12px 0;font-size:11px}
+.bodega-title{color:var(--amber);font-weight:500;margin-bottom:6px;font-size:11px}
+.bodega-item{color:var(--text);line-height:1.7}
+.bodega-alert{color:var(--red);margin-top:6px;padding-top:6px;border-top:1px solid rgba(192,57,43,.2)}
+
+.ok-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:22px}
+.ok-actions button{padding:13px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:inherit}
+.btn-sec{background:transparent;color:var(--text);border:1px solid var(--border2)!important}
+.btn-pri{background:var(--amber);color:#000;font-weight:700}
+
+/* DESVIACION */
+.desv-intro{padding:4px 4px 14px;font-size:12px;color:var(--text2);line-height:1.6}
+.desv-label{font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 4px}
+.desv-opts{display:grid;gap:8px;margin-bottom:16px}
+.desv-opt{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.desv-opt.active{background:var(--red-d);border-color:var(--red)}
+.desv-opt-ico{font-size:22px;width:28px;text-align:center;flex-shrink:0}
+.desv-opt-info{flex:1}
+.desv-opt-nom{font-size:13px;font-weight:500;margin-bottom:2px}
+.desv-opt-sub{font-size:10px;color:var(--text2)}
+
+.desv-send{background:var(--red);color:#fff;margin-top:8px}
+.desv-send:active{background:#8b2a1f}
+
+/* ERROR / LOADING */
+.loading,.error{text-align:center;padding:64px 20px}
+.spin{width:26px;height:26px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 14px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.err-ico{font-size:38px;margin-bottom:10px;color:var(--red)}
+.err-title{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:6px}
+.err-msg{font-size:12px;color:var(--text2);line-height:1.5}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:16px;right:16px;background:var(--red);color:#fff;padding:12px 16px;border-radius:8px;font-size:13px;z-index:200;display:none;text-align:center}
+.toast.show{display:block}
+</style>
+</head>
+<body>
+
+<div id="hdr" class="hdr">
+  <button id="btn-back" class="hdr-back" style="display:none" onclick="goBack()">‹</button>
+  <div class="logo">GO<span> OBRA</span></div>
+  <div class="hdr-sep"></div>
+  <div style="flex:1;min-width:0">
+    <div id="hdr-title" class="hdr-title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Cargando...</div>
+    <div id="hdr-sub" class="hdr-sub"></div>
+  </div>
+</div>
+
+<!-- Loading inicial -->
+<div id="screen-loading" class="screen on">
+  <div class="loading">
+    <div class="spin"></div>
+    <div style="font-size:12px;color:var(--text2)">Cargando tus misiones...</div>
+  </div>
+</div>
+
+<!-- Error -->
+<div id="screen-error" class="screen">
+  <div class="error">
+    <div class="err-ico" id="err-ico">⚠</div>
+    <div class="err-title" id="err-title">No se pudo cargar</div>
+    <div class="err-msg" id="err-msg">Revisa que el link sea correcto.</div>
+  </div>
+</div>
+
+<!-- Pantalla 1: Lista -->
+<div id="screen-lista" class="screen">
+  <div style="padding:0 4px 14px">
+    <div class="hero-label" id="p1-saludo">Hola</div>
+    <div class="hero-title" id="p1-title">Mi obra · hoy</div>
+    <div class="hero-sub" id="p1-sub">— misiones asignadas</div>
+  </div>
+  <div id="p1-misiones"></div>
+  <div class="novedad-cta" onclick="irADesviacionGeneral()">
+    <div class="novedad-cta-title">¿Pasó algo inesperado?</div>
+    <div class="novedad-cta-sub">Reportar una novedad</div>
+  </div>
+</div>
+
+<!-- Pantalla 2: Cantidad -->
+<div id="screen-cantidad" class="screen">
+  <div class="mision-info">
+    <div class="mcard-etapa" id="p2-etapa">—</div>
+    <div class="mision-info-nom" id="p2-nom">—</div>
+    <div class="mcard-progress">
+      <div class="mcard-bar"><div class="mcard-bf" id="p2-bar" style="width:0%"></div></div>
+      <div class="mcard-pct" id="p2-pct" style="color:var(--amber)">0%</div>
+    </div>
+    <div class="mision-info-sub" id="p2-pendiente">—</div>
+  </div>
+
+  <div class="qty-card">
+    <div class="qty-label">¿Cuánto hicieron hoy?</div>
+    <div class="qty-stepper">
+      <button class="qty-btn minus" id="p2-minus" onclick="changeQty(-1)">−</button>
+      <div class="qty-val">
+        <div class="qty-num" id="p2-qty">1</div>
+        <div class="qty-unit" id="p2-unidad">und</div>
+      </div>
+      <button class="qty-btn plus" id="p2-plus" onclick="changeQty(1)">+</button>
+    </div>
+    <div class="qty-chips" id="p2-chips"></div>
+  </div>
+
+  <div class="preview-card" id="p2-preview">
+    <div class="preview-title" id="p2-preview-title">Después de este avance</div>
+    <div class="preview-body" id="p2-preview-body">—</div>
+  </div>
+
+  <div class="optional-card">
+    <div class="optional-label">Opcional</div>
+    <div class="optional-chips">
+      <button class="opt-chip" id="p2-opt-foto" disabled title="Próximamente">📷 Foto</button>
+      <button class="opt-chip" id="p2-opt-nota" onclick="toggleNota()">💬 Nota</button>
+      <button class="opt-chip desviacion" id="p2-opt-desv" onclick="toggleDesviacion()">⚠ Desviación</button>
+    </div>
+    <textarea id="p2-nota" class="nota" placeholder="Escribe una nota para el dueño (opcional)..."></textarea>
+  </div>
+
+  <button class="send-btn" id="p2-send" onclick="enviarAvance()">Enviar avance</button>
+</div>
+
+<!-- Pantalla 3: Confirmación -->
+<div id="screen-ok" class="screen">
+  <div class="ok-wrap">
+    <div class="ok-circle">✓</div>
+    <div class="ok-title" id="p3-title">Avance registrado</div>
+    <div class="ok-sub" id="p3-sub">El dueño ya lo ve en su gemelo</div>
+  </div>
+
+  <div class="delta-card">
+    <div class="delta-title">Cambios en esta misión</div>
+    <div class="delta-grid">
+      <div>
+        <div class="delta-lbl">Antes</div>
+        <div class="delta-val" id="p3-antes-pct" style="color:var(--text2)">0%</div>
+        <div class="delta-sub" id="p3-antes-cant">—</div>
+      </div>
+      <div class="delta-arrow">→</div>
+      <div style="text-align:right">
+        <div class="delta-lbl" style="color:var(--green)">Ahora</div>
+        <div class="delta-val" id="p3-ahora-pct" style="color:var(--green)">0%</div>
+        <div class="delta-sub" id="p3-ahora-cant">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="p3-bodega" class="bodega-card" style="display:none">
+    <div class="bodega-title">📦 Bodega actualizada</div>
+    <div id="p3-bodega-items"></div>
+    <div id="p3-bodega-alerts"></div>
+  </div>
+
+  <div class="ok-actions">
+    <button class="btn-sec" onclick="volverALista()">Ver misiones</button>
+    <button class="btn-pri" onclick="reportarOtra()">Reportar otra</button>
+  </div>
+</div>
+
+<!-- Pantalla 4: Desviación -->
+<div id="screen-desv" class="screen">
+  <div class="desv-intro">
+    Reporta aquí cuando algo no salió como el plan lo pedía. El dueño lo verá marcado en su gemelo.
+  </div>
+  <div class="desv-label">¿Qué pasó?</div>
+  <div class="desv-opts" id="desv-opts"></div>
+  
+  <div class="optional-card">
+    <div class="optional-label">Explica qué pasó</div>
+    <textarea id="desv-nota" class="nota show" placeholder="Describe qué ocurrió con más detalle..." style="min-height:90px"></textarea>
+    <div class="optional-chips" style="margin-top:10px">
+      <button class="opt-chip" disabled title="Próximamente">📷 Foto</button>
+    </div>
+  </div>
+
+  <button class="send-btn desv-send" onclick="enviarDesviacion()">Reportar al dueño</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const SB = 'https://muyezsssnzlxavchabum.supabase.co';
+const SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
+const db = supabase.createClient(SB, SK);
+
+const ETAPAS = {
+  prel:'Preliminares', mvt:'Mov. de tierras', cim:'Cimentación',
+  estr:'Estructura', mamp:'Mampostería', redes:'Redes',
+  acab:'Acabados', urb:'Urbanismo', entr:'Entrega'
+};
+
+const ROLES = {res:'Residente', mae:'Maestro', of:'Oficial', ayu:'Ayudante', arq:'Arquitecto'};
+
+const DESV_TIPOS = [
+  {id:'negligencia', ico:'💥', nom:'Se dañó algo, hay que rehacer', sub:'Retrabajo, material malo, mala instalación'},
+  {id:'retraso_suministro', ico:'📦', nom:'No hay materiales / no llegaron', sub:'Faltó suministro para avanzar'},
+  {id:'clima', ico:'🌧', nom:'Clima impidió trabajar', sub:'Lluvia, frío extremo, viento'},
+  {id:'cambio_diseno', ico:'📐', nom:'Cambio de diseño / instrucciones', sub:'El dueño o arq. pidió algo diferente'},
+  {id:'otro', ico:'❓', nom:'Otra cosa', sub:'Describir libremente'}
+];
+
+// Estado
+let CTX = null;
+let MISION_ACTUAL = null;
+let QTY = 1;
+let NOTA_VISIBLE = false;
+let DESV_MARCADA = false;
+let DESV_TIPO_SEL = null;
+let ES_DESV_GENERAL = false;
+let historial = [];
+
+// URL params
+function getParams() {
+  const h = new URLSearchParams(location.hash.replace('#',''));
+  const q = new URLSearchParams(location.search);
+  return {
+    obra: (h.get('obra') || q.get('obra') || '').toUpperCase().trim(),
+    worker: (h.get('worker') || q.get('worker') || '').toUpperCase().trim(),
+    token: (h.get('token') || q.get('token') || '').trim()
+  };
+}
+
+const P = getParams();
+
+// Mostrar error
+function showError(titulo, msg, ico='⚠') {
+  document.getElementById('err-ico').textContent = ico;
+  document.getElementById('err-title').textContent = titulo;
+  document.getElementById('err-msg').textContent = msg;
+  showScreen('error');
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.getElementById('screen-'+name).classList.add('on');
+  const showBack = ['cantidad','desv'].includes(name);
+  document.getElementById('btn-back').style.display = showBack ? 'block' : 'none';
+  if (name === 'lista' || name === 'loading') historial = [];
+  window.scrollTo(0, 0);
+}
+
+function toast(msg, duration=3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function goBack() {
+  const prev = historial.pop();
+  showScreen(prev || 'lista');
+}
+
+// Helpers visuales
+function pctColor(pct) {
+  if (pct >= 100) return 'var(--green)';
+  if (pct > 0) return 'var(--amber)';
+  return 'var(--text3)';
+}
+
+function pisoNum(nivel) {
+  if (!nivel) return 0;
+  const m = nivel.match(/(\d+)/);
+  return m ? parseInt(m[1]) : 0;
+}
+
+function esEstructuralBloqueada(mision) {
+  if (mision.etapa_id !== 'estr') return false;
+  if (!mision.nivel) return false;
+  if (CTX.proyecto.sistema_constructivo !== 'porticos') return false;
+  const n = pisoNum(mision.nivel);
+  if (n <= 1) return false;
+  const prevNivel = 'piso ' + (n-1);
+  return !CTX.estructura_completada[prevNivel];
+}
+
+// ── INICIALIZACIÓN ──
+async function init() {
+  if (!P.obra || !P.worker || !P.token) {
+    showError('Link incompleto', 'Falta información en el link. Pídele al dueño que te reenvíe el link completo.', '🔗');
+    return;
+  }
+
+  try {
+    const { data, error } = await db.rpc('contexto_reportar', {
+      p_proyecto_codigo: P.obra,
+      p_worker_codigo: P.worker,
+      p_token: P.token
+    });
+
+    if (error) throw error;
+    
+    if (!data.ok) {
+      const errores = {
+        proyecto_no_encontrado: ['Obra no encontrada', 'El código de obra no existe o la obra no está activa.'],
+        token_invalido: ['Acceso denegado', 'El link que usaste no es válido. Pídele al dueño uno nuevo.'],
+        worker_no_encontrado: ['Tu código no coincide', 'El link no corresponde a un trabajador de esta obra.'],
+        worker_inactivo: ['Tu acceso fue desactivado', 'El dueño ya no te tiene registrado como activo.']
+      };
+      const [t, m] = errores[data.error] || ['Error', 'No se pudo validar tu acceso.'];
+      showError(t, m, '🔒');
+      return;
+    }
+
+    CTX = data;
+    renderLista();
+    showScreen('lista');
+
+    // Realtime: recargar cuando alguien reporte un avance
+    db.channel('reportar-'+CTX.proyecto.id)
+      .on('postgres_changes', {event:'*', schema:'public', table:'proyecto_misiones', filter:'proyecto_id=eq.'+CTX.proyecto.id}, recargarContexto)
+      .subscribe();
+
+  } catch (e) {
+    console.error(e);
+    showError('Sin conexión', 'Revisa tu internet y recarga la página.', '📵');
+  }
+}
+
+async function recargarContexto() {
+  try {
+    const { data } = await db.rpc('contexto_reportar', {
+      p_proyecto_codigo: P.obra,
+      p_worker_codigo: P.worker,
+      p_token: P.token
+    });
+    if (data?.ok) {
+      CTX = data;
+      if (document.getElementById('screen-lista').classList.contains('on')) {
+        renderLista();
+      }
+    }
+  } catch(e) {}
+}
+
+// ── PANTALLA 1: LISTA ──
+function renderLista() {
+  document.getElementById('hdr-title').textContent = CTX.proyecto.nombre;
+  document.getElementById('hdr-sub').textContent = CTX.proyecto.codigo_corto;
+  document.getElementById('p1-saludo').textContent = 'Hola, ' + (CTX.worker.nombre || ROLES[CTX.worker.rol] || 'residente');
+  const fecha = new Date().toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long'});
+  document.getElementById('p1-title').textContent = CTX.proyecto.nombre + ' · ' + fecha;
+  document.getElementById('p1-sub').textContent = `${CTX.misiones.length} misiones asignadas hoy`;
+
+  const cont = document.getElementById('p1-misiones');
+  if (!CTX.misiones.length) {
+    cont.innerHTML = '<div style="text-align:center;padding:32px 16px;color:var(--text2);font-size:12px">No hay misiones activas en este momento.<br>Habla con el dueño.</div>';
+    return;
+  }
+
+  cont.innerHTML = CTX.misiones.map(m => {
+    const bloqueada = esEstructuralBloqueada(m);
+    const esActiva = m.estado === 'en_curso';
+    const etapa = ETAPAS[m.etapa_id] || m.etapa_id;
+    const nivelTxt = m.nivel ? ` · ${m.nivel}` : '';
+    const misionNom = (m.mision_id || '').replace(/_/g,' ');
+    const pct = parseFloat(m.pct_avance || 0);
+    
+    let sub;
+    if (bloqueada) {
+      sub = `🔒 Necesita que terminen el piso ${pisoNum(m.nivel)-1} primero`;
+    } else {
+      sub = `Pendiente: ${m.cantidad_pendiente} de ${m.cantidad_meta} ${m.unidad_primaria || ''}`;
+    }
+    
+    const cls = bloqueada ? 'blocked' : (esActiva ? 'active' : '');
+    const btnTxt = bloqueada ? '' : (esActiva ? 'Reportar ›' : 'Reportar');
+    
+    return `<div class="mcard ${cls}" ${!bloqueada ? `onclick='irAReportar(${JSON.stringify(m.id)})'` : ''}>
+      <div class="mcard-hd">
+        <div class="mcard-hd-info">
+          <div class="mcard-etapa">${etapa}${nivelTxt}</div>
+          <div class="mcard-nom">${misionNom}</div>
+          <div class="mcard-progress">
+            <div class="mcard-bar"><div class="mcard-bf" style="width:${pct}%;background:${pctColor(pct)}"></div></div>
+            <div class="mcard-pct" style="color:${pctColor(pct)}">${pct.toFixed(0)}%</div>
+          </div>
+          <div class="mcard-sub">${sub}</div>
+        </div>
+        ${btnTxt ? `<div class="mcard-btn">${btnTxt}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── PANTALLA 2: CANTIDAD ──
+function irAReportar(misionId) {
+  MISION_ACTUAL = CTX.misiones.find(m => m.id === misionId);
+  if (!MISION_ACTUAL) return;
+  
+  QTY = 1;
+  NOTA_VISIBLE = false;
+  DESV_MARCADA = false;
+  ES_DESV_GENERAL = false;
+  document.getElementById('p2-nota').value = '';
+  document.getElementById('p2-nota').classList.remove('show');
+  document.getElementById('p2-opt-nota').classList.remove('active');
+  document.getElementById('p2-opt-desv').classList.remove('active');
+
+  const m = MISION_ACTUAL;
+  const etapa = ETAPAS[m.etapa_id] || m.etapa_id;
+  const nivelTxt = m.nivel ? ` · ${m.nivel}` : '';
+  const misionNom = (m.mision_id || '').replace(/_/g,' ');
+  const pct = parseFloat(m.pct_avance || 0);
+
+  document.getElementById('hdr-title').textContent = 'Reportar avance';
+  document.getElementById('hdr-sub').textContent = `${CTX.proyecto.codigo_corto} · ${misionNom}`;
+  
+  document.getElementById('p2-etapa').textContent = etapa + nivelTxt;
+  document.getElementById('p2-nom').textContent = misionNom;
+  document.getElementById('p2-bar').style.width = pct + '%';
+  document.getElementById('p2-bar').style.background = pctColor(pct);
+  document.getElementById('p2-pct').textContent = pct.toFixed(0) + '%';
+  document.getElementById('p2-pct').style.color = pctColor(pct);
+  document.getElementById('p2-pendiente').textContent = 
+    `Llevan ${m.cantidad_ejecutada} de ${m.cantidad_meta} · faltan ${m.cantidad_pendiente} ${m.unidad_primaria || ''}`;
+  document.getElementById('p2-unidad').textContent = m.unidad_primaria || 'und';
+  
+  // Chips rápidos basados en cantidad pendiente
+  const pend = parseFloat(m.cantidad_pendiente || 0);
+  const chips = [];
+  if (pend >= 1) chips.push(1);
+  if (pend >= 2) chips.push(2);
+  if (pend >= 5) chips.push(5);
+  const half = Math.ceil(pend / 2);
+  if (half >= 3 && !chips.includes(half)) chips.push(half);
+  if (pend > 1) chips.push(pend);
+  const uniqueChips = [...new Set(chips)].sort((a,b)=>a-b);
+  
+  const chipsHTML = uniqueChips.map(v => 
+    `<button class="qty-chip" onclick="setQty(${v})">${v === pend ? `todas ${v}` : v}</button>`
+  ).join('');
+  document.getElementById('p2-chips').innerHTML = chipsHTML;
+
+  updateQtyDisplay();
+  historial.push('lista');
+  showScreen('cantidad');
+}
+
+function changeQty(delta) {
+  const pend = parseFloat(MISION_ACTUAL.cantidad_pendiente || 0);
+  QTY = Math.max(1, Math.min(pend, QTY + delta));
+  updateQtyDisplay();
+}
+
+function setQty(v) {
+  const pend = parseFloat(MISION_ACTUAL.cantidad_pendiente || 0);
+  QTY = Math.max(1, Math.min(pend, v));
+  updateQtyDisplay();
+}
+
+function updateQtyDisplay() {
+  document.getElementById('p2-qty').textContent = QTY;
+  
+  const pend = parseFloat(MISION_ACTUAL.cantidad_pendiente || 0);
+  document.getElementById('p2-minus').disabled = QTY <= 1;
+  document.getElementById('p2-plus').disabled = QTY >= pend;
+  
+  // Actualizar chips activos
+  document.querySelectorAll('.qty-chip').forEach(c => {
+    const cv = parseFloat(c.textContent.replace('todas ','')) || 0;
+    c.classList.toggle('active', cv === QTY);
+  });
+  
+  // Preview
+  const meta = parseFloat(MISION_ACTUAL.cantidad_meta || 0);
+  const actual = parseFloat(MISION_ACTUAL.cantidad_ejecutada || 0);
+  const despues = Math.min(actual + QTY, meta);
+  const pctDespues = Math.round((despues / meta) * 100);
+  const faltaran = meta - despues;
+  
+  let preview;
+  if (faltaran <= 0) {
+    preview = `🎉 Con este avance, la misión quedará <b>completada al 100%</b>`;
+    document.getElementById('p2-preview-title').textContent = 'Vas a terminar la misión';
+  } else {
+    preview = `La misión quedará al <b>${pctDespues}%</b> · faltarían ${faltaran} ${MISION_ACTUAL.unidad_primaria || ''}`;
+    document.getElementById('p2-preview-title').textContent = 'Después de este avance';
+  }
+  document.getElementById('p2-preview-body').innerHTML = preview;
+}
+
+function toggleNota() {
+  NOTA_VISIBLE = !NOTA_VISIBLE;
+  document.getElementById('p2-nota').classList.toggle('show', NOTA_VISIBLE);
+  document.getElementById('p2-opt-nota').classList.toggle('active', NOTA_VISIBLE);
+}
+
+function toggleDesviacion() {
+  DESV_MARCADA = !DESV_MARCADA;
+  document.getElementById('p2-opt-desv').classList.toggle('active', DESV_MARCADA);
+  if (DESV_MARCADA && !NOTA_VISIBLE) {
+    toggleNota(); // Forzar nota visible para que describa la desviación
+  }
+  if (DESV_MARCADA) {
+    document.getElementById('p2-nota').placeholder = 'Describe qué desviación ocurrió (obligatorio)...';
+  } else {
+    document.getElementById('p2-nota').placeholder = 'Escribe una nota para el dueño (opcional)...';
+  }
+}
+
+// ── ENVIAR AVANCE ──
+async function enviarAvance() {
+  const nota = document.getElementById('p2-nota').value.trim() || null;
+  
+  if (DESV_MARCADA && !nota) {
+    toast('Si marcas desviación, explica qué pasó en la nota');
+    return;
+  }
+
+  const btn = document.getElementById('p2-send');
+  btn.disabled = true;
+  btn.classList.add('saving');
+  btn.textContent = 'Enviando...';
+
+  try {
+    const { data, error } = await db.rpc('reportar_avance_completo', {
+      p_token: P.token,
+      p_worker_codigo: P.worker,
+      p_proyecto_codigo: P.obra,
+      p_etapa_id: MISION_ACTUAL.etapa_id,
+      p_mision_id: MISION_ACTUAL.mision_id,
+      p_nivel: MISION_ACTUAL.nivel,
+      p_cantidad_primaria_valor: QTY,
+      p_cantidad_primaria_unidad: MISION_ACTUAL.unidad_primaria,
+      p_comentario_libre: nota,
+      p_desviacion_detectada: DESV_MARCADA,
+      p_desviacion_tipo: DESV_MARCADA ? 'otro' : null,
+      p_desviacion_motivo: DESV_MARCADA ? nota : null,
+      p_desviacion_monto: 0,
+      p_user_agent: navigator.userAgent.substring(0, 200)
+    });
+
+    if (error) throw error;
+
+    if (!data.ok) {
+      if (data.error === 'mision_ya_completa') {
+        toast(data.mensaje || 'Esta misión ya fue completada por otra persona');
+        await recargarContexto();
+        setTimeout(() => volverALista(), 2000);
+      } else {
+        toast('No se pudo registrar: ' + (data.detalle || data.error));
+      }
+      btn.disabled = false;
+      btn.classList.remove('saving');
+      btn.textContent = 'Enviar avance';
+      return;
+    }
+
+    renderConfirmacion(data);
+    await recargarContexto();
+
+  } catch(e) {
+    console.error(e);
+    toast('Error de conexión. Revisa tu internet.');
+    btn.disabled = false;
+    btn.classList.remove('saving');
+    btn.textContent = 'Enviar avance';
+  }
+}
+
+// ── PANTALLA 3: CONFIRMACIÓN ──
+function renderConfirmacion(r) {
+  document.getElementById('hdr-title').textContent = 'Avance registrado';
+  document.getElementById('hdr-sub').textContent = CTX.proyecto.codigo_corto;
+  
+  const misionNom = (MISION_ACTUAL.mision_id || '').replace(/_/g,' ');
+  const nivelTxt = MISION_ACTUAL.nivel ? ' ' + MISION_ACTUAL.nivel : '';
+  
+  if (r.completada) {
+    document.getElementById('p3-title').textContent = '🎉 Misión completada';
+    document.getElementById('p3-sub').innerHTML = `${QTY} ${MISION_ACTUAL.unidad_primaria || ''} · ${misionNom}${nivelTxt}<br>El dueño ya lo ve en su gemelo`;
+  } else {
+    document.getElementById('p3-title').textContent = 'Avance registrado';
+    document.getElementById('p3-sub').innerHTML = `${QTY} ${MISION_ACTUAL.unidad_primaria || ''} · ${misionNom}${nivelTxt}<br>El dueño ya lo ve en su gemelo`;
+  }
+
+  document.getElementById('p3-antes-pct').textContent = r.pct_anterior.toFixed(0) + '%';
+  document.getElementById('p3-antes-cant').textContent = `${r.cantidad_anterior} de ${r.cantidad_meta}`;
+  document.getElementById('p3-ahora-pct').textContent = r.pct_nuevo.toFixed(0) + '%';
+  document.getElementById('p3-ahora-cant').textContent = `${r.cantidad_nueva} de ${r.cantidad_meta}`;
+
+  // Bodega
+  const bodega = r.bodega || {};
+  const movs = bodega.movimientos || [];
+  const alertas = bodega.alertas || [];
+  
+  if (movs.length || alertas.length) {
+    document.getElementById('p3-bodega').style.display = 'block';
+    document.getElementById('p3-bodega-items').innerHTML = movs.map(m => 
+      `<div class="bodega-item">• ${m.material}: −${typeof m.cantidad === 'number' ? m.cantidad.toFixed(1) : m.cantidad} ${m.unidad || ''}</div>`
+    ).join('');
+    
+    if (alertas.length) {
+      document.getElementById('p3-bodega-alerts').innerHTML = alertas.map(a => {
+        if (a.tipo === 'sin_stock_registrado') {
+          return `<div class="bodega-alert">⚠ ${a.material}: sin stock registrado en bodega</div>`;
+        } else {
+          const falta = (a.necesario || 0) - (a.disponible || 0);
+          return `<div class="bodega-alert">⚠ ${a.material}: faltan ${falta.toFixed(1)} para terminar</div>`;
+        }
+      }).join('');
+    } else {
+      document.getElementById('p3-bodega-alerts').innerHTML = '';
+    }
+  } else {
+    document.getElementById('p3-bodega').style.display = 'none';
+  }
+
+  // Reset botón enviar
+  const btn = document.getElementById('p2-send');
+  btn.disabled = false;
+  btn.classList.remove('saving');
+  btn.textContent = 'Enviar avance';
+
+  historial = [];
+  showScreen('ok');
+}
+
+function volverALista() {
+  historial = [];
+  showScreen('lista');
+  renderLista();
+}
+
+function reportarOtra() {
+  volverALista();
+}
+
+// ── PANTALLA 4: DESVIACIÓN GENERAL ──
+function irADesviacionGeneral() {
+  ES_DESV_GENERAL = true;
+  DESV_TIPO_SEL = null;
+  document.getElementById('desv-nota').value = '';
+  
+  document.getElementById('hdr-title').textContent = 'Reportar novedad';
+  document.getElementById('hdr-sub').textContent = 'Algo inesperado';
+  
+  document.getElementById('desv-opts').innerHTML = DESV_TIPOS.map(t => 
+    `<div class="desv-opt" onclick="selectDesvTipo('${t.id}', this)">
+      <div class="desv-opt-ico">${t.ico}</div>
+      <div class="desv-opt-info">
+        <div class="desv-opt-nom">${t.nom}</div>
+        <div class="desv-opt-sub">${t.sub}</div>
+      </div>
+    </div>`
+  ).join('');
+  
+  historial.push('lista');
+  showScreen('desv');
+}
+
+function selectDesvTipo(id, el) {
+  DESV_TIPO_SEL = id;
+  document.querySelectorAll('.desv-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+}
+
+async function enviarDesviacion() {
+  if (!DESV_TIPO_SEL) {
+    toast('Selecciona qué pasó');
+    return;
+  }
+  const nota = document.getElementById('desv-nota').value.trim();
+  if (!nota) {
+    toast('Explica qué ocurrió');
+    return;
+  }
+
+  // Para desviación general, insertamos directamente en la tabla desviaciones
+  try {
+    const res = await fetch(SB + '/rest/v1/desviaciones', {
+      method: 'POST',
+      headers: {
+        'apikey': SK,
+        'Authorization': 'Bearer ' + SK,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        proyecto_id: CTX.proyecto.id,
+        trabajador_id: CTX.worker.id,
+        tipo: DESV_TIPO_SEL,
+        motivo: nota,
+        descripcion: nota,
+        origen: 'reportar_html',
+        timestamp_evento: new Date().toISOString(),
+        registrado_por: 'residente',
+        monto: 0
+      })
+    });
+
+    if (!res.ok) throw new Error('Error al guardar');
+
+    // Log observabilidad
+    fetch(SB + '/rest/v1/observabilidad_eventos', {
+      method:'POST',
+      headers: {'apikey':SK,'Authorization':'Bearer '+SK,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body: JSON.stringify({
+        workflow:'reportar_html', step:'desviacion_general', severidad:'warn',
+        proyecto_id: CTX.proyecto.id, worker_id: CTX.worker.id,
+        mensaje: 'Desviación general reportada: '+DESV_TIPO_SEL,
+        payload: {tipo: DESV_TIPO_SEL, nota}
+      })
+    }).catch(()=>{});
+
+    toast('✓ Novedad reportada al dueño', 2500);
+    setTimeout(() => volverALista(), 1500);
+  } catch(e) {
+    toast('Error de conexión. Intenta de nuevo.');
+  }
+}
+
+// Arranque
+init();
+</script>
+</body>
+</html>
