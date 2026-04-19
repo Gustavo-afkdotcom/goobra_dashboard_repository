@@ -13,6 +13,7 @@
   --surface:#f7f5f0;--page:#fff;
   --line:#ddd;--line2:#eee;
   --red:#c0392b;
+  --wa:#25D366;
   --radius:12px;
 }
 html{scroll-behavior:smooth}
@@ -200,30 +201,50 @@ input[type="range"]{
 .btn-next:disabled{opacity:.4;cursor:not-allowed}
 
 /* SUCCESS */
-#step-ok{text-align:center;padding:2rem 0}
+#step-ok{text-align:center;padding:1.5rem 0}
 .ok-circle{
-  width:96px;height:96px;border-radius:50%;
+  width:80px;height:80px;border-radius:50%;
   background:var(--gold-bg);border:3px solid var(--gold);
   display:flex;align-items:center;justify-content:center;
-  font-size:44px;margin:0 auto 1.5rem;
+  font-size:38px;margin:0 auto 1.25rem;
 }
-.ok-title{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;margin-bottom:.75rem}
-.ok-sub{font-size:14px;color:var(--ink3);line-height:1.7;margin-bottom:1.5rem}
+.ok-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:.5rem}
+.ok-sub{font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:1.25rem;max-width:420px;margin-left:auto;margin-right:auto}
+
 .link-card{
   background:var(--ink);color:#fff;border-radius:var(--radius);
-  padding:16px;margin:1rem 0;text-align:left;
+  padding:14px 16px;margin:.75rem 0;text-align:left;
 }
-.link-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:6px}
-.link-val{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold);word-break:break-all;line-height:1.5}
-.btn-copy{
-  width:100%;margin-top:.75rem;padding:14px;border-radius:10px;
-  border:none;background:var(--gold);color:#fff;
-  font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;
+.link-card.residente{background:#1a1a1a;border:1px solid rgba(200,120,10,0.3)}
+.link-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.5);margin-bottom:6px;text-transform:uppercase}
+.link-card.residente .link-label{color:var(--gold)}
+.link-val{font-family:'DM Mono',monospace;font-size:11px;color:#fff;word-break:break-all;line-height:1.5}
+.link-card.residente .link-val{color:var(--gold)}
+
+.link-btns{display:flex;gap:6px;margin-top:10px}
+.link-btn{
+  flex:1;padding:11px 8px;border-radius:8px;border:none;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;
 }
-.btn-open{
-  width:100%;margin-top:.5rem;padding:14px;border-radius:10px;
+.link-btn.copy{background:rgba(255,255,255,0.1);color:#fff}
+.link-btn.copy:hover{background:rgba(255,255,255,0.18)}
+.link-btn.wa{background:var(--wa);color:#fff}
+.link-btn.wa:hover{background:#1da851}
+.link-btn.open{background:var(--gold);color:#fff}
+
+.next-steps{
+  margin-top:1.25rem;padding:1rem 1.25rem;
+  background:var(--gold-bg);border:1px solid var(--gold-b);
+  border-radius:var(--radius);text-align:left;
+}
+.next-steps-title{font-size:12px;font-weight:600;margin-bottom:.75rem;color:var(--ink)}
+.next-steps-list{font-size:13px;color:var(--ink2);line-height:1.8}
+.next-steps-list strong{color:var(--ink);font-weight:600}
+
+.btn-open-dueno{
+  width:100%;margin-top:1rem;padding:14px;border-radius:10px;
   border:1.5px solid var(--line);background:none;color:var(--ink);
-  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;
 }
 
 /* SAVING */
@@ -264,7 +285,7 @@ input[type="range"]{
     <div class="step-hero">
       <span class="step-emoji">👋</span>
       <div class="step-title">Hola. Vamos a<br>activar tu obra.</div>
-      <div class="step-desc">En 5 minutos tu obra tendrá su gemelo digital. El residente reporta por Telegram, tú ves todo en tiempo real.</div>
+      <div class="step-desc">En 5 minutos tu obra tendrá su gemelo digital. El residente reporta desde su celular, tú ves todo en tiempo real.</div>
     </div>
 
     <div class="card">
@@ -291,9 +312,9 @@ input[type="range"]{
         <input type="text" id="c-res-nombre" placeholder="Quien dirige la obra día a día">
       </div>
       <div class="field">
-        <label>Su número de Telegram o celular <span class="req">*</span></label>
+        <label>Su WhatsApp <span class="req">*</span></label>
         <input type="tel" id="c-res-tel" placeholder="+57 310 000 0000">
-        <div class="hint">Recibe las misiones y reporta avances por ahí</div>
+        <div class="hint">Le enviaremos su link para reportar los avances</div>
       </div>
     </div>
   </div>
@@ -472,21 +493,38 @@ input[type="range"]{
   <div class="step" id="step-ok">
     <div class="ok-circle">✅</div>
     <div class="ok-title">¡Tu obra está activa!</div>
-    <div class="ok-sub">El gemelo digital está listo. Comparte el link con quien quieras que tenga acceso al seguimiento de tu obra.</div>
+    <div class="ok-sub">El gemelo digital está listo. Ahora solo falta enviarle el link al residente para que reporte los avances del día a día.</div>
+
+    <!-- Link del dueño -->
     <div class="link-card">
-      <div class="link-label">Tu link del gemelo</div>
-      <div class="link-val" id="ok-link">Generando…</div>
-    </div>
-    <button class="btn-copy" onclick="copiar()">📋 Copiar link</button>
-    <button class="btn-open" onclick="abrir()">Abrir gemelo →</button>
-    <div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--line2);text-align:left">
-      <div style="font-size:13px;font-weight:600;margin-bottom:.75rem">¿Qué sigue?</div>
-      <div style="font-size:13px;color:var(--ink3);line-height:1.8">
-        1. El residente recibe el código de obra por Telegram<br>
-        2. Empieza a reportar avances con mensajes simples<br>
-        3. Tú ves todo en tu gemelo en tiempo real
+      <div class="link-label">👤 Tu link (dueño)</div>
+      <div class="link-val" id="ok-link-dueno">Generando…</div>
+      <div class="link-btns">
+        <button class="link-btn copy" onclick="copiarDueno()">📋 Copiar</button>
+        <button class="link-btn open" onclick="abrirDueno()">Abrir gemelo</button>
       </div>
     </div>
+
+    <!-- Link del residente -->
+    <div class="link-card residente">
+      <div class="link-label">🏗️ Link del residente</div>
+      <div class="link-val" id="ok-link-residente">—</div>
+      <div class="link-btns">
+        <button class="link-btn copy" onclick="copiarResidente()">📋 Copiar</button>
+        <button class="link-btn wa" onclick="enviarWhatsApp()">💬 Enviar por WhatsApp</button>
+      </div>
+    </div>
+
+    <div class="next-steps">
+      <div class="next-steps-title">📋 Qué sigue</div>
+      <div class="next-steps-list">
+        1. <strong>Envíale el link al residente</strong> por WhatsApp<br>
+        2. El residente lo abre en su celular y ve sus misiones del día<br>
+        3. Cada avance que reporte aparece en tu gemelo al instante
+      </div>
+    </div>
+
+    <button class="btn-open-dueno" onclick="abrirDueno()">Abrir mi gemelo →</button>
   </div>
 
 </div><!-- /wrap -->
@@ -502,6 +540,7 @@ input[type="range"]{
 const SUPA_URL='https://muyezsssnzlxavchabum.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
 const GEMELO='https://goobradashboardrepository-production.up.railway.app/gemelo.html';
+const REPORTAR='https://goobradashboardrepository-production.up.railway.app/reportar.html';
 const PCTS={prel:.03,mvt:.05,cim:.12,estr:.35,mamp:.18,redes:.10,acab:.12,urb:.03,entr:.02};
 
 async function supa(path,opts={}){
@@ -693,11 +732,17 @@ async function activar(){
     // Token
     await supa('proyecto_tokens',{method:'POST',body:JSON.stringify({proyecto_id:pid,token,activo:true})});
 
-    // Worker residente
+    // Worker residente — guardamos la respuesta para obtener el codigo_corto generado por el trigger
     const rn=g('c-res-nombre');const rt=g('c-res-tel');
-    if(rn&&rt) await supa('workers',{method:'POST',body:JSON.stringify({
-      proyecto_id:pid,nombre:rn,rol:'res',numero_wa:rt,telegram_id:rt,activo:true
-    })});
+    let workerCodigo=null;
+    if(rn&&rt){
+      try{
+        const workerResp=await supa('workers',{method:'POST',body:JSON.stringify({
+          proyecto_id:pid,nombre:rn,rol:'res',numero_wa:rt,telegram_id:rt,activo:true
+        })});
+        workerCodigo = workerResp?.[0]?.codigo_corto || null;
+      }catch(e){console.warn('No se pudo crear worker:',e);}
+    }
 
     // Presupuesto
     const pres=parseFloat(g('c-presupuesto'))||0;
@@ -711,10 +756,27 @@ async function activar(){
     await generarMisionesBásicas(pid,{frente,fondo,pisos,sistema:g('c-sistema')||'porticos',
       fecha_inicio:g('c-inicio'),presupuesto_total:pres});
 
-    // Link
-    const link=`${GEMELO}#proyecto=${pid}&codigo=${codigo}&token=${token}`;
-    document.getElementById('ok-link').textContent=link;
-    window._link=link;
+    // Links
+    const linkDueno=`${GEMELO}#proyecto=${pid}&codigo=${codigo}&token=${token}`;
+    const linkResidente=workerCodigo
+      ? `${REPORTAR}?obra=${codigo}&worker=${workerCodigo}&token=${token}`
+      : null;
+
+    // Guardar en window para las funciones de copiar/enviar
+    window._link_dueno=linkDueno;
+    window._link_residente=linkResidente;
+    window._residente_nombre=rn||'residente';
+    window._obra_nombre=g('c-nombre');
+    window._worker_tel=rt;
+    window._worker_codigo=workerCodigo;
+
+    // Actualizar UI
+    document.getElementById('ok-link-dueno').textContent=linkDueno;
+    if(linkResidente){
+      document.getElementById('ok-link-residente').textContent=linkResidente;
+    }else{
+      document.getElementById('ok-link-residente').innerHTML='<span style="color:#F4C0D1">No se pudo generar — crea el worker desde el gemelo.</span>';
+    }
 
     document.getElementById('overlay').classList.remove('on');
     document.getElementById(STEPS[cur]).classList.remove('active');
@@ -778,15 +840,50 @@ async function generarMisionesBásicas(pid,p){
   }
 }
 
-function copiar(){
-  if(navigator.clipboard&&window._link){
-    navigator.clipboard.writeText(window._link).then(()=>{
-      const b=document.querySelector('.btn-copy');b.textContent='✓ Copiado';
-      setTimeout(()=>b.textContent='📋 Copiar link',2000);
-    });
-  }
+// ── COPIAR & ENVIAR ──
+function copiarDueno(){
+  if(!window._link_dueno)return;
+  navigator.clipboard.writeText(window._link_dueno).then(()=>{
+    const btns=document.querySelectorAll('.link-btn.copy');
+    if(btns[0]){
+      const orig=btns[0].textContent;
+      btns[0].textContent='✓ Copiado';
+      setTimeout(()=>btns[0].textContent=orig,2000);
+    }
+  });
 }
-function abrir(){if(window._link) window.open(window._link,'_blank');}
+
+function copiarResidente(){
+  if(!window._link_residente){alert('No hay link del residente');return;}
+  navigator.clipboard.writeText(window._link_residente).then(()=>{
+    const btns=document.querySelectorAll('.link-btn.copy');
+    if(btns[1]){
+      const orig=btns[1].textContent;
+      btns[1].textContent='✓ Copiado';
+      setTimeout(()=>btns[1].textContent=orig,2000);
+    }
+  });
+}
+
+function enviarWhatsApp(){
+  if(!window._link_residente){alert('No hay link del residente');return;}
+
+  const mensaje=`Hola ${window._residente_nombre}, soy el dueño de la obra "${window._obra_nombre}".\n\nTe envío este link para que reportes los avances del día a día. Solo ábrelo en tu celular cuando termine la jornada, verás las misiones del día y podrás reportar cuánto avanzaron:\n\n${window._link_residente}\n\nConsejo: guárdalo como acceso directo en tu pantalla de inicio para abrirlo rápido cada día.`;
+
+  let numero=(window._worker_tel||'').replace(/[^0-9]/g,'');
+  // Si ya empieza con código de país, respetar; si es un 10 dígitos tipo colombiano sin código, prepend 57
+  if(numero.length===10) numero='57'+numero;
+
+  const waUrl=numero
+    ? `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`
+    : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+
+  window.open(waUrl,'_blank');
+}
+
+function abrirDueno(){
+  if(window._link_dueno)window.open(window._link_dueno,'_blank');
+}
 
 buildUI();updateUI();
 </script>
