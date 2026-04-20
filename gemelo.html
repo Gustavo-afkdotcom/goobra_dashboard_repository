@@ -1085,7 +1085,7 @@ function renderMis(){
     let urgTag='';
     if(fin&&dr<0&&m.estado!=='completada') urgTag=`<span class="mi-urg" style="background:var(--red-d);color:var(--red)">▲ vencida ${Math.abs(dr)}d</span>`;
     else if(fin&&dr>=0&&dr<=3&&m.estado!=='completada') urgTag=`<span class="mi-urg" style="background:var(--amber-d);color:var(--amber)">◆ ${dr}d</span>`;
-    return`<div class="mr"><div class="mi-i"><div class="mi-n">${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}${urgTag}</div><div class="mi-m">Meta: ${m.cantidad_meta} ${m.unidad_primaria||''} · Ej: ${m.cantidad_ejecutada||0} · ${m.fecha_fin_plan||'sin fecha'}</div></div><div class="mi-p"><div class="bt"><div class="bf" style="width:${pct}%;background:${col}"></div></div></div><div class="mi-pct" style="color:${col}">${pct.toFixed(0)}%</div><div class="bdg ${m.estado==='completada'?'bdg-c':m.estado==='en_curso'?'bdg-e':'bdg-p'}">${m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—'}</div></div>`;
+    return`<div class="mr"><div class="mi-i"><div class="mi-n">${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}${urgTag}</div><div class="mi-m">Meta: ${m.cantidad_meta} ${m.unidad_primaria||''} · Ej: ${m.cantidad_ejecutada||0} · ${m.fecha_fin_plan||'sin fecha'}</div></div><div class="mi-p"><div class="bt"><div class="bf" style="width:${pct}%;background:${col}"></div></div></div><div class="mi-pct" style="color:${col}">${pct.toFixed(0)}%</div><button data-mis-foto-key="${m.id}" onclick="abrirFotoMisionTab('${m.id}')" class="vis-foto-btn${m.foto_url?' has-foto':''}" title="${m.foto_url?'Ver/cambiar foto':'Agregar foto'}" style="flex-shrink:0">${m.foto_url?`<img src="${m.foto_url}" style="width:20px;height:20px;border-radius:3px;object-fit:cover">` :'📷'}</button><div class="bdg ${m.estado==='completada'?'bdg-c':m.estado==='en_curso'?'bdg-e':'bdg-p'}">${m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—'}</div></div>`; 
   };
 
   let html=sorted.map(row).join('')||'<div class="empty">Sin misiones activas</div>';
@@ -2254,6 +2254,288 @@ async function loadVisitaHistorial(){
     if(cont) cont.innerHTML = '<div class="empty">Error al cargar historial: '+e.message+'</div>';
   }
 }
+
+
+// ── VISITA: RECORRIDO ACTIVO ──
+// Estado en memoria de la visita en curso
+let _visEstados = {};   // mision_key -> 'ok'|'rev'|'rej'|null
+let _visNotas   = {};   // mision_key -> string
+let _visFotos   = {};   // mision_key -> { file, dataUrl, path } (pendientes de subir)
+let _visFotosGuardadas = {}; // mision_key -> public_url ya subida
+let _visFechaInicio = null;
+let _visMisionesActivas = [];
+
+async function iniciarVisita(){
+  const visitador = document.getElementById('vis-visitador').value.trim();
+  if(!visitador){ alert('Escribe quién realiza la visita.'); return; }
+  _visEstados = {}; _visNotas = {}; _visFotos = {}; _visFotosGuardadas = {};
+  _visFechaInicio = new Date().toISOString().split('T')[0];
+
+  // Tomar misiones activas y en_curso
+  _visMisionesActivas = (MDATA || []).filter(m => m.estado !== 'completada');
+
+  document.getElementById('vis-inicio').style.display = 'none';
+  document.getElementById('vis-checklist').style.display = 'block';
+  document.getElementById('vis-fecha').textContent = new Date().toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('vis-visitador-lbl').textContent = visitador;
+
+  renderVisitaLista();
+  // Actualizar contadores
+  actualizarContadoresVisita();
+}
+
+function renderVisitaLista(){
+  // Agrupar por etapa
+  const grupos = {};
+  _visMisionesActivas.forEach(m => {
+    if(!grupos[m.etapa_id]) grupos[m.etapa_id] = [];
+    grupos[m.etapa_id].push(m);
+  });
+
+  let html = '';
+  for(const eid of EO){
+    const ms = grupos[eid];
+    if(!ms || !ms.length) continue;
+    html += `<div class="vis-piso-hd">${EN[eid]||eid}</div>`;
+    ms.forEach(m => {
+      const key = m.id;
+      const est = _visEstados[key] || null;
+      const nota = _visNotas[key] || '';
+      const fotoData = _visFotos[key];
+      const fotoGuardada = _visFotosGuardadas[key];
+      const nomMis = (m.mision_id||'').replace(/_/g,' ') + (m.nivel ? ' · '+m.nivel : '');
+      const fotoThumb = fotoData
+        ? `<img class="vis-foto-thumb" src="${fotoData.dataUrl}" onclick="openLightbox('${fotoData.dataUrl}')" alt="foto">`
+        : fotoGuardada
+          ? `<img class="vis-foto-thumb" src="${fotoGuardada}" onclick="openLightbox('${fotoGuardada}')" alt="foto">`
+          : `<button class="vis-foto-btn${fotoData||fotoGuardada?' has-foto':''}" onclick="abrirFotoMision('${key}')" title="Agregar foto">📷</button>`;
+      html += `<div class="vis-row" id="vis-row-${key}">
+        <div class="vis-nom">${nomMis}<br><span style="font-size:10px;color:var(--text3)">${m.cantidad_meta||''} ${m.unidad_primaria||''} · ${parseFloat(m.pct_avance||0).toFixed(0)}%</span></div>
+        <div class="vis-btns">
+          <button class="vis-btn ok${est==='ok'?' active':''}" onclick="setVisEstado('${key}','ok')" title="Aprobado">✓</button>
+          <button class="vis-btn rev${est==='rev'?' active':''}" onclick="setVisEstado('${key}','rev')" title="En revisión">◆</button>
+          <button class="vis-btn rej${est==='rej'?' active':''}" onclick="setVisEstado('${key}','rej')" title="Rechazado">✗</button>
+        </div>
+        ${fotoThumb}
+        <input type="text" value="${nota}" placeholder="nota..." onchange="setVisNota('${key}',this.value)"
+          style="background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:4px 8px;font-size:11px;width:130px;font-family:'DM Sans',sans-serif"/>
+      </div>`;
+    });
+  }
+  if(!html) html = '<div class="empty">Sin misiones activas para revisar. Cambia el estado de algunas etapas desde el Dashboard.</div>';
+  document.getElementById('vis-lista').innerHTML = html;
+
+  // Insertar input file oculto para cámara
+  if(!document.getElementById('vis-foto-input-hidden')){
+    const inp = document.createElement('input');
+    inp.type='file'; inp.accept='image/*'; inp.capture='environment';
+    inp.id='vis-foto-input-hidden';
+    inp.style.display='none';
+    inp.addEventListener('change', onFotoMisionSelected);
+    document.body.appendChild(inp);
+  }
+}
+
+let _visFotoCurrentKey = null;
+
+function abrirFotoMision(misionKey){
+  _visFotoCurrentKey = misionKey;
+  document.getElementById('vis-foto-input-hidden').click();
+}
+
+function onFotoMisionSelected(e){
+  const file = e.target.files[0];
+  if(!file || !_visFotoCurrentKey) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    _visFotos[_visFotoCurrentKey] = { file, dataUrl: ev.target.result };
+    // Re-render solo esa fila
+    renderVisitaLista();
+    e.target.value = ''; // reset input
+  };
+  reader.readAsDataURL(file);
+}
+
+function setVisEstado(key, est){
+  // Toggle: si ya está seleccionado, quitar
+  _visEstados[key] = _visEstados[key] === est ? null : est;
+  actualizarContadoresVisita();
+  // Actualizar UI de la fila sin re-renderizar todo
+  const row = document.getElementById('vis-row-'+key);
+  if(row){
+    row.querySelectorAll('.vis-btn').forEach(btn => btn.classList.remove('active'));
+    if(_visEstados[key]){
+      const activeBtn = row.querySelector('.vis-btn.'+_visEstados[key]);
+      if(activeBtn) activeBtn.classList.add('active');
+    }
+  }
+}
+
+function setVisNota(key, val){
+  _visNotas[key] = val;
+}
+
+function actualizarContadoresVisita(){
+  const vals = Object.values(_visEstados).filter(Boolean);
+  const total = _visMisionesActivas.length;
+  document.getElementById('vis-ok').textContent  = vals.filter(v=>v==='ok').length;
+  document.getElementById('vis-rev').textContent = vals.filter(v=>v==='rev').length;
+  document.getElementById('vis-rej').textContent = vals.filter(v=>v==='rej').length;
+  document.getElementById('vis-pen').textContent = total - vals.length;
+}
+
+async function subirFotoVisita(key, file){
+  // Sube a Supabase Storage bucket 'fotos-visita'
+  // Si no existe el bucket o falla, retorna null (no bloquea guardar)
+  try {
+    const ext = file.name.split('.').pop() || 'jpg';
+    const path = `${PID}/${_visFechaInicio}/${key.replace(/[^a-zA-Z0-9_-]/g,'_')}.${ext}`;
+    const { data, error } = await db.storage.from('fotos-visita').upload(path, file, {
+      cacheControl: '3600', upsert: true
+    });
+    if(error){ console.warn('Error subiendo foto:', error.message); return null; }
+    const { data: urlData } = db.storage.from('fotos-visita').getPublicUrl(path);
+    return urlData?.publicUrl || null;
+  } catch(e){
+    console.warn('subirFotoVisita error:', e.message);
+    return null;
+  }
+}
+
+async function guardarVisitaCompleta(){
+  const firma = document.getElementById('vis-firma').checked;
+  if(!firma){ alert('Debes confirmar el acta antes de guardar.'); return; }
+  const visitador = document.getElementById('vis-visitador').value.trim() || document.getElementById('vis-visitador-lbl').textContent || 'Dueño';
+  const observacion = document.getElementById('vis-observacion').value.trim();
+
+  const btn = document.getElementById('btn-guardar-visita');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  try {
+    // 1. Subir fotos pendientes
+    const fotosSubidas = {};
+    for(const [key, fotoObj] of Object.entries(_visFotos)){
+      if(fotoObj.file){
+        const url = await subirFotoVisita(key, fotoObj.file);
+        if(url) fotosSubidas[key] = url;
+      }
+    }
+
+    // 2. Construir filas para tabla `visitas`
+    const hoy = _visFechaInicio || new Date().toISOString().split('T')[0];
+    const rows = _visMisionesActivas.map(m => ({
+      proyecto_id: PID,
+      mision_key: m.id,
+      etapa_id: m.etapa_id,
+      mision_id: m.mision_id,
+      nivel: m.nivel || null,
+      resultado: _visEstados[m.id] || 'pendiente',
+      nota: _visNotas[m.id] || null,
+      foto_url: fotosSubidas[m.id] || null,
+      visitador,
+      fecha: hoy,
+      observaciones: observacion || null,
+      condiciones_generales: document.getElementById('vis-condiciones')?.value?.trim() || null,
+      observacion_cierre: observacion || null,
+      timestamp: new Date().toISOString()
+    }));
+
+    // Insertar en lotes de 20
+    for(let i=0; i<rows.length; i+=20){
+      const { error } = await db.from('visitas').insert(rows.slice(i,i+20));
+      if(error) throw new Error('Error guardando visita: '+error.message);
+    }
+
+    // 3. Si hay rechazos, sugerir registrar desviaciones
+    const rechazos = rows.filter(r=>r.resultado==='rej');
+
+    // 4. Reset UI
+    document.getElementById('vis-checklist').style.display='none';
+    document.getElementById('vis-inicio').style.display='block';
+    document.getElementById('vis-visitador').value='';
+    document.getElementById('vis-condiciones').value='';
+    document.getElementById('vis-observacion').value='';
+    document.getElementById('vis-firma').checked=false;
+    _visEstados={}; _visNotas={}; _visFotos={}; _visFotosGuardadas={};
+    actualizarContadoresVisita();
+
+    await loadVisitaHistorial();
+
+    let msg = `Visita guardada. ${rows.filter(r=>r.resultado==='ok').length} aprobadas · ${rows.filter(r=>r.resultado==='rev').length} en revisión · ${rechazos.length} rechazadas.`;
+    if(rechazos.length) msg += '\n\n¿Quieres registrar una desviación para los rechazos?';
+    alert(msg);
+
+    if(rechazos.length){
+      // Abrir modal de desviación con la primera rechazada pre-seleccionada
+      setTimeout(()=>mostrarNuevaDesviacion(rechazos[0].mision_key, rechazos[0].etapa_id), 200);
+    }
+
+  } catch(e){
+    alert('Error al guardar: '+e.message);
+    console.error(e);
+  } finally {
+    btn.disabled=false;
+    btn.textContent='Guardar acta de visita ✓';
+  }
+}
+
+// ── FOTO EN MISIONES (tab Misiones) ──
+// Input file oculto para misiones (reutilizable)
+let _misFotoKey = null;
+
+function abrirFotoMisionTab(misionId){
+  _misFotoKey = misionId;
+  let inp = document.getElementById('mis-foto-input-hidden');
+  if(!inp){
+    inp = document.createElement('input');
+    inp.type='file'; inp.accept='image/*'; inp.capture='environment';
+    inp.id='mis-foto-input-hidden';
+    inp.style.display='none';
+    inp.addEventListener('change', onMisFotoSelected);
+    document.body.appendChild(inp);
+  }
+  inp.click();
+}
+
+async function onMisFotoSelected(e){
+  const file = e.target.files[0];
+  if(!file || !_misFotoKey) return;
+  e.target.value='';
+
+  // Mostrar miniatura local inmediatamente
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    const dataUrl = ev.target.result;
+    // Actualizar botón de esa misión en UI
+    const btn = document.querySelector(`[data-mis-foto-key="${_misFotoKey}"]`);
+    if(btn){
+      btn.innerHTML = `<img src="${dataUrl}" style="width:28px;height:28px;border-radius:3px;object-fit:cover" alt="foto">`;
+      btn.style.borderColor='rgba(39,174,96,.4)';
+      btn.style.background='var(--green-d)';
+    }
+
+    // Subir a Supabase Storage bucket 'fotos-avances'
+    try{
+      const hoy = new Date().toISOString().split('T')[0];
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `${PID}/${hoy}/${_misFotoKey.replace(/[^a-zA-Z0-9_-]/g,'_')}_${Date.now()}.${ext}`;
+      const { error: upErr } = await db.storage.from('fotos-avances').upload(path, file, {cacheControl:'3600',upsert:true});
+      if(upErr){ console.warn('Foto misión no subida:', upErr.message); return; }
+      const { data: urlData } = db.storage.from('fotos-avances').getPublicUrl(path);
+      const url = urlData?.publicUrl;
+      if(!url) return;
+      // Guardar en avances o en proyecto_misiones como foto_url
+      await db.from('proyecto_misiones').update({foto_url: url})
+        .eq('proyecto_id', PID)
+        .eq('id', _misFotoKey);
+    }catch(err){
+      console.warn('Error subiendo foto de misión:', err.message);
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
 
 // ── REALTIME ──
 db.channel('av-'+PID).on('postgres_changes',{event:'INSERT',schema:'public',table:'avances',filter:'proyecto_id=eq.'+PID},()=>loadAll()).subscribe();
