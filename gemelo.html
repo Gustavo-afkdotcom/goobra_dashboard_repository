@@ -696,6 +696,41 @@ const EN={'prel':'Preliminares','mvt':'Mov. tierras','cim':'Cimentación','estr'
 const EO=['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
 const SIST={'porticos':'Pórticos concreto','ipe':'Acero / IPE','mixto':'Mixto'};
 
+// ── HELPERS GLOBALES ──
+function pisoNum(nivel){
+  if(!nivel) return 0;
+  const m = String(nivel).match(/(\d+)/);
+  return m ? parseInt(m[1]) : 0;
+}
+
+// Helper: ¿un piso tiene ya placa descofrada (superficie horizontal para mampostería)?
+function tieneSuperficieHorizontal(nivel){
+  if(!nivel || typeof MDATA === 'undefined' || !MDATA) return true;
+  const n = pisoNum(nivel);
+  if(n <= 1) return true; // piso 1 siempre tiene superficie (contrapiso)
+  // Buscar si la placa de este piso está completada
+  const placa = MDATA.find(m => 
+    m.etapa_id === 'estr' && 
+    m.mision_id === 'placa_entrepiso' && 
+    m.nivel === nivel
+  );
+  return !placa || placa.estado === 'completada';
+}
+
+// Lightbox de fotos
+function openLightbox(src){
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lightbox-img');
+  if(lb && img){
+    img.src = src;
+    lb.style.display = 'flex';
+  }
+}
+function closeLightbox(){
+  const lb = document.getElementById('lightbox');
+  if(lb) lb.style.display = 'none';
+}
+
 // Rendimientos CAMACOL para proyección de materiales
 const REND={
   columnas_vaciado:{mat:'Concreto 28MPa',r:.27,u:'m³'},
@@ -1232,12 +1267,6 @@ async function renderMateriales(){
     if(m.mision_id==='vigas') estructCompletada[m.nivel].vigas=true;
     if(m.mision_id==='placa_entrepiso') estructCompletada[m.nivel].placa=true;
   });
-
-  function pisoNum(nivel){
-    if(!nivel) return 0;
-    const m=nivel.match(/(\d+)/);
-    return m?parseInt(m[1]):0;
-  }
 
   function pisoAnteriorListo(nivel){
     if(!esPorticos) return true; // IPE/mixto no tiene restricción
@@ -2154,6 +2183,76 @@ async function confirmarMovimientoBodega(tipoMov){
 
   document.getElementById('modal-bodega').remove();
   await loadBodega();
+}
+
+// ── VISITA: HISTORIAL ──
+async function loadVisitaHistorial(){
+  try{
+    const cont = document.getElementById('vis-historial');
+    if(!cont) return;
+    cont.innerHTML = '<div class="empty"><div class="spin"></div>Cargando historial...</div>';
+    const {data:visitas, error} = await db.from('visitas')
+      .select('*')
+      .eq('proyecto_id', PID)
+      .order('created_at', {ascending:false})
+      .limit(50);
+    
+    if(error){
+      console.error('loadVisitaHistorial:', error);
+      cont.innerHTML = '<div class="empty">No se pudo cargar el historial: '+error.message+'</div>';
+      return;
+    }
+    
+    if(!visitas?.length){
+      cont.innerHTML = '<div class="empty">Sin visitas registradas. Usa "Iniciar recorrido" para crear la primera.</div>';
+      return;
+    }
+    
+    // Agrupar por fecha+visitador (una visita real puede tener múltiples filas)
+    const grupos = {};
+    visitas.forEach(v => {
+      const fecha = v.fecha || (v.created_at?.slice(0,10)) || 'sin-fecha';
+      const visitador = v.visitador || 'Sin visitador';
+      const k = fecha + '__' + visitador;
+      if(!grupos[k]) grupos[k] = {
+        fecha, visitador,
+        observacion: v.observacion_cierre || v.observaciones || '',
+        condiciones: v.condiciones_generales || '',
+        created: v.created_at,
+        rows: []
+      };
+      grupos[k].rows.push(v);
+    });
+    
+    const arr = Object.values(grupos).sort((a,b) => (b.created||'').localeCompare(a.created||''));
+    
+    cont.innerHTML = arr.map(g => {
+      const f = g.fecha !== 'sin-fecha' 
+        ? new Date(g.fecha+'T12:00:00').toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long', year:'numeric'})
+        : 'Sin fecha';
+      const ok = g.rows.filter(r => r.resultado==='ok').length;
+      const rev = g.rows.filter(r => r.resultado==='rev').length;
+      const rej = g.rows.filter(r => r.resultado==='rej').length;
+      return `<div class="acta-row">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:500;color:var(--amber);margin-bottom:2px;text-transform:capitalize">${f}</div>
+            <div style="font-size:11px;color:var(--text2);margin-bottom:4px">${g.visitador}</div>
+            ${g.observacion ? `<div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:4px">${g.observacion.length>150 ? g.observacion.slice(0,150)+'...' : g.observacion}</div>` : ''}
+          </div>
+          <div style="text-align:right;flex-shrink:0;font-size:10px">
+            ${ok ? `<span style="color:var(--green);margin-right:6px">✓ ${ok}</span>` : ''}
+            ${rev ? `<span style="color:var(--amber);margin-right:6px">◆ ${rev}</span>` : ''}
+            ${rej ? `<span style="color:var(--red)">✗ ${rej}</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }catch(e){
+    console.error('loadVisitaHistorial:', e);
+    const cont = document.getElementById('vis-historial');
+    if(cont) cont.innerHTML = '<div class="empty">Error al cargar historial: '+e.message+'</div>';
+  }
 }
 
 // ── REALTIME ──
