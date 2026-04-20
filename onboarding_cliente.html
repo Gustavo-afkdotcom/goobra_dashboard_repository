@@ -711,8 +711,10 @@ async function activar(){
     const frente=parseFloat(g('c-frente'))||10;
     const fondo=parseFloat(g('c-fondo'))||20;
 
-    // Proyecto
-    await supa('proyectos',{method:'POST',body:JSON.stringify({
+    // Proyecto (upsert: si ya existe mismo nombre+dirección, actualiza en lugar de fallar)
+    await supa('proyectos',{method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates,return=representation'},
+      body:JSON.stringify({
       id:pid,nombre:g('c-nombre'),direccion:g('c-dir'),
       codigo_corto:codigo,dueno_wa:g('c-wa'),
       numero_pisos:pisos,sotanos:parseInt(g('c-sotanos'))||0,
@@ -786,7 +788,18 @@ async function activar(){
 
   }catch(e){
     document.getElementById('overlay').classList.remove('on');
-    alert('Error: '+e.message);console.error(e);
+    let msg=e.message||'';
+    try{
+      const parsed=JSON.parse(msg);
+      if(parsed.code==='23505'&&parsed.details?.includes('nombre_normalizado')){
+        alert('⚠️ Ya existe un proyecto con ese nombre y dirección.\n\nCambia el nombre de la obra o la dirección para continuar.');
+      } else {
+        alert('Error al activar la obra:\n\n'+(parsed.message||msg));
+      }
+    }catch(_){
+      alert('Error: '+msg);
+    }
+    console.error(e);
   }
 }
 
