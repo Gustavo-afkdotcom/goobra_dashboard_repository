@@ -711,10 +711,8 @@ async function activar(){
     const frente=parseFloat(g('c-frente'))||10;
     const fondo=parseFloat(g('c-fondo'))||20;
 
-    // Proyecto (upsert: si ya existe mismo nombre+dirección, actualiza en lugar de fallar)
-    await supa('proyectos',{method:'POST',
-      headers:{'Prefer':'resolution=merge-duplicates,return=representation'},
-      body:JSON.stringify({
+    // Proyecto — intentar crear; si ya existe (23505 nombre+dir) reutilizar el existente
+    const proyPayload={
       id:pid,nombre:g('c-nombre'),direccion:g('c-dir'),
       codigo_corto:codigo,dueno_wa:g('c-wa'),
       numero_pisos:pisos,sotanos:parseInt(g('c-sotanos'))||0,
@@ -729,10 +727,28 @@ async function activar(){
       fecha_inicio:g('c-inicio')||null,fecha_fin_estimada:g('c-entrega')||null,
       presupuesto_total:parseFloat(g('c-presupuesto'))||0,
       estado:'activo',moneda:'COP',
-    })});
+    };
+    let pidFinal=pid, codigoFinal=codigo;
+    try{
+      await supa('proyectos',{method:'POST',body:JSON.stringify(proyPayload)});
+    }catch(dupErr){
+      let dp={};try{dp=JSON.parse(dupErr.message);}catch(_){}
+      if(dp.code==='23505'&&(dp.details||'').includes('nombre_normalizado')){
+        // Proyecto duplicado — recuperar el existente
+        const existentes=await supa('proyectos?nombre=eq.'+encodeURIComponent(g('c-nombre')||'')+'&direccion=eq.'+encodeURIComponent(g('c-dir')||'')+'&select=id,codigo_corto');
+        if(existentes&&existentes.length>0){
+          pidFinal=existentes[0].id;
+          codigoFinal=existentes[0].codigo_corto||codigo;
+        }else{
+          throw dupErr;
+        }
+      }else{
+        throw dupErr;
+      }
+    }
 
     // Token
-    await supa('proyecto_tokens',{method:'POST',body:JSON.stringify({proyecto_id:pid,token,activo:true})});
+    await supa('proyecto_tokens',{method:'POST',body:JSON.stringify({proyecto_id:pidFinal,token,activo:true})});
 
     // Worker residente — guardamos la respuesta para obtener el codigo_corto generado por el trigger
     const rn=g('c-res-nombre');const rt=g('c-res-tel');
@@ -740,7 +756,7 @@ async function activar(){
     if(rn&&rt){
       try{
         const workerResp=await supa('workers',{method:'POST',body:JSON.stringify({
-          proyecto_id:pid,nombre:rn,rol:'res',numero_wa:rt,telegram_id:rt,activo:true
+          proyecto_id:pidFinal,nombre:rn,rol:'res',numero_wa:rt,telegram_id:rt,activo:true
         })});
         workerCodigo = workerResp?.[0]?.codigo_corto || null;
       }catch(e){console.warn('No se pudo crear worker:',e);}
@@ -750,16 +766,16 @@ async function activar(){
     const pres=parseFloat(g('c-presupuesto'))||0;
     if(pres>0){
       await supa('presupuesto_versiones',{method:'POST',body:JSON.stringify({
-        proyecto_id:pid,version:1,presupuesto_total:pres,motivo_cambio:'Presupuesto inicial'
+        proyecto_id:pidFinal,version:1,presupuesto_total:pres,motivo_cambio:'Presupuesto inicial'
       })});
     }
 
     // Misiones básicas
-    await generarMisionesBásicas(pid,{frente,fondo,pisos,sistema:g('c-sistema')||'porticos',
+    await generarMisionesBásicas(pidFinal,{frente,fondo,pisos,sistema:g('c-sistema')||'porticos',
       fecha_inicio:g('c-inicio'),presupuesto_total:pres});
 
     // Links
-    const linkDueno=`${GEMELO}#proyecto=${pid}&codigo=${codigo}&token=${token}`;
+    const linkDueno=`${GEMELO}#proyecto=${pidFinal}&codigo=${codigoFinal}&token=${token}`;
     const linkResidente=workerCodigo
       ? `${REPORTAR}?obra=${codigo}&worker=${workerCodigo}&token=${token}`
       : null;
@@ -788,16 +804,12 @@ async function activar(){
 
   }catch(e){
     document.getElementById('overlay').classList.remove('on');
-    let msg=e.message||'';
-    try{
-      const parsed=JSON.parse(msg);
-      if(parsed.code==='23505'&&parsed.details?.includes('nombre_normalizado')){
-        alert('⚠️ Ya existe un proyecto con ese nombre y dirección.\n\nCambia el nombre de la obra o la dirección para continuar.');
-      } else {
-        alert('Error al activar la obra:\n\n'+(parsed.message||msg));
-      }
-    }catch(_){
-      alert('Error: '+msg);
+    let em=e.message||'';
+    let ep={};try{ep=JSON.parse(em);}catch(_){}
+    if(ep.code==='23505'){
+      alert('⚠️ Ya existe un proyecto con ese nombre y dirección.\n\nCambia el nombre de la obra o la dirección para continuar.');
+    }else{
+      alert('Error al activar la obra:\n\n'+(ep.message||em));
     }
     console.error(e);
   }
