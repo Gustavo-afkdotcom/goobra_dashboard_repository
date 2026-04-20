@@ -7,113 +7,271 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--gold:#c8780a;--gold-bg:#fdf3e3;--gold-b:rgba(200,120,10,.18);--ink:#111;--ink2:#333;--ink3:#777;--surface:#f7f5f0;--page:#fff;--line:#ddd;--line2:#eee;--red:#c0392b;--wa:#25D366;--radius:12px}
+:root{
+  --gold:#c8780a;--gold-bg:#fdf3e3;--gold-b:rgba(200,120,10,.18);
+  --ink:#111;--ink2:#333;--ink3:#777;
+  --surface:#f7f5f0;--page:#fff;
+  --line:#ddd;--line2:#eee;
+  --red:#c0392b;
+  --wa:#25D366;
+  --radius:12px;
+}
 html{scroll-behavior:smooth}
-body{font-family:'DM Sans',sans-serif;background:var(--surface);color:var(--ink);min-height:100vh;font-size:15px}
-.top{background:var(--ink);padding:1rem 1.5rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+body{
+  font-family:'DM Sans',sans-serif;
+  background:var(--surface);color:var(--ink);
+  min-height:100vh;font-size:15px;
+}
+
+/* TOP */
+.top{
+  background:var(--ink);padding:1rem 1.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
 .brand{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.5px}
 .brand em{color:var(--gold);font-style:normal}
 .step-pills{display:flex;gap:5px}
-.pill{width:28px;height:5px;border-radius:3px;background:rgba(255,255,255,.15);transition:all .3s}
+.pill{
+  width:28px;height:5px;border-radius:3px;
+  background:rgba(255,255,255,.15);transition:all .3s;
+}
 .pill.active{background:var(--gold);width:36px}
 .pill.done{background:rgba(255,255,255,.4)}
+
+/* PROGRESS */
 .prog-bar{height:3px;background:rgba(200,120,10,.15)}
 .prog-fill{height:100%;background:var(--gold);transition:width .5s cubic-bezier(.16,1,.3,1)}
+
+/* WRAPPER */
 .wrap{max-width:520px;margin:0 auto;padding:2rem 1.25rem 7rem}
+
+/* STEP */
 .step{display:none}
 .step.active{display:block;animation:up .4s cubic-bezier(.16,1,.3,1)}
 @keyframes up{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-.step-hero{text-align:center;padding:2rem 0 1.5rem}
+
+/* HERO PER STEP */
+.step-hero{
+  text-align:center;padding:2rem 0 1.5rem;
+}
 .step-emoji{font-size:52px;margin-bottom:.75rem;display:block}
-.step-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;line-height:1.2;margin-bottom:.5rem}
+.step-title{
+  font-family:'Syne',sans-serif;font-size:26px;font-weight:800;
+  line-height:1.2;margin-bottom:.5rem;
+}
 .step-desc{font-size:14px;color:var(--ink3);line-height:1.7;max-width:380px;margin:0 auto}
-.card{background:var(--page);border-radius:var(--radius);border:1.5px solid var(--line2);padding:1.25rem;margin-bottom:1rem}
-.card-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;font-weight:700}
+
+/* CARD */
+.card{
+  background:var(--page);border-radius:var(--radius);
+  border:1.5px solid var(--line2);
+  padding:1.25rem;margin-bottom:1rem;
+}
+.card-title{
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:2px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:1rem;font-weight:700;
+}
+
+/* FIELD */
 .field{margin-bottom:1rem}
 .field:last-child{margin-bottom:0}
-.field label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px}
+.field label{
+  display:block;font-size:12px;font-weight:600;
+  color:var(--ink2);margin-bottom:6px;
+}
 .field label .req{color:var(--gold)}
-.field label .opt{color:var(--ink3);font-weight:400;font-size:11px;margin-left:4px}
 .field .hint{font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.5}
-.field input,.field select,.field textarea{width:100%;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:8px;padding:12px 14px;outline:none;transition:border-color .15s,box-shadow .15s;-webkit-appearance:none}
-.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-bg);background:var(--page)}
+.field input,.field select,.field textarea{
+  width:100%;font-family:'DM Sans',sans-serif;font-size:15px;
+  color:var(--ink);background:var(--surface);
+  border:1.5px solid var(--line);border-radius:8px;
+  padding:12px 14px;outline:none;
+  transition:border-color .15s,box-shadow .15s;
+  -webkit-appearance:none;
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px var(--gold-bg);
+  background:var(--page);
+}
 .field input.error{border-color:var(--red)!important}
 .field input[type="number"]{font-family:'DM Mono',monospace}
+
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* BIG CHIPS */
 .big-chips{display:grid;gap:8px;margin-top:4px}
 .big-chips.cols-2{grid-template-columns:1fr 1fr}
-.big-chip{padding:14px 12px;border:1.5px solid var(--line);border-radius:10px;text-align:center;cursor:pointer;transition:all .15s;background:var(--page);user-select:none}
+.big-chips.cols-3{grid-template-columns:1fr 1fr 1fr}
+.big-chip{
+  padding:14px 12px;border:1.5px solid var(--line);border-radius:10px;
+  text-align:center;cursor:pointer;transition:all .15s;
+  background:var(--page);user-select:none;
+}
 .big-chip:hover{border-color:var(--gold);background:var(--gold-bg)}
 .big-chip.active{border-color:var(--gold);background:var(--gold-bg);font-weight:600}
 .big-chip .chip-ico{font-size:24px;margin-bottom:4px;display:block}
 .big-chip .chip-txt{font-size:13px;color:var(--ink2)}
 .big-chip.active .chip-txt{color:var(--gold)}
+
+/* SMALL CHIPS */
 .s-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
-.s-chip{padding:8px 14px;border:1.5px solid var(--line);border-radius:20px;font-size:13px;cursor:pointer;transition:all .12s;background:var(--page);color:var(--ink2);user-select:none}
+.s-chip{
+  padding:8px 14px;border:1.5px solid var(--line);border-radius:20px;
+  font-size:13px;cursor:pointer;transition:all .12s;
+  background:var(--page);color:var(--ink2);user-select:none;
+}
 .s-chip:hover{border-color:var(--gold);color:var(--gold)}
 .s-chip.active{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:500}
-.num-input{display:flex;align-items:center;gap:0;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
-.num-btn{width:48px;height:48px;border:none;background:none;font-size:22px;cursor:pointer;color:var(--ink3);display:flex;align-items:center;justify-content:center;transition:background .1s;flex-shrink:0}
+
+/* NUMBER INPUT WITH ARROWS */
+.num-input{
+  display:flex;align-items:center;gap:0;
+  border:1.5px solid var(--line);border-radius:8px;overflow:hidden;
+  background:var(--surface);
+}
+.num-btn{
+  width:48px;height:48px;border:none;background:none;
+  font-size:22px;cursor:pointer;color:var(--ink3);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .1s;flex-shrink:0;
+}
 .num-btn:hover{background:var(--gold-bg);color:var(--gold)}
-.num-val{flex:1;text-align:center;font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--ink);border:none;background:none;outline:none}
+.num-val{
+  flex:1;text-align:center;font-family:'Syne',sans-serif;
+  font-size:22px;font-weight:800;color:var(--ink);
+  border:none;background:none;outline:none;
+}
 input[type="hidden"]{display:none}
-.etapa-simple{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--line2);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s;background:var(--page);user-select:none}
+
+/* ETAPAS SIMPLE */
+.etapa-simple{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;border:1.5px solid var(--line2);
+  border-radius:10px;margin-bottom:8px;cursor:pointer;
+  transition:all .15s;background:var(--page);
+  user-select:none;
+}
 .etapa-simple.completada{border-color:var(--gold);background:var(--gold-bg)}
 .etapa-simple.en_curso{border-color:var(--gold);background:var(--gold-bg);box-shadow:0 0 0 2px var(--gold-b)}
 .etapa-ico{font-size:22px;flex-shrink:0}
 .etapa-info{flex:1}
 .etapa-nom{font-size:14px;font-weight:500}
 .etapa-est{font-size:11px;color:var(--ink3);margin-top:2px}
-.etapa-badge{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;flex-shrink:0}
+.etapa-badge{
+  font-family:'DM Mono',monospace;font-size:10px;font-weight:700;
+  padding:3px 8px;border-radius:4px;flex-shrink:0;
+}
 .etapa-badge.completada{background:var(--gold);color:#fff}
 .etapa-badge.en_curso{background:var(--ink);color:var(--gold)}
 .etapa-badge.pendiente{background:var(--line2);color:var(--ink3)}
+
+/* PCT SLIDER */
 .pct-slider-wrap{margin-top:12px;display:none;padding:12px 14px;background:var(--gold-bg);border-radius:8px}
 .pct-slider-wrap.show{display:block}
 .pct-label{font-size:12px;color:var(--ink2);margin-bottom:8px;font-weight:500}
-input[type="range"]{width:100%;accent-color:var(--gold);height:6px;-webkit-appearance:none;cursor:pointer}
+input[type="range"]{
+  width:100%;accent-color:var(--gold);height:6px;
+  -webkit-appearance:none;cursor:pointer;
+}
 .pct-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:var(--gold);text-align:center;margin-top:6px}
-.nav{position:fixed;bottom:0;left:0;right:0;background:var(--page);border-top:1px solid var(--line2);padding:1rem 1.25rem;display:flex;gap:10px;z-index:100}
-.btn-back{width:48px;height:48px;border-radius:10px;border:1.5px solid var(--line);background:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+
+/* NAV */
+.nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--page);border-top:1px solid var(--line2);
+  padding:1rem 1.25rem;display:flex;gap:10px;z-index:100;
+}
+.btn-back{
+  width:48px;height:48px;border-radius:10px;border:1.5px solid var(--line);
+  background:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .15s;
+}
 .btn-back:hover{border-color:var(--gold)}
-.btn-next{flex:1;height:48px;border-radius:10px;border:none;background:var(--gold);color:#fff;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .15s;letter-spacing:.5px}
+.btn-next{
+  flex:1;height:48px;border-radius:10px;border:none;
+  background:var(--gold);color:#fff;
+  font-family:'Syne',sans-serif;font-size:15px;font-weight:800;
+  cursor:pointer;transition:all .15s;letter-spacing:.5px;
+}
 .btn-next:hover{background:#a86508}
 .btn-next.final{background:var(--ink);font-size:16px}
 .btn-next:disabled{opacity:.4;cursor:not-allowed}
+
+/* SUCCESS */
 #step-ok{text-align:center;padding:1.5rem 0}
-.ok-circle{width:80px;height:80px;border-radius:50%;background:var(--gold-bg);border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 1.25rem}
+.ok-circle{
+  width:80px;height:80px;border-radius:50%;
+  background:var(--gold-bg);border:3px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-size:38px;margin:0 auto 1.25rem;
+}
 .ok-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:.5rem}
 .ok-sub{font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:1.25rem;max-width:420px;margin-left:auto;margin-right:auto}
-.link-card{background:var(--ink);color:#fff;border-radius:var(--radius);padding:14px 16px;margin:.75rem 0;text-align:left}
+
+.link-card{
+  background:var(--ink);color:#fff;border-radius:var(--radius);
+  padding:14px 16px;margin:.75rem 0;text-align:left;
+}
 .link-card.residente{background:#1a1a1a;border:1px solid rgba(200,120,10,0.3)}
 .link-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.5);margin-bottom:6px;text-transform:uppercase}
 .link-card.residente .link-label{color:var(--gold)}
 .link-val{font-family:'DM Mono',monospace;font-size:11px;color:#fff;word-break:break-all;line-height:1.5}
 .link-card.residente .link-val{color:var(--gold)}
+
 .link-btns{display:flex;gap:6px;margin-top:10px}
-.link-btn{flex:1;padding:11px 8px;border-radius:8px;border:none;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer}
+.link-btn{
+  flex:1;padding:11px 8px;border-radius:8px;border:none;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;
+}
 .link-btn.copy{background:rgba(255,255,255,0.1);color:#fff}
 .link-btn.copy:hover{background:rgba(255,255,255,0.18)}
 .link-btn.wa{background:var(--wa);color:#fff}
 .link-btn.wa:hover{background:#1da851}
 .link-btn.open{background:var(--gold);color:#fff}
-.next-steps{margin-top:1.25rem;padding:1rem 1.25rem;background:var(--gold-bg);border:1px solid var(--gold-b);border-radius:var(--radius);text-align:left}
+
+.next-steps{
+  margin-top:1.25rem;padding:1rem 1.25rem;
+  background:var(--gold-bg);border:1px solid var(--gold-b);
+  border-radius:var(--radius);text-align:left;
+}
 .next-steps-title{font-size:12px;font-weight:600;margin-bottom:.75rem;color:var(--ink)}
 .next-steps-list{font-size:13px;color:var(--ink2);line-height:1.8}
 .next-steps-list strong{color:var(--ink);font-weight:600}
-.btn-open-dueno{width:100%;margin-top:1rem;padding:14px;border-radius:10px;border:1.5px solid var(--line);background:none;color:var(--ink);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer}
-#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+
+.btn-open-dueno{
+  width:100%;margin-top:1rem;padding:14px;border-radius:10px;
+  border:1.5px solid var(--line);background:none;color:var(--ink);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;
+}
+
+/* SAVING */
+#overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);
+  z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+}
 #overlay.on{display:flex}
-.spin{width:44px;height:44px;border:3px solid rgba(200,120,10,.3);border-top-color:var(--gold);border-radius:50%;animation:sp 1s linear infinite}
+.spin{
+  width:44px;height:44px;border:3px solid rgba(200,120,10,.3);
+  border-top-color:var(--gold);border-radius:50%;
+  animation:sp 1s linear infinite;
+}
 @keyframes sp{to{transform:rotate(360deg)}}
 .spin-txt{font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.6);letter-spacing:2px}
-@media(max-width:400px){.grid-2{grid-template-columns:1fr}}
+
+@media(max-width:400px){
+  .big-chips.cols-3{grid-template-columns:1fr 1fr}
+  .grid-2{grid-template-columns:1fr}
+}
 </style>
 </head>
 <body>
 
 <div id="overlay"><div class="spin"></div><div class="spin-txt">Activando tu obra...</div></div>
 
+<!-- TOP -->
 <div class="top">
   <div class="brand">GO<em>Obra</em></div>
   <div class="step-pills" id="pills"></div>
@@ -122,7 +280,7 @@ input[type="range"]{width:100%;accent-color:var(--gold);height:6px;-webkit-appea
 
 <div class="wrap">
 
-  <!-- STEP 1 -->
+  <!-- STEP 1: BIENVENIDA / CONTACTO -->
   <div class="step active" id="cs-1">
     <div class="step-hero">
       <span class="step-emoji">👋</span>
@@ -154,14 +312,14 @@ input[type="range"]{width:100%;accent-color:var(--gold);height:6px;-webkit-appea
         <input type="text" id="c-res-nombre" placeholder="Quien dirige la obra día a día">
       </div>
       <div class="field">
-        <label>WhatsApp del residente <span class="opt">(opcional)</span></label>
+        <label>Su WhatsApp <span class="req">*</span></label>
         <input type="tel" id="c-res-tel" placeholder="+57 310 000 0000">
-        <div class="hint">Si lo pones, podrás enviarle su link por WhatsApp con 1 toque. Si no, lo copias y lo compartes como prefieras.</div>
+        <div class="hint">Le enviaremos su link para reportar los avances</div>
       </div>
     </div>
   </div>
 
-  <!-- STEP 2 -->
+  <!-- STEP 2: DÓNDE ESTÁ LA OBRA -->
   <div class="step" id="cs-2">
     <div class="step-hero">
       <span class="step-emoji">📍</span>
@@ -190,16 +348,28 @@ input[type="range"]{width:100%;accent-color:var(--gold);height:6px;-webkit-appea
     <div class="card">
       <div class="card-title">¿Qué es lo que estás construyendo?</div>
       <div class="big-chips cols-2" id="chips-uso">
-        <div class="big-chip" onclick="bigChip('c-uso','vivienda',this)"><span class="chip-ico">🏠</span><div class="chip-txt">Casa o apartamentos</div></div>
-        <div class="big-chip" onclick="bigChip('c-uso','oficinas',this)"><span class="chip-ico">🏢</span><div class="chip-txt">Oficinas</div></div>
-        <div class="big-chip" onclick="bigChip('c-uso','comercio',this)"><span class="chip-ico">🏪</span><div class="chip-txt">Comercio / local</div></div>
-        <div class="big-chip" onclick="bigChip('c-uso','mixto',this)"><span class="chip-ico">🏗</span><div class="chip-txt">Mixto</div></div>
+        <div class="big-chip" onclick="bigChip('c-uso','vivienda',this)">
+          <span class="chip-ico">🏠</span>
+          <div class="chip-txt">Casa o apartamentos</div>
+        </div>
+        <div class="big-chip" onclick="bigChip('c-uso','oficinas',this)">
+          <span class="chip-ico">🏢</span>
+          <div class="chip-txt">Oficinas</div>
+        </div>
+        <div class="big-chip" onclick="bigChip('c-uso','comercio',this)">
+          <span class="chip-ico">🏪</span>
+          <div class="chip-txt">Comercio / local</div>
+        </div>
+        <div class="big-chip" onclick="bigChip('c-uso','mixto',this)">
+          <span class="chip-ico">🏗</span>
+          <div class="chip-txt">Mixto</div>
+        </div>
       </div>
       <input type="hidden" id="c-uso">
     </div>
   </div>
 
-  <!-- STEP 3 -->
+  <!-- STEP 3: TAMAÑO DE LA OBRA -->
   <div class="step" id="cs-3">
     <div class="step-hero">
       <span class="step-emoji">📐</span>
@@ -243,16 +413,28 @@ input[type="range"]{width:100%;accent-color:var(--gold);height:6px;-webkit-appea
     <div class="card">
       <div class="card-title">Sistema de construcción</div>
       <div class="big-chips cols-2" id="chips-sistema">
-        <div class="big-chip" onclick="bigChip('c-sistema','porticos',this)"><span class="chip-ico">🏛</span><div class="chip-txt">Pórticos en concreto</div></div>
-        <div class="big-chip" onclick="bigChip('c-sistema','ipe',this)"><span class="chip-ico">⚙️</span><div class="chip-txt">Estructura metálica</div></div>
-        <div class="big-chip" onclick="bigChip('c-sistema','muros',this)"><span class="chip-ico">🧱</span><div class="chip-txt">Muros portantes</div></div>
-        <div class="big-chip" onclick="bigChip('c-sistema','mixto',this)"><span class="chip-ico">🔧</span><div class="chip-txt">Mixto</div></div>
+        <div class="big-chip" onclick="bigChip('c-sistema','porticos',this)">
+          <span class="chip-ico">🏛</span>
+          <div class="chip-txt">Pórticos en concreto</div>
+        </div>
+        <div class="big-chip" onclick="bigChip('c-sistema','ipe',this)">
+          <span class="chip-ico">⚙️</span>
+          <div class="chip-txt">Estructura metálica</div>
+        </div>
+        <div class="big-chip" onclick="bigChip('c-sistema','muros',this)">
+          <span class="chip-ico">🧱</span>
+          <div class="chip-txt">Muros portantes</div>
+        </div>
+        <div class="big-chip" onclick="bigChip('c-sistema','mixto',this)">
+          <span class="chip-ico">🔧</span>
+          <div class="chip-txt">Mixto</div>
+        </div>
       </div>
       <input type="hidden" id="c-sistema" value="porticos">
     </div>
   </div>
 
-  <!-- STEP 4 -->
+  <!-- STEP 4: EN QUÉ VA LA OBRA -->
   <div class="step" id="cs-4">
     <div class="step-hero">
       <span class="step-emoji">🏗</span>
@@ -268,13 +450,19 @@ input[type="range"]{width:100%;accent-color:var(--gold);height:6px;-webkit-appea
     <div class="card">
       <div class="card-title">Fechas</div>
       <div class="grid-2">
-        <div class="field"><label>Inicio de obra</label><input type="date" id="c-inicio"></div>
-        <div class="field"><label>Entrega estimada</label><input type="date" id="c-entrega"></div>
+        <div class="field">
+          <label>Inicio de obra</label>
+          <input type="date" id="c-inicio">
+        </div>
+        <div class="field">
+          <label>Entrega estimada</label>
+          <input type="date" id="c-entrega">
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- STEP 5 -->
+  <!-- STEP 5: PRESUPUESTO -->
   <div class="step" id="cs-5">
     <div class="step-hero">
       <span class="step-emoji">💰</span>
@@ -307,6 +495,7 @@ input[type="range"]{width:100%;accent-color:var(--gold);height:6px;-webkit-appea
     <div class="ok-title">¡Tu obra está activa!</div>
     <div class="ok-sub">El gemelo digital está listo. Ahora solo falta enviarle el link al residente para que reporte los avances del día a día.</div>
 
+    <!-- Link del dueño -->
     <div class="link-card">
       <div class="link-label">👤 Tu link (dueño)</div>
       <div class="link-val" id="ok-link-dueno">Generando…</div>
@@ -316,6 +505,7 @@ input[type="range"]{width:100%;accent-color:var(--gold);height:6px;-webkit-appea
       </div>
     </div>
 
+    <!-- Link del residente -->
     <div class="link-card residente">
       <div class="link-label">🏗️ Link del residente</div>
       <div class="link-val" id="ok-link-residente">—</div>
@@ -337,28 +527,41 @@ input[type="range"]{width:100%;accent-color:var(--gold);height:6px;-webkit-appea
     <button class="btn-open-dueno" onclick="abrirDueno()">Abrir mi gemelo →</button>
   </div>
 
-</div>
+</div><!-- /wrap -->
 
+<!-- NAV -->
 <div class="nav" id="nav-bar">
   <button class="btn-back" id="btn-back" onclick="prev()" style="display:none">←</button>
   <button class="btn-next" id="btn-next" onclick="next()">Continuar →</button>
 </div>
 
 <script>
+// ── CONFIG ──
 const SUPA_URL='https://muyezsssnzlxavchabum.supabase.co';
 const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
 const GEMELO='https://goobradashboardrepository-production.up.railway.app/gemelo.html';
 const REPORTAR='https://goobradashboardrepository-production.up.railway.app/reportar.html';
+const PCTS={prel:.03,mvt:.05,cim:.12,estr:.35,mamp:.18,redes:.10,acab:.12,urb:.03,entr:.02};
 
 async function supa(path,opts={}){
   const {headers:extraHeaders,...restOpts}=opts;
-  const r=await fetch(SUPA_URL+'/rest/v1/'+path,{...restOpts,headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=representation',...(extraHeaders||{})}});
+  const r=await fetch(SUPA_URL+'/rest/v1/'+path,{
+    ...restOpts,
+    headers:{
+      'apikey':SUPA_KEY,
+      'Authorization':'Bearer '+SUPA_KEY,
+      'Content-Type':'application/json',
+      'Prefer':'return=representation',
+      ...(extraHeaders||{})
+    }
+  });
   if(!r.ok) throw new Error(await r.text());
   if(r.status===204||r.headers.get('content-length')==='0') return null;
   const txt=await r.text();
   return txt?JSON.parse(txt):null;
 }
 
+// ── STEPS ──
 const STEPS=['cs-1','cs-2','cs-3','cs-4','cs-5','step-ok'];
 let cur=0;
 
@@ -371,13 +574,17 @@ function buildUI(){
 
 function updateUI(){
   const pills=document.querySelectorAll('.pill');
-  pills.forEach((p,i)=>{p.classList.remove('active','done');if(i===cur)p.classList.add('active');else if(i<cur)p.classList.add('done')});
+  pills.forEach((p,i)=>{
+    p.classList.remove('active','done');
+    if(i===cur) p.classList.add('active');
+    else if(i<cur) p.classList.add('done');
+  });
   const pct=Math.round(cur/(STEPS.length-1)*100);
   document.getElementById('prog').style.width=pct+'%';
   document.getElementById('btn-back').style.display=cur>0&&cur<STEPS.length-1?'flex':'none';
   const nb=document.getElementById('btn-next');
   const nb2=document.getElementById('nav-bar');
-  if(cur===STEPS.length-1){nb2.style.display='none'}
+  if(cur===STEPS.length-1){nb2.style.display='none';}
   else{
     nb2.style.display='flex';
     nb.className=cur===STEPS.length-2?'btn-next final':'btn-next';
@@ -387,25 +594,25 @@ function updateUI(){
 }
 
 function next(){
-  if(!validate(cur))return;
-  if(cur===STEPS.length-2){activar();return}
+  if(!validate(cur)) return;
+  if(cur===STEPS.length-2){activar();return;}
   document.getElementById(STEPS[cur]).classList.remove('active');
   cur++;
   document.getElementById(STEPS[cur]).classList.add('active');
   updateUI();
 }
 function prev(){
-  if(cur<=0)return;
+  if(cur<=0) return;
   document.getElementById(STEPS[cur]).classList.remove('active');
   cur--;
   document.getElementById(STEPS[cur]).classList.add('active');
   updateUI();
 }
 
-// Validación: WhatsApp del residente ahora OPCIONAL
+// ── VALIDATION ──
 function validate(n){
   const req={
-    0:['c-nombre','c-dueno','c-wa','c-res-nombre'],
+    0:['c-nombre','c-dueno','c-wa','c-res-nombre','c-res-tel'],
     1:['c-dir'],
     2:['c-frente','c-fondo','c-pisos'],
     3:['c-inicio'],
@@ -414,13 +621,14 @@ function validate(n){
   let ok=true;
   (req[n]||[]).forEach(id=>{
     const el=document.getElementById(id);
-    if(!el)return;
-    if(!el.value.trim()){el.classList.add('error');if(ok)el.focus();ok=false}
+    if(!el) return;
+    if(!el.value.trim()){el.classList.add('error');if(ok){el.focus();}ok=false;}
     else el.classList.remove('error');
   });
   return ok;
 }
 
+// ── CHIPS ──
 function bigChip(fieldId,val,el){
   el.closest('.big-chips').querySelectorAll('.big-chip').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
@@ -431,6 +639,8 @@ function sChip(fieldId,val,el){
   el.classList.add('active');
   document.getElementById(fieldId).value=val;
 }
+
+// ── NUM INPUT ──
 function changeNum(id,delta){
   const el=document.getElementById(id);
   const cur=parseInt(el.value)||1;
@@ -439,6 +649,7 @@ function changeNum(id,delta){
   el.value=Math.max(min,Math.min(max,cur+delta));
 }
 
+// ── ETAPAS CLIENTE ──
 const ETAPAS_C=[
   {id:'prel',nom:'Preliminares',ico:'🚧'},
   {id:'mvt',nom:'Movimiento de tierras',ico:'🚜'},
@@ -464,7 +675,8 @@ function renderEtapasCliente(){
     </div>
     <div class="pct-slider-wrap" id="et-pct-wrap-${e.id}">
       <div class="pct-label">¿Qué porcentaje va?</div>
-      <input type="range" min="0" max="100" step="5" value="50" id="et-pct-${e.id}" oninput="document.getElementById('et-pct-val-${e.id}').textContent=this.value+'%'">
+      <input type="range" min="0" max="100" step="5" value="50" id="et-pct-${e.id}"
+        oninput="document.getElementById('et-pct-val-${e.id}').textContent=this.value+'%'">
       <div class="pct-val" id="et-pct-val-${e.id}">50%</div>
     </div>`).join('');
 }
@@ -485,6 +697,7 @@ function cycleEtapa(id){
   pctWrap.classList.toggle('show',next==='en_curso');
 }
 
+// ── ACTIVAR ──
 async function activar(){
   document.getElementById('overlay').classList.add('on');
   try{
@@ -498,6 +711,7 @@ async function activar(){
     const frente=parseFloat(g('c-frente'))||10;
     const fondo=parseFloat(g('c-fondo'))||20;
 
+    // Proyecto
     await supa('proyectos',{method:'POST',body:JSON.stringify({
       id:pid,nombre:g('c-nombre'),direccion:g('c-dir'),
       codigo_corto:codigo,dueno_wa:g('c-wa'),
@@ -515,21 +729,22 @@ async function activar(){
       estado:'activo',moneda:'COP',
     })});
 
+    // Token
     await supa('proyecto_tokens',{method:'POST',body:JSON.stringify({proyecto_id:pid,token,activo:true})});
 
-    // Worker residente — sin Telegram, solo WhatsApp opcional
-    const rn=g('c-res-nombre');
-    const rt=g('c-res-tel'); // puede ser null
+    // Worker residente — guardamos la respuesta para obtener el codigo_corto generado por el trigger
+    const rn=g('c-res-nombre');const rt=g('c-res-tel');
     let workerCodigo=null;
-    if(rn){
+    if(rn&&rt){
       try{
-        const workerBody={proyecto_id:pid,nombre:rn,rol:'res',activo:true};
-        if(rt) workerBody.numero_wa=rt;
-        const workerResp=await supa('workers',{method:'POST',body:JSON.stringify(workerBody)});
-        workerCodigo=workerResp?.[0]?.codigo_corto||null;
-      }catch(e){console.warn('No se pudo crear worker:',e)}
+        const workerResp=await supa('workers',{method:'POST',body:JSON.stringify({
+          proyecto_id:pid,nombre:rn,rol:'res',numero_wa:rt,telegram_id:rt,activo:true
+        })});
+        workerCodigo = workerResp?.[0]?.codigo_corto || null;
+      }catch(e){console.warn('No se pudo crear worker:',e);}
     }
 
+    // Presupuesto
     const pres=parseFloat(g('c-presupuesto'))||0;
     if(pres>0){
       await supa('presupuesto_versiones',{method:'POST',body:JSON.stringify({
@@ -537,17 +752,25 @@ async function activar(){
       })});
     }
 
-    await generarMisionesBásicas(pid,{frente,fondo,pisos,sistema:g('c-sistema')||'porticos',fecha_inicio:g('c-inicio'),presupuesto_total:pres});
+    // Misiones básicas
+    await generarMisionesBásicas(pid,{frente,fondo,pisos,sistema:g('c-sistema')||'porticos',
+      fecha_inicio:g('c-inicio'),presupuesto_total:pres});
 
+    // Links
     const linkDueno=`${GEMELO}#proyecto=${pid}&codigo=${codigo}&token=${token}`;
-    const linkResidente=workerCodigo?`${REPORTAR}?obra=${codigo}&worker=${workerCodigo}&token=${token}`:null;
+    const linkResidente=workerCodigo
+      ? `${REPORTAR}?obra=${codigo}&worker=${workerCodigo}&token=${token}`
+      : null;
 
+    // Guardar en window para las funciones de copiar/enviar
     window._link_dueno=linkDueno;
     window._link_residente=linkResidente;
     window._residente_nombre=rn||'residente';
     window._obra_nombre=g('c-nombre');
     window._worker_tel=rt;
+    window._worker_codigo=workerCodigo;
 
+    // Actualizar UI
     document.getElementById('ok-link-dueno').textContent=linkDueno;
     if(linkResidente){
       document.getElementById('ok-link-residente').textContent=linkResidente;
@@ -577,70 +800,221 @@ async function generarMisionesBásicas(pid,p){
     acab:[{id:'pisos_enchapes',u:'m2',m:Math.round(p.pisos*p.frente*p.fondo*0.55),d:90},{id:'pintura_final',u:'m2',m:Math.round(p.pisos*p.frente*p.fondo*1.1),d:90}],
     entr:[{id:'aseo_fino',u:'m2',m:Math.round(p.pisos*p.frente*p.fondo*0.69),d:15},{id:'actas_entrega',u:'un',m:p.pisos*3,d:10}],
   };
+  // Estructura va después de cimentación (o de mvt si no hay cim, etc). Se construye aparte.
+  const ESTR=[
+    {id:'columnas_armado',u:'kg',m:16*18,d:6},
+    {id:'columnas_vaciado',u:'un',m:16,d:5},
+    {id:'vigas',u:'ml',m:Math.round(p.frente*p.fondo/4),d:6},
+    {id:'placa_entrepiso',u:'m2',m:p.frente*p.fondo,d:6}
+  ];
+  const DIAS_POR_PISO=ESTR.reduce((s,m)=>s+m.d,0)+2; // +2 de descofrado entre pisos
+
+  // ── CÁLCULO DE TIEMPOS INTELIGENTE ──
+  // Filosofía: las fechas de misiones se ajustan al ESTADO REAL actual:
+  //   - Completadas → en el pasado
+  //   - En curso → abarcando hoy (pct indica qué tan adentro de la etapa estamos)
+  //   - Pendientes → en el futuro, encadenadas
+  const HOY=new Date();HOY.setHours(0,0,0,0);
+  const FINI=new Date(p.fecha_inicio||HOY);FINI.setHours(0,0,0,0);
+  
+  // Orden de etapas no-estructurales
+  const ORDEN_PRE_ESTR=['prel','mvt','cim']; // antes de estructura
+  const ORDEN_POST_ESTR=['mamp','redes','acab','entr']; // después de estructura
+  
+  // Duración total de cada etapa (suma de duraciones de sus misiones)
+  const DUR={};
+  for(const[eid,ms] of Object.entries(TMPL)) DUR[eid]=ms.reduce((s,m)=>s+m.d,0);
+  const DUR_ESTR=p.pisos*DIAS_POR_PISO;
+  
+  // Calcular "cursor" — fecha donde arranca cada etapa
+  // Estrategia: buscar la etapa "en curso" (si hay) y anclarla a HOY
+  const allEtapas=[...ORDEN_PRE_ESTR,'estr',...ORDEN_POST_ESTR];
+  const pisoEstr=parseInt(document.getElementById('et-pct-estr')?.value/100*p.pisos)||0;
+  const estrEstado=estadosE['estr']||'pendiente';
+  
+  // Encontrar primera etapa en_curso (o primera pendiente si todo está pendiente/completado)
+  let etapaAncla=null;
+  for(const eid of allEtapas){
+    const e=estadosE[eid]||'pendiente';
+    if(e==='en_curso'){etapaAncla=eid;break;}
+  }
+  // Si no hay ninguna en_curso, buscar primera pendiente después de las completadas
+  if(!etapaAncla){
+    for(const eid of allEtapas){
+      const e=estadosE[eid]||'pendiente';
+      if(e==='pendiente'){etapaAncla=eid;break;}
+    }
+  }
+  // Si todo está completado, no hay ancla (proyecto terminado) → usar FINI
+  
+  // Calcular fecha de inicio de cada etapa
+  // Para la etapa ancla, arranca en: HOY menos (pct*duracion) si está en_curso, o HOY si está pendiente
+  const inicioEtapa={}; // eid → Date
+  
+  if(etapaAncla){
+    const estAncla=estadosE[etapaAncla]||'pendiente';
+    let inicioAncla;
+    if(estAncla==='en_curso'){
+      const pctEl=document.getElementById('et-pct-'+etapaAncla);
+      const pct=parseInt(pctEl?.value)||50;
+      const duracionAncla=etapaAncla==='estr'?DUR_ESTR:DUR[etapaAncla];
+      const diasTranscurridos=Math.round(duracionAncla*pct/100);
+      inicioAncla=new Date(HOY);
+      inicioAncla.setDate(inicioAncla.getDate()-diasTranscurridos);
+    } else {
+      // Pendiente → arranca HOY
+      inicioAncla=new Date(HOY);
+    }
+    inicioEtapa[etapaAncla]=inicioAncla;
+    
+    // Las etapas ANTES del ancla: retroceden desde inicioAncla
+    let cursor=new Date(inicioAncla);
+    const idxAncla=allEtapas.indexOf(etapaAncla);
+    for(let i=idxAncla-1;i>=0;i--){
+      const eid=allEtapas[i];
+      const dur=eid==='estr'?DUR_ESTR:DUR[eid];
+      cursor=new Date(cursor);
+      cursor.setDate(cursor.getDate()-dur);
+      inicioEtapa[eid]=new Date(cursor);
+    }
+    
+    // Las etapas DESPUÉS del ancla: avanzan desde inicioAncla+duracion
+    cursor=new Date(inicioAncla);
+    const durAncla=etapaAncla==='estr'?DUR_ESTR:DUR[etapaAncla];
+    cursor.setDate(cursor.getDate()+durAncla);
+    for(let i=idxAncla+1;i<allEtapas.length;i++){
+      const eid=allEtapas[i];
+      inicioEtapa[eid]=new Date(cursor);
+      const dur=eid==='estr'?DUR_ESTR:DUR[eid];
+      cursor.setDate(cursor.getDate()+dur);
+    }
+  } else {
+    // Todo completado: fechas en el pasado, usar FINI como ancla
+    let cursor=new Date(FINI);
+    for(const eid of allEtapas){
+      inicioEtapa[eid]=new Date(cursor);
+      const dur=eid==='estr'?DUR_ESTR:DUR[eid];
+      cursor.setDate(cursor.getDate()+dur);
+    }
+  }
+  
+  // ── CONSTRUIR ROWS ──
   const rows=[];let i=0;
-  let fc=new Date(p.fecha_inicio||new Date());
+  
+  // Etapas no-estructurales (prel, mvt, cim, mamp, redes, acab, entr)
   for(const[eid,ms] of Object.entries(TMPL)){
     const est=estadosE[eid]||'pendiente';
     const pctEl=document.getElementById('et-pct-'+eid);
     const pct=est==='en_curso'?(parseInt(pctEl?.value)||50):est==='completada'?100:0;
+    let cursor=new Date(inicioEtapa[eid]||FINI);
     for(const m of ms){
-      const fi=new Date(fc);const ff=new Date(fc);ff.setDate(ff.getDate()+m.d);
-      rows.push({id:`${pid}_${eid}_${m.id}__${i}`,proyecto_id:pid,etapa_id:eid,mision_id:m.id,nivel:null,
-        cantidad_meta:Math.round(m.m),unidad_primaria:m.u,
+      const fi=new Date(cursor);
+      const ff=new Date(cursor);ff.setDate(ff.getDate()+m.d);
+      rows.push({
+        id:`${pid}_${eid}_${m.id}__${i}`,
+        proyecto_id:pid,
+        etapa_id:eid,
+        mision_id:m.id,
+        nivel:null,
+        cantidad_meta:Math.round(m.m),
+        unidad_primaria:m.u,
         cantidad_ejecutada:Math.round(m.m*pct/100),
         fecha_inicio_plan:fi.toISOString().split('T')[0],
-        fecha_fin_plan:ff.toISOString().split('T')[0],dias_plan:m.d,
-        estado:est==='completada'?'completada':est==='en_curso'?'en_curso':'pendiente'});
-      if(est==='completada')fc=new Date(ff);
+        fecha_fin_plan:ff.toISOString().split('T')[0],
+        dias_plan:m.d,
+        estado:est==='completada'?'completada':est==='en_curso'?'en_curso':'pendiente'
+      });
+      cursor=new Date(ff);
       i++;
     }
   }
-  const ESTR=[{id:'columnas_armado',u:'kg',m:16*18,d:6},{id:'columnas_vaciado',u:'un',m:16,d:5},{id:'vigas',u:'ml',m:Math.round(p.frente*p.fondo/4),d:6},{id:'placa_entrepiso',u:'m2',m:p.frente*p.fondo,d:6}];
-  let fe=new Date(p.fecha_inicio||new Date());fe.setDate(fe.getDate()+60);
-  const pisoEstr=parseInt(document.getElementById('et-pct-estr')?.value/100*p.pisos)||0;
+  
+  // Estructura (por pisos)
+  let cursorEstr=new Date(inicioEtapa['estr']||FINI);
   for(let pp=1;pp<=p.pisos;pp++){
-    const estP=pp<pisoEstr?'completada':pp===pisoEstr?'en_curso':'pendiente';
-    for(const m of ESTR){
-      const fi=new Date(fe);const ff=new Date(fe);ff.setDate(ff.getDate()+m.d);
-      rows.push({id:`${pid}_estr_${m.id}_piso ${pp}_${i}`,proyecto_id:pid,etapa_id:'estr',mision_id:m.id,nivel:`piso ${pp}`,
-        cantidad_meta:m.m,unidad_primaria:m.u,cantidad_ejecutada:estP==='completada'?m.m:0,
-        fecha_inicio_plan:fi.toISOString().split('T')[0],fecha_fin_plan:ff.toISOString().split('T')[0],
-        dias_plan:m.d,estado:estP});
-      fe.setDate(fe.getDate()+m.d);i++;
+    // Estado del piso según pisoEstr
+    let estP;
+    if(estrEstado==='completada') estP='completada';
+    else if(estrEstado==='pendiente') estP='pendiente';
+    else {
+      // en_curso: pisos < pisoEstr completos, pisoEstr en curso, >pisoEstr pendiente
+      if(pp<pisoEstr) estP='completada';
+      else if(pp===pisoEstr) estP='en_curso';
+      else estP='pendiente';
     }
-    fe.setDate(fe.getDate()+2);
+    for(const m of ESTR){
+      const fi=new Date(cursorEstr);
+      const ff=new Date(cursorEstr);ff.setDate(ff.getDate()+m.d);
+      rows.push({
+        id:`${pid}_estr_${m.id}_piso ${pp}_${i}`,
+        proyecto_id:pid,
+        etapa_id:'estr',
+        mision_id:m.id,
+        nivel:`piso ${pp}`,
+        cantidad_meta:m.m,
+        unidad_primaria:m.u,
+        cantidad_ejecutada:estP==='completada'?m.m:estP==='en_curso'&&pp===pisoEstr?Math.round(m.m*0.5):0,
+        fecha_inicio_plan:fi.toISOString().split('T')[0],
+        fecha_fin_plan:ff.toISOString().split('T')[0],
+        dias_plan:m.d,
+        estado:estP
+      });
+      cursorEstr=new Date(ff);
+      i++;
+    }
+    cursorEstr.setDate(cursorEstr.getDate()+2); // 2 días descofrado entre pisos
   }
+  
   for(let b=0;b<rows.length;b+=20){
-    await supa('proyecto_misiones',{method:'POST',body:JSON.stringify(rows.slice(b,b+20)),headers:{'Prefer':'resolution=ignore-duplicates,return=minimal'}});
+    await supa('proyecto_misiones',{method:'POST',body:JSON.stringify(rows.slice(b,b+20)),
+      headers:{'Prefer':'resolution=ignore-duplicates,return=minimal'}});
   }
 }
 
+// ── COPIAR & ENVIAR ──
 function copiarDueno(){
   if(!window._link_dueno)return;
   navigator.clipboard.writeText(window._link_dueno).then(()=>{
     const btns=document.querySelectorAll('.link-btn.copy');
-    if(btns[0]){const orig=btns[0].textContent;btns[0].textContent='✓ Copiado';setTimeout(()=>btns[0].textContent=orig,2000)}
+    if(btns[0]){
+      const orig=btns[0].textContent;
+      btns[0].textContent='✓ Copiado';
+      setTimeout(()=>btns[0].textContent=orig,2000);
+    }
   });
 }
 
 function copiarResidente(){
-  if(!window._link_residente){alert('No hay link del residente');return}
+  if(!window._link_residente){alert('No hay link del residente');return;}
   navigator.clipboard.writeText(window._link_residente).then(()=>{
     const btns=document.querySelectorAll('.link-btn.copy');
-    if(btns[1]){const orig=btns[1].textContent;btns[1].textContent='✓ Copiado';setTimeout(()=>btns[1].textContent=orig,2000)}
+    if(btns[1]){
+      const orig=btns[1].textContent;
+      btns[1].textContent='✓ Copiado';
+      setTimeout(()=>btns[1].textContent=orig,2000);
+    }
   });
 }
 
 function enviarWhatsApp(){
-  if(!window._link_residente){alert('No hay link del residente');return}
+  if(!window._link_residente){alert('No hay link del residente');return;}
+
   const mensaje=`Hola ${window._residente_nombre}, soy el dueño de la obra "${window._obra_nombre}".\n\nTe envío este link para que reportes los avances del día a día. Solo ábrelo en tu celular cuando termine la jornada, verás las misiones del día y podrás reportar cuánto avanzaron:\n\n${window._link_residente}\n\nConsejo: guárdalo como acceso directo en tu pantalla de inicio para abrirlo rápido cada día.`;
+
   let numero=(window._worker_tel||'').replace(/[^0-9]/g,'');
-  if(numero.length===10)numero='57'+numero;
-  const waUrl=numero?`https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`:`https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+  // Si ya empieza con código de país, respetar; si es un 10 dígitos tipo colombiano sin código, prepend 57
+  if(numero.length===10) numero='57'+numero;
+
+  const waUrl=numero
+    ? `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`
+    : `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+
   window.open(waUrl,'_blank');
 }
 
-function abrirDueno(){if(window._link_dueno)window.open(window._link_dueno,'_blank')}
+function abrirDueno(){
+  if(window._link_dueno)window.open(window._link_dueno,'_blank');
+}
 
 buildUI();updateUI();
 </script>
