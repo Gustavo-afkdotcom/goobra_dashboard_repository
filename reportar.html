@@ -134,6 +134,17 @@ textarea.nota.show{display:block}
 .btn-sec{background:transparent;color:var(--text);border:1px solid var(--border2)!important}
 .btn-pri{background:var(--amber);color:#000;font-weight:700}
 
+/* WA NOTIFICATION */
+.wa-card{background:#0d2018;border:1px solid #1a4a2e;border-radius:10px;padding:14px;margin:14px 0 0}
+.wa-card-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.wa-card-ico{font-size:18px}
+.wa-card-title{font-size:12px;font-weight:600;color:#4ade80}
+.wa-card-label{font-size:10px;color:#6b7280;letter-spacing:1px;text-transform:uppercase;margin-left:auto}
+.wa-msg-preview{background:#0a1a10;border:1px solid #1a3a24;border-radius:8px;padding:12px;font-size:12px;color:#d1fae5;line-height:1.7;font-family:'DM Mono',monospace;white-space:pre-wrap;word-break:break-word;max-height:160px;overflow-y:auto;margin-bottom:10px}
+.wa-send-btn{width:100%;background:#25D366;color:#fff;padding:12px;border-radius:8px;font-family:'Syne',sans-serif;font-size:13px;font-weight:800;cursor:pointer;border:none;display:flex;align-items:center;justify-content:center;gap:8px}
+.wa-send-btn:active{background:#1aa34a}
+.wa-hint{font-size:10px;color:#6b7280;text-align:center;margin-top:6px}
+
 /* DESVIACION */
 .desv-intro{padding:4px 4px 14px;font-size:12px;color:var(--text2);line-height:1.6}
 .desv-label{font-size:11px;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding:0 4px}
@@ -276,6 +287,20 @@ textarea.nota.show{display:block}
     <div class="bodega-title">📦 Bodega actualizada</div>
     <div id="p3-bodega-items"></div>
     <div id="p3-bodega-alerts"></div>
+  </div>
+
+  <!-- WA Notification Card -->
+  <div class="wa-card" id="p3-wa-card">
+    <div class="wa-card-hd">
+      <span class="wa-card-ico">📲</span>
+      <span class="wa-card-title">Notificar al dueño</span>
+      <span class="wa-card-label">WhatsApp</span>
+    </div>
+    <div class="wa-msg-preview" id="p3-wa-preview">…</div>
+    <button class="wa-send-btn" id="p3-wa-btn" onclick="abrirWA()">
+      <span>📤</span> Enviar al dueño por WhatsApp
+    </button>
+    <div class="wa-hint">Se abre WhatsApp con el mensaje listo · solo toca Enviar</div>
   </div>
 
   <div class="ok-actions">
@@ -687,6 +712,77 @@ async function enviarAvance() {
 }
 
 // ── PANTALLA 3: CONFIRMACIÓN ──
+// Estado WA
+let WA_MSG = '';
+let WA_NUMERO = '';
+
+function abrirWA() {
+  if (!WA_NUMERO || !WA_MSG) { toast('No hay número del dueño configurado'); return; }
+  const num = WA_NUMERO.replace(/\D/g,'');
+  window.open('https://wa.me/' + num + '?text=' + encodeURIComponent(WA_MSG), '_blank');
+}
+
+function buildWAMsg(r) {
+  const misionNom = (MISION_ACTUAL.mision_id || '').replace(/_/g,' ');
+  const nivelTxt = MISION_ACTUAL.nivel ? ' — ' + MISION_ACTUAL.nivel : '';
+  const unidad = MISION_ACTUAL.unidad_primaria || '';
+  const obra = CTX.proyecto.nombre || CTX.proyecto.codigo_corto || 'Su obra';
+  const trabajador = CTX.worker.nombre || 'El residente';
+  const fecha = new Date().toLocaleDateString('es-CO', {weekday:'long', day:'numeric', month:'long'});
+  const pctNuevo = r.pct_nuevo ? r.pct_nuevo.toFixed(0) : '—';
+  const pctAnt = r.pct_anterior ? r.pct_anterior.toFixed(0) : '—';
+
+  let emoji = r.completada ? '🎉' : '✅';
+  let lineas = [
+    `${emoji} *GO Obra — Avance de hoy*`,
+    `📍 ${obra} · ${fecha}`,
+    ``,
+    `*${misionNom}${nivelTxt}*`,
+    `${pctAnt}% → *${pctNuevo}%* (+${QTY} ${unidad})`,
+  ];
+
+  if (r.completada) {
+    lineas.push(`🏆 ¡Misión completada!`);
+  }
+
+  // Bodega
+  const movs = (r.bodega || {}).movimientos || [];
+  if (movs.length) {
+    lineas.push(``);
+    lineas.push(`📦 *Materiales usados:*`);
+    movs.forEach(m => {
+      lineas.push(`  • ${m.material}: ${typeof m.cantidad === 'number' ? m.cantidad.toFixed(1) : m.cantidad} ${m.unidad || ''}`);
+    });
+  }
+
+  // Alertas
+  const alertas = (r.bodega || {}).alertas || [];
+  if (alertas.length) {
+    lineas.push(``);
+    lineas.push(`⚠️ *Alerta de materiales:*`);
+    alertas.forEach(a => {
+      if (a.tipo === 'sin_stock_registrado') {
+        lineas.push(`  • ${a.material}: sin stock registrado`);
+      } else {
+        const falta = (a.necesario || 0) - (a.disponible || 0);
+        lineas.push(`  • ${a.material}: faltan ${falta.toFixed(1)} para terminar`);
+      }
+    });
+  }
+
+  // Nota
+  const nota = document.getElementById('p2-nota') ? document.getElementById('p2-nota').value.trim() : '';
+  if (nota) {
+    lineas.push(``);
+    lineas.push(`💬 *Nota:* ${nota}`);
+  }
+
+  lineas.push(``);
+  lineas.push(`_Reportado por ${trabajador} · GO Obra_`);
+
+  return lineas.join('\n');
+}
+
 function renderConfirmacion(r) {
   document.getElementById('hdr-title').textContent = 'Avance registrado';
   document.getElementById('hdr-sub').textContent = CTX.proyecto.codigo_corto;
@@ -696,10 +792,22 @@ function renderConfirmacion(r) {
   
   if (r.completada) {
     document.getElementById('p3-title').textContent = '🎉 Misión completada';
-    document.getElementById('p3-sub').innerHTML = `${QTY} ${MISION_ACTUAL.unidad_primaria || ''} · ${misionNom}${nivelTxt}<br>El dueño ya lo ve en su gemelo`;
+    document.getElementById('p3-sub').innerHTML = `¡Excelente trabajo! ${QTY} ${MISION_ACTUAL.unidad_primaria || ''} · ${misionNom}${nivelTxt}<br><span style="color:var(--green)">✓ Registrado en el gemelo digital</span>`;
   } else {
-    document.getElementById('p3-title').textContent = 'Avance registrado';
-    document.getElementById('p3-sub').innerHTML = `${QTY} ${MISION_ACTUAL.unidad_primaria || ''} · ${misionNom}${nivelTxt}<br>El dueño ya lo ve en su gemelo`;
+    document.getElementById('p3-title').textContent = '✅ Avance registrado';
+    document.getElementById('p3-sub').innerHTML = `${QTY} ${MISION_ACTUAL.unidad_primaria || ''} · ${misionNom}${nivelTxt}<br><span style="color:var(--green)">✓ El dueño ya lo ve en su gemelo</span>`;
+  }
+
+  // Construir mensaje WA
+  WA_MSG = buildWAMsg(r);
+  WA_NUMERO = CTX.proyecto.dueno_telefono || CTX.proyecto.telefono_dueno || '';
+  const waCard = document.getElementById('p3-wa-card');
+  const waPreview = document.getElementById('p3-wa-preview');
+  if (WA_NUMERO) {
+    waPreview.textContent = WA_MSG;
+    waCard.style.display = 'block';
+  } else {
+    waCard.style.display = 'none';
   }
 
   document.getElementById('p3-antes-pct').textContent = r.pct_anterior.toFixed(0) + '%';
