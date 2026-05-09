@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GO Obra · Tablero de Tareas</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #08080e;
+  --surface: #111118;
+  --surface2: #17171f;
+  --border: #24243a;
+  --border2: #30304a;
+  --text: #e4e4f0;
+  --muted: #60607a;
+  --orange: #ff6b35;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --purple: #a855f7;
+  --blue: #3b82f6;
+  --c0: #ef4444;
+  --c1: #f59e0b;
+  --c2: #a855f7;
+  --c3: #22c55e;
+  --c4: #3b82f6;
+}
+
+body { font-family: system-ui,-apple-system,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* ── HEADER ── */
+.header {
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; background: var(--bg); z-index: 100;
+  gap: 20px; flex-wrap: wrap;
+}
+.logo { font-size: 18px; font-weight: 800; color: var(--orange); letter-spacing: -0.5px; line-height: 1; }
+.logo span { color: var(--text); }
+.logo-sub { font-size: 11px; color: var(--muted); margin-top: 3px; letter-spacing: 0.3px; }
+
+.header-stats { display: flex; gap: 20px; align-items: center; }
+.stat { text-align: right; }
+.stat-val { font-size: 22px; font-weight: 800; line-height: 1; }
+.stat-lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 1px; }
+
+/* ── GLOBAL BAR ── */
+.global-bar {
+  padding: 10px 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 14px;
+}
+.global-bar-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.progress-track { flex: 1; height: 6px; background: var(--border2); border-radius: 3px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--orange), var(--amber)); border-radius: 3px; transition: width .7s ease; }
+.global-pct { font-size: 13px; font-weight: 700; color: var(--orange); min-width: 36px; text-align: right; }
+
+/* ── ACTION BAR ── */
+.action-bar {
+  padding: 8px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; justify-content: space-between;
+  flex-wrap: wrap;
+}
+.filter-btns { display: flex; gap: 6px; }
+.filter-btn {
+  font-size: 11px; padding: 4px 12px; border-radius: 20px; cursor: pointer;
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font-family: inherit; transition: all .15s;
+}
+.filter-btn.active, .filter-btn:hover { border-color: var(--orange); color: var(--orange); background: rgba(255,107,53,.08); }
+.right-actions { display: flex; gap: 6px; }
+.btn-sm {
+  font-size: 12px; padding: 5px 14px; border-radius: 6px; cursor: pointer;
+  font-family: inherit; transition: all .15s;
+}
+.btn-ghost { background: none; border: 1px solid var(--border); color: var(--muted); }
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+.btn-accent { background: rgba(255,107,53,.12); border: 1px solid rgba(255,107,53,.35); color: var(--orange); font-weight: 600; }
+.btn-accent:hover { background: rgba(255,107,53,.2); }
+
+/* ── INSIGHT BANNER ── */
+.insight-banner {
+  margin: 20px 28px 0;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  display: flex; gap: 10px; align-items: flex-start;
+  border-left: 3px solid var(--orange);
+}
+.insight-banner.hidden { display: none; }
+.insight-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.insight-content { flex: 1; line-height: 1.5; }
+.insight-content strong { color: var(--orange); }
+
+/* ── MAIN ── */
+.main { max-width: 860px; margin: 0 auto; padding: 24px 28px; display: flex; flex-direction: column; gap: 20px; }
+
+/* ── PHASE ── */
+.phase {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.phase.filter-hidden { display: none; }
+
+.phase-header {
+  padding: 14px 18px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; user-select: none;
+  background: var(--surface);
+  border-left: 4px solid var(--phase-color, #444);
+}
+.phase-header:hover { background: var(--surface2); }
+.phase-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--phase-color, #444); flex-shrink: 0; }
+.phase-info { flex: 1; min-width: 0; }
+.phase-name { font-size: 13px; font-weight: 700; }
+.phase-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.phase-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.phase-count { font-size: 12px; font-weight: 700; }
+.mini-track { width: 64px; height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+.mini-fill { height: 100%; background: var(--phase-color, #444); transition: width .5s; }
+.chevron { color: var(--muted); font-size: 12px; transition: transform .2s; }
+.phase.collapsed .chevron { transform: rotate(-90deg); }
+.phase.collapsed .phase-tasks { display: none; }
+
+/* ── PHASE CONTEXT NOTE ── */
+.phase-context {
+  padding: 8px 18px;
+  background: rgba(255,107,53,.04);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  display: none;
+}
+.phase-context.has-note { display: flex; gap: 8px; align-items: flex-start; }
+.phase-context-edit { display: flex; gap: 8px; align-items: center; padding: 8px 18px; border-bottom: 1px solid var(--border); display: none; }
+.phase-context-edit.open { display: flex; }
+.phase-context-input { flex: 1; background: var(--surface2); border: 1px solid var(--border2); color: var(--text); padding: 6px 10px; border-radius: 6px; font-size: 12px; font-family: inherit; }
+.phase-context-input:focus { outline: none; border-color: var(--orange); }
+
+/* ── TASKS ── */
+.phase-tasks { padding: 10px; display: flex; flex-direction: column; gap: 7px; }
+
+.task {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 13px;
+  transition: border-color .2s;
+}
+.task:hover { border-color: var(--border2); }
+.task.status-completado { opacity: .55; }
+.task.status-bloqueado { border-color: rgba(239,68,68,.3); }
+.task.status-cancelado { opacity: .35; }
+.task.filter-hidden { display: none; }
+
+.task-top { display: flex; align-items: flex-start; gap: 9px; }
+.task-num { font-size: 10px; color: var(--muted); font-weight: 700; min-width: 22px; padding-top: 3px; }
+.task-body { flex: 1; min-width: 0; }
+.task-title { font-size: 13px; line-height: 1.45; }
+.task.status-completado .task-title { text-decoration: line-through; }
+.task.status-cancelado .task-title { text-decoration: line-through; }
+.task-porque { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.task-porque::before { content: "↳ "; }
+.task-meta { font-size: 10px; color: var(--muted); margin-top: 4px; }
+
+.task-controls { display: flex; align-items: center; gap: 5px; flex-shrink: 0; margin-top: 1px; }
+
+/* Status pill */
+.pill {
+  font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 20px;
+  cursor: pointer; white-space: nowrap; border: none; font-family: inherit;
+  text-transform: uppercase; letter-spacing: 0.4px; transition: filter .15s;
+}
+.pill:hover { filter: brightness(1.15); }
+.pill-pendiente   { background: rgba(96,96,122,.2);  color: var(--muted); border: 1px solid var(--border2); }
+.pill-en_progreso { background: rgba(245,158,11,.14); color: var(--amber); border: 1px solid rgba(245,158,11,.35); }
+.pill-completado  { background: rgba(34,197,94,.14);  color: var(--green); border: 1px solid rgba(34,197,94,.35); }
+.pill-bloqueado   { background: rgba(239,68,68,.14);  color: var(--red);   border: 1px solid rgba(239,68,68,.35); }
+.pill-cancelado   { background: rgba(96,96,122,.1);   color: var(--muted); border: 1px solid var(--border); }
+
+.ico-btn {
+  width: 26px; height: 26px; border-radius: 5px; border: 1px solid var(--border);
+  background: none; color: var(--muted); cursor: pointer; font-size: 13px;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.ico-btn:hover { border-color: var(--border2); color: var(--text); background: var(--surface); }
+
+/* Notes area */
+.task-notes-area {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border); display: none;
+}
+.task.notes-visible .task-notes-area { display: block; }
+
+.note-item {
+  font-size: 12px; padding: 6px 10px;
+  background: var(--surface); border-radius: 6px; margin-bottom: 5px;
+  border-left: 2px solid var(--border2); line-height: 1.45;
+}
+.note-item.type-cambio  { border-left-color: var(--amber); }
+.note-item.type-bloqueo { border-left-color: var(--red); }
+.note-item.type-plan    { border-left-color: var(--purple); }
+.note-ts { color: var(--muted); font-size: 10px; margin-top: 2px; }
+
+.note-row { display: flex; gap: 6px; margin-top: 8px; }
+.note-inp {
+  flex: 1; background: var(--surface); border: 1px solid var(--border2);
+  color: var(--text); padding: 7px 10px; border-radius: 6px; font-size: 12px; font-family: inherit;
+}
+.note-inp:focus { outline: none; border-color: var(--orange); }
+.note-save {
+  background: var(--orange); border: none; color: #fff;
+  padding: 7px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.note-save:hover { filter: brightness(1.1); }
+
+/* Add task */
+.add-task-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 12px; background: none; border: 1px dashed var(--border2);
+  border-radius: 7px; color: var(--muted); cursor: pointer; font-size: 12px;
+  font-family: inherit; width: 100%; margin-top: 2px; transition: all .15s;
+}
+.add-task-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+/* ── MODALS ── */
+.overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.72);
+  z-index: 1000; display: flex; align-items: center; justify-content: center;
+  padding: 20px; backdrop-filter: blur(3px);
+}
+.overlay.hidden { display: none; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 14px; padding: 26px; max-width: 460px; width: 100%;
+  max-height: 85vh; overflow-y: auto;
+}
+.modal-h { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+.modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+.field { margin-bottom: 15px; }
+.field label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+.inp, .ta, .sel {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border2);
+  color: var(--text); padding: 9px 11px; border-radius: 7px; font-family: inherit; font-size: 13px;
+}
+.inp:focus, .ta:focus, .sel:focus { outline: none; border-color: var(--orange); }
+.ta { resize: vertical; min-height: 72px; }
+.sel option { background: var(--surface2); }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+.btn-cancel { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); padding: 9px 20px; border-radius: 7px; cursor: pointer; font-size: 13px; font-family: inherit; }
+.btn-ok { background: var(--orange); border: none; color: #fff; padding: 9px 22px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 700; font-family: inherit; }
+.btn-ok:hover { filter: brightness(1.08); }
+.btn-cancel:hover { border-color: var(--muted); }
+
+/* Highlight helper */
+.tip {
+  font-size: 11px; color: var(--amber); background: rgba(245,158,11,.08);
+  border: 1px solid rgba(245,158,11,.2); border-radius: 6px;
+  padding: 8px 12px; margin-bottom: 14px; line-height: 1.5;
+}
+
+/* ── CHANGELOG VIEW ── */
+.changelog-view { display: none; }
+.changelog-view.visible { display: flex; flex-direction: column; gap: 0; }
+.cl-entry {
+  display: flex; gap: 12px; padding: 11px 0;
+  border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.cl-entry:last-child { border-bottom: none; }
+.cl-ts { color: var(--muted); font-size: 10px; white-space: nowrap; min-width: 80px; padding-top: 2px; }
+.cl-body { flex: 1; line-height: 1.5; }
+.cl-task { color: var(--muted); font-size: 10px; margin-bottom: 2px; }
+.cl-reason { color: var(--muted); font-style: italic; margin-top: 3px; font-size: 11px; }
+.cl-empty { color: var(--muted); font-size: 13px; padding: 24px 0; text-align: center; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 10px 18px; font-size: 12px;
+  transform: translateY(60px); opacity: 0; transition: all .28s ease;
+  max-width: 260px; pointer-events: none;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.ok  { border-color: var(--green); }
+.toast.warn{ border-color: var(--amber); }
+
+/* Responsive */
+@media (max-width:600px) {
+  .header { padding: 14px 16px; }
+  .main { padding: 16px; }
+  .action-bar { padding: 8px 16px; }
+  .global-bar { padding: 8px 16px; }
+  .insight-banner { margin: 14px 16px 0; }
+  .task-controls { flex-wrap: wrap; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <div class="logo">GO <span>Obra</span></div>
+    <div class="logo-sub">Roadmap del Producto · Tablero de Tareas</div>
+  </div>
+  <div class="header-stats">
+    <div class="stat">
+      <div class="stat-val" id="s-done" style="color:var(--green)">0</div>
+      <div class="stat-lbl">Listas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="s-prog" style="color:var(--amber)">0</div>
+      <div class="stat-lbl">En progreso</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="s-total" style="color:var(--muted)">0</div>
+      <div class="stat-lbl">Total</div>
+    </div>
+  </div>
+</div>
+
+<!-- GLOBAL PROGRESS BAR -->
+<div class="global-bar">
+  <span class="global-bar-label">Progreso general</span>
+  <div class="progress-track">
+    <div class="progress-fill" id="g-fill" style="width:0%"></div>
+  </div>
+  <span class="global-pct" id="g-pct">0%</span>
+</div>
+
+<!-- ACTION BAR -->
+<div class="action-bar">
+  <div class="filter-btns">
+    <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">Todas</button>
+    <button class="filter-btn" data-filter="en_progreso" onclick="setFilter('en_progreso',this)">En progreso</button>
+    <button class="filter-btn" data-filter="bloqueado" onclick="setFilter('bloqueado',this)">Bloqueadas</button>
+    <button class="filter-btn" data-filter="pendiente" onclick="setFilter('pendiente',this)">Pendientes</button>
+    <button class="filter-btn" data-filter="completado" onclick="setFilter('completado',this)">Completadas</button>
+  </div>
+  <div class="right-actions">
+    <button class="btn-sm btn-ghost" onclick="toggleChangelog()">📋 Historial</button>
+    <button class="btn-sm btn-ghost" onclick="doExport()">⬇ Exportar</button>
+    <button class="btn-sm btn-ghost" onclick="doImport()">⬆ Importar</button>
+    <input type="file" id="file-inp" accept=".json" style="display:none" onchange="onImport(event)">
+    <button class="btn-sm btn-accent" onclick="openNew()">+ Tarea</button>
+  </div>
+</div>
+
+<!-- INSIGHT BANNER -->
+<div class="insight-banner hidden" id="insight">
+  <div class="insight-icon" id="insight-icon">💡</div>
+  <div class="insight-content" id="insight-text"></div>
+</div>
+
+<!-- MAIN PHASES -->
+<div class="main" id="phases-root"></div>
+
+<!-- CHANGELOG PANEL -->
+<div class="main changelog-view" id="cl-panel">
+  <div class="phase" style="--phase-color:var(--muted)">
+    <div class="phase-header" style="cursor:default; border-left-color:var(--muted)">
+      <div class="phase-dot"></div>
+      <div class="phase-info"><div class="phase-name">Historial de cambios</div></div>
+      <button class="ico-btn" onclick="toggleChangelog()" style="margin-left:auto">✕</button>
+    </div>
+    <div style="padding:10px 16px">
+      <div id="cl-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Status change -->
+<div class="overlay hidden" id="m-status">
+  <div class="modal">
+    <div class="modal-h">Cambiar estado</div>
+    <div class="modal-sub" id="m-status-sub"></div>
+    <div id="m-status-warning"></div>
+    <div class="field">
+      <label>Nuevo estado</label>
+      <select class="sel" id="m-status-val">
+        <option value="pendiente">⏳ Pendiente</option>
+        <option value="en_progreso">🔄 En progreso</option>
+        <option value="completado">✅ Completado</option>
+        <option value="bloqueado">🚫 Bloqueado</option>
+        <option value="cancelado">❌ Cancelado</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Contexto / razón del cambio</label>
+      <textarea class="ta" id="m-status-reason" placeholder="¿Por qué cambió? ¿Qué aprendiste? ¿Nuevo contexto?"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeM('m-status')">Cancelar</button>
+      <button class="btn-ok" onclick="applyStatus()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit task -->
+<div class="overlay hidden" id="m-edit">
+  <div class="modal">
+    <div class="modal-h">Adaptar tarea</div>
+    <div class="modal-sub">Si el plan cambió, actualiza y registra el contexto. Queda en el historial.</div>
+    <div class="field"><label>Título</label><input class="inp" id="e-title" type="text"></div>
+    <div class="field"><label>Por qué / Impacto</label><textarea class="ta" id="e-porque"></textarea></div>
+    <div class="field">
+      <label>Mover a fase</label>
+      <select class="sel" id="e-phase"></select>
+    </div>
+    <div class="field">
+      <label>Razón del cambio <span style="color:var(--muted);font-weight:400">(recomendado)</span></label>
+      <textarea class="ta" id="e-reason" placeholder="¿Qué aprendiste o qué cambió que motivó este ajuste?"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeM('m-edit')">Cancelar</button>
+      <button class="btn-ok" onclick="applyEdit()">Actualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: New task -->
+<div class="overlay hidden" id="m-new">
+  <div class="modal">
+    <div class="modal-h">Nueva tarea</div>
+    <div class="field"><label>Título</label><input class="inp" id="n-title" placeholder="¿Qué hay que hacer?"></div>
+    <div class="field"><label>Por qué / Impacto</label><textarea class="ta" id="n-porque" placeholder="¿Por qué es importante?"></textarea></div>
+    <div class="field">
+      <label>Fase</label>
+      <select class="sel" id="n-phase"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeM('m-new')">Cancelar</button>
+      <button class="btn-ok" onclick="applyNew()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// SEED DATA
+// ─────────────────────────────────────────────
+const PHASES_DEF = [
+  { id:'fase0', nombre:'FASE 0 — Fundación',              sub:'No negociable · antes de agregar más clientes', color:'#ef4444' },
+  { id:'fase1', nombre:'FASE 1 — El diferenciador visual',sub:'Esta semana · ningún competidor lo tiene',       color:'#f59e0b' },
+  { id:'fase2', nombre:'FASE 2 — Mecánicas de progreso',  sub:'Fidelización del dueño de obra',                color:'#a855f7' },
+  { id:'fase3', nombre:'FASE 3 — Retención y valor',      sub:'El cliente que recibe esto no cancela',          color:'#22c55e' },
+  { id:'fase4', nombre:'FASE 4 — Inteligencia y escala',  sub:'GO Obra avisa antes de que el cliente lo note', color:'#3b82f6' },
+];
+
+const TASKS_DEF = [
+  { id:'00', phase:'fase0', title:'Verificar que org_id está en todas las tablas operativas',                          why:'Si falta en alguna, la RLS tiene huecos de seguridad ahora mismo' },
+  { id:'01', phase:'fase0', title:'Limpiar notas DB obsoletas (clientes.md, materiales.md, misiones.md, personal.md)', why:'Evita confusión en futuras sesiones' },
+  { id:'10', phase:'fase1', title:'Modelo 3D piso a piso en gemelo.html — edificio que se construye visualmente',      why:'Ningún competidor lo tiene' },
+  { id:'11', phase:'fase1', title:'Botón "Reclamar" cuando misión llega a 100% — animado, grande, con puntos',         why:'El momento de dopamina central del método' },
+  { id:'12', phase:'fase1', title:'Countdown a fecha estimada de cada misión',                                         why:'Ansiedad positiva = engagement diario' },
+  { id:'13', phase:'fase1', title:'Barra de progreso por misión: gris → amarillo → verde',                            why:'Percepción visual de avance' },
+  { id:'20', phase:'fase2', title:'Puntos de Avance acumulables por misión completada',                                why:'Fidelización del dueño' },
+  { id:'21', phase:'fase2', title:'Badges / logros desbloqueables (primera losa, sin retrasos, 10 fotos)',             why:'Narrativa de progreso coleccionable' },
+  { id:'22', phase:'fase2', title:'Level up del proyecto por fase constructiva',                                       why:'Onboarding continuo del dueño' },
+  { id:'23', phase:'fase2', title:'Racha de reporte — N días seguidos con avance de obreros',                         why:'Incentiva a los workers a usar reportar.html' },
+  { id:'30', phase:'fase3', title:'Resumen semanal automático — email/WhatsApp al dueño',                             why:'El cliente que recibe esto no cancela' },
+  { id:'31', phase:'fase3', title:'PDF exportable de acta de visita firmable',                                        why:'Artefacto que el dueño muestra al banco/arquitecto' },
+  { id:'32', phase:'fase3', title:'Proyección de fecha de entrega basada en velocidad real vs. plan',                 why:'Convierte datos en decisión' },
+  { id:'33', phase:'fase3', title:'Vista móvil responsive del gemelo (el dueño revisa desde el carro)',               why:'Retención de uso diario' },
+  { id:'40', phase:'fase4', title:'Alertas proactivas — si el ritmo actual no alcanza la fecha de entrega',           why:'GO Obra avisa antes de que el cliente lo note' },
+  { id:'41', phase:'fase4', title:'vw_health_proyectos conectado a alertas automáticas',                              why:'Gustavo ve todos los proyectos desde health.html' },
+  { id:'42', phase:'fase4', title:'CRM integrado — el prospecto que cierra pasa directo a onboarding',               why:'Elimina el paso manual' },
+  { id:'43', phase:'fase4', title:'Multi-cuenta real — un dueño puede tener 2+ obras en el mismo login',             why:'Escala el LTV por cliente' },
+];
+
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+const SK = 'goobra_tareas_v2';
+
+let S = { phases: [], tasks: {}, log: [] };
+
+function boot() {
+  try {
+    const saved = localStorage.getItem(SK);
+    if (saved) {
+      S = JSON.parse(saved);
+      // Migration: add any new default tasks missing from saved state
+      TASKS_DEF.forEach(t => {
+        if (!S.tasks[t.id]) {
+          S.tasks[t.id] = mkTask(t);
+        }
+      });
+      // Ensure all phases exist
+      if (!S.phases || !S.phases.length) S.phases = PHASES_DEF.map(p => ({...p, note:''}));
+    } else {
+      S.phases = PHASES_DEF.map(p => ({...p, note:''}));
+      TASKS_DEF.forEach(t => { S.tasks[t.id] = mkTask(t); });
+    }
+  } catch(e) {
+    S.phases = PHASES_DEF.map(p => ({...p, note:''}));
+    TASKS_DEF.forEach(t => { S.tasks[t.id] = mkTask(t); });
+  }
+  save();
+}
+
+function mkTask(def) {
+  return { id: def.id, phase: def.phase, title: def.title, why: def.why,
+           status: 'pendiente', notes: [], created: now() };
+}
+
+function save() { localStorage.setItem(SK, JSON.stringify(S)); }
+function now()  { return new Date().toISOString(); }
+
+// ─────────────────────────────────────────────
+// COMPUTED
+// ─────────────────────────────────────────────
+function tasksFor(phaseId) {
+  return Object.values(S.tasks)
+    .filter(t => t.phase === phaseId)
+    .sort((a,b) => a.id < b.id ? -1 : 1);
+}
+
+function phaseStats(phaseId) {
+  const tt = tasksFor(phaseId).filter(t => t.status !== 'cancelado');
+  const done = tt.filter(t => t.status === 'completado').length;
+  return { done, total: tt.length, pct: tt.length ? Math.round(done/tt.length*100) : 0 };
+}
+
+function globalStats() {
+  const all = Object.values(S.tasks).filter(t => t.status !== 'cancelado');
+  const done  = all.filter(t => t.status === 'completado').length;
+  const prog  = all.filter(t => t.status === 'en_progreso').length;
+  const blk   = all.filter(t => t.status === 'bloqueado').length;
+  const total = all.length;
+  return { done, prog, blk, total, pct: total ? Math.round(done/total*100) : 0 };
+}
+
+// ─────────────────────────────────────────────
+// RENDER
+// ─────────────────────────────────────────────
+let activeFilter = 'all';
+
+function render() {
+  renderStats();
+  renderInsight();
+  renderPhases();
+  applyFilter(activeFilter);
+}
+
+function renderStats() {
+  const g = globalStats();
+  el('s-done').textContent  = g.done;
+  el('s-prog').textContent  = g.prog;
+  el('s-total').textContent = g.total;
+  el('g-pct').textContent   = g.pct + '%';
+  el('g-fill').style.width  = g.pct + '%';
+}
+
+function renderInsight() {
+  const g = globalStats();
+  const ins = el('insight');
+  let msg = '', icon = '💡';
+
+  // Phase 0 check
+  const s0 = phaseStats('fase0');
+  if (s0.done < s0.total) {
+    icon = '🔴';
+    msg = `<strong>Fase 0 incompleta:</strong> ${s0.total - s0.done} tarea(s) de fundación pendientes. Completa estas antes de agregar más clientes.`;
+  } else if (s0.done === s0.total && s0.total > 0) {
+    // Check if phase 1 is untouched
+    const s1 = phaseStats('fase1');
+    if (s1.done === 0 && s1.pct === 0) {
+      icon = '🟢';
+      msg = `<strong>Fase 0 completa.</strong> El stack tiene base segura. ¡Es momento de construir el diferenciador visual — Fase 1!`;
+    }
+  }
+
+  // Blocked tasks warning
+  if (g.blk > 0 && !msg) {
+    icon = '🚫';
+    const blkTasks = Object.values(S.tasks).filter(t => t.status === 'bloqueado');
+    msg = `<strong>${g.blk} tarea(s) bloqueada(s):</strong> ${blkTasks.map(t => `#${t.id}`).join(', ')}. Revisar y desbloquear para mantener el ritmo.`;
+  }
+
+  // Phase completion celebrations
+  if (!msg) {
+    for (const ph of S.phases) {
+      const st = phaseStats(ph.id);
+      if (st.done === st.total && st.total > 0) {
+        // Find next phase
+        const idx = S.phases.findIndex(p => p.id === ph.id);
+        const next = S.phases[idx + 1];
+        if (next) {
+          const ns = phaseStats(next.id);
+          if (ns.done < ns.total) {
+            icon = '🏆';
+            msg = `<strong>${ph.nombre} completada.</strong> Próximo frente: <strong>${next.nombre}</strong> — ${ns.total - ns.done} tarea(s) por completar.`;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  // General progress nudge
+  if (!msg && g.total > 0) {
+    if (g.pct === 100) {
+      icon = '🎉';
+      msg = `<strong>Roadmap 100% completo.</strong> Tiempo de definir la siguiente fase de escala.`;
+    } else if (g.prog > 0) {
+      icon = '🔥';
+      msg = `<strong>${g.prog} tarea(s) en progreso.</strong> Velocidad actual: ${g.done}/${g.total} tareas completadas (${g.pct}%).`;
+    }
+  }
+
+  if (msg) {
+    el('insight-icon').textContent = icon;
+    el('insight-text').innerHTML   = msg;
+    ins.classList.remove('hidden');
+  } else {
+    ins.classList.add('hidden');
+  }
+}
+
+function renderPhases() {
+  const root = el('phases-root');
+  root.innerHTML = '';
+  S.phases.forEach(ph => root.appendChild(buildPhase(ph)));
+}
+
+function buildPhase(ph) {
+  const st = phaseStats(ph.id);
+  const tasks = tasksFor(ph.id);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'phase';
+  wrap.id = 'ph-' + ph.id;
+  wrap.style.setProperty('--phase-color', ph.color);
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.className = 'phase-header';
+  hdr.style.borderLeftColor = ph.color;
+  hdr.innerHTML = `
+    <div class="phase-dot" style="background:${ph.color}"></div>
+    <div class="phase-info">
+      <div class="phase-name">${esc(ph.nombre)}</div>
+      <div class="phase-sub">${esc(ph.sub)}</div>
+    </div>
+    <div class="phase-right">
+      <div class="mini-track"><div class="mini-fill" style="width:${st.pct}%;background:${ph.color}"></div></div>
+      <div class="phase-count" style="color:${ph.color}">${st.done}/${st.total}</div>
+      <div class="chevron">▼</div>
+    </div>`;
+  hdr.onclick = () => wrap.classList.toggle('collapsed');
+
+  // Context note
+  const ctxBar = document.createElement('div');
+  ctxBar.className = 'phase-context' + (ph.note ? ' has-note' : '');
+  ctxBar.id = 'ctx-' + ph.id;
+  if (ph.note) ctxBar.innerHTML = `<span style="color:var(--amber);margin-right:4px">📌</span> ${esc(ph.note)} <button onclick="editPhaseNote('${ph.id}')" style="margin-left:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px">editar</button>`;
+
+  // Tasks
+  const taskArea = document.createElement('div');
+  taskArea.className = 'phase-tasks';
+  tasks.forEach(t => taskArea.appendChild(buildTask(t, ph)));
+
+  // Add task + add context note buttons
+  const addRow = document.createElement('div');
+  addRow.style.cssText = 'display:flex;gap:6px;margin-top:2px';
+  const addBtn = document.createElement('button');
+  addBtn.className = 'add-task-btn';
+  addBtn.innerHTML = '+ Agregar tarea';
+  addBtn.onclick = (e) => { e.stopPropagation(); openNew(ph.id); };
+  const noteBtn = document.createElement('button');
+  noteBtn.className = 'add-task-btn';
+  noteBtn.style.maxWidth = '180px';
+  noteBtn.innerHTML = '📌 Nota de fase';
+  noteBtn.onclick = (e) => { e.stopPropagation(); editPhaseNote(ph.id); };
+  addRow.appendChild(addBtn);
+  addRow.appendChild(noteBtn);
+  taskArea.appendChild(addRow);
+
+  wrap.appendChild(hdr);
+  wrap.appendChild(ctxBar);
+  wrap.appendChild(taskArea);
+  return wrap;
+}
+
+function buildTask(t, ph) {
+  const wrap = document.createElement('div');
+  wrap.className = `task status-${t.status}`;
+  wrap.id = 'tk-' + t.id;
+  wrap.dataset.status = t.status;
+  wrap.dataset.phase  = t.phase;
+
+  const labels = { pendiente:'⏳ Pendiente', en_progreso:'🔄 En progreso',
+                   completado:'✅ Listo', bloqueado:'🚫 Bloqueado', cancelado:'❌ Cancelado' };
+
+  const notesHtml = t.notes && t.notes.length
+    ? t.notes.slice().reverse().map(n => `
+        <div class="note-item type-${n.type||''}">
+          ${esc(n.text)}
+          <div class="note-ts">${fmtDate(n.date)}</div>
+        </div>`).join('')
+    : '';
+
+  const daysAgo = t.status_changed
+    ? Math.floor((Date.now() - new Date(t.status_changed)) / 86400000)
+    : null;
+  const metaHtml = t.status === 'en_progreso' && daysAgo !== null
+    ? `<div class="task-meta">En progreso hace ${daysAgo === 0 ? 'menos de 1 día' : daysAgo + ' día(s)'}</div>` : '';
+
+  wrap.innerHTML = `
+    <div class="task-top">
+      <div class="task-num">${esc(t.id)}</div>
+      <div class="task-body">
+        <div class="task-title">${esc(t.title)}</div>
+        ${t.why ? `<div class="task-porque">${esc(t.why)}</div>` : ''}
+        ${metaHtml}
+      </div>
+      <div class="task-controls">
+        <button class="pill pill-${t.status}" onclick="openStatus('${t.id}')">${labels[t.status]||t.status}</button>
+        <button class="ico-btn" title="Nota" onclick="toggleNotes('${t.id}')">📝</button>
+        <button class="ico-btn" title="Editar/Adaptar" onclick="openEdit('${t.id}')">✏️</button>
+      </div>
+    </div>
+    <div class="task-notes-area" id="na-${t.id}">
+      <div id="nl-${t.id}">${notesHtml}</div>
+      <div class="note-row">
+        <input class="note-inp" id="ni-${t.id}" placeholder="Nota, decisión, contexto…"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){saveNote('${t.id}');event.preventDefault();}">
+        <button class="note-save" onclick="saveNote('${t.id}')">↵ Guardar</button>
+      </div>
+    </div>`;
+
+  if (t.notes && t.notes.length) wrap.classList.add('notes-visible');
+  return wrap;
+}
+
+// ─────────────────────────────────────────────
+// FILTER
+// ─────────────────────────────────────────────
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilter(f);
+}
+
+function applyFilter(f) {
+  document.querySelectorAll('.task').forEach(t => {
+    const show = f === 'all' || t.dataset.status === f;
+    t.classList.toggle('filter-hidden', !show);
+  });
+  // Hide/show phases that have no visible tasks
+  document.querySelectorAll('.phase').forEach(ph => {
+    const visible = [...ph.querySelectorAll('.task')].some(t => !t.classList.contains('filter-hidden'));
+    ph.classList.toggle('filter-hidden', !visible);
+  });
+}
+
+// ─────────────────────────────────────────────
+// STATUS MODAL
+// ─────────────────────────────────────────────
+let _sid = null;
+
+function openStatus(id) {
+  const t = S.tasks[id];
+  _sid = id;
+  el('m-status-sub').textContent = `#${id} — ${t.title.substring(0,70)}${t.title.length>70?'…':''}`;
+  el('m-status-val').value  = t.status;
+  el('m-status-reason').value = '';
+  el('m-status-warning').innerHTML = '';
+  openM('m-status');
+  // Smart warning: if trying to complete while Phase 0 not done and this is not Phase 0
+  if (t.phase !== 'fase0') {
+    const s0 = phaseStats('fase0');
+    if (s0.done < s0.total) {
+      el('m-status-warning').innerHTML = `<div class="tip">⚠️ Fase 0 aún incompleta (${s0.done}/${s0.total}). Considera terminar la fundación primero.</div>`;
+    }
+  }
+}
+
+function applyStatus() {
+  if (!_sid) return;
+  const t = S.tasks[_sid];
+  const nv     = el('m-status-val').value;
+  const reason = el('m-status-reason').value.trim();
+  const prev   = t.status;
+
+  t.status = nv;
+  t.status_changed = now();
+
+  addLog({ taskId: _sid, action: 'status', from: prev, to: nv, reason });
+
+  if (reason) {
+    const type = nv === 'bloqueado' ? 'bloqueo' : nv === 'completado' ? 'plan' : 'cambio';
+    t.notes.push({ text: reason, date: now(), type });
+  }
+
+  save(); closeM('m-status'); render();
+
+  if (nv === 'completado') {
+    toast('🎉 Completada', 'ok');
+    checkPhaseDone(t.phase);
+  } else {
+    toast(`Estado → ${nv}`, '');
+  }
+}
+
+// ─────────────────────────────────────────────
+// EDIT MODAL
+// ─────────────────────────────────────────────
+let _eid = null;
+
+function openEdit(id) {
+  const t = S.tasks[id];
+  _eid = id;
+  el('e-title').value  = t.title;
+  el('e-porque').value = t.why || '';
+  el('e-reason').value = '';
+  populatePhaseSel('e-phase', t.phase);
+  openM('m-edit');
+}
+
+function applyEdit() {
+  if (!_eid) return;
+  const t      = S.tasks[_eid];
+  const title  = el('e-title').value.trim();
+  const why    = el('e-porque').value.trim();
+  const phase  = el('e-phase').value;
+  const reason = el('e-reason').value.trim();
+
+  if (!title) return;
+
+  const changes = [];
+  if (t.title !== title)  changes.push('título');
+  if (t.why   !== why)    changes.push('impacto');
+  if (t.phase !== phase)  changes.push(`movida a ${phase}`);
+
+  t.title = title; t.why = why; t.phase = phase;
+
+  if (changes.length || reason) {
+    addLog({ taskId: _eid, action: 'edit', note: changes.length ? 'Editado: ' + changes.join(', ') : 'Editada', reason });
+    if (reason) t.notes.push({ text: `Adaptación: ${reason}`, date: now(), type: 'plan' });
+  }
+
+  save(); closeM('m-edit'); render();
+  toast('Tarea actualizada', 'ok');
+}
+
+// ─────────────────────────────────────────────
+// NEW TASK MODAL
+// ─────────────────────────────────────────────
+let _nphase = null;
+
+function openNew(phaseId) {
+  _nphase = phaseId || S.phases[0].id;
+  el('n-title').value  = '';
+  el('n-porque').value = '';
+  populatePhaseSel('n-phase', _nphase);
+  openM('m-new');
+  setTimeout(() => el('n-title').focus(), 80);
+}
+
+function applyNew() {
+  const title = el('n-title').value.trim();
+  const why   = el('n-porque').value.trim();
+  const phase = el('n-phase').value;
+  if (!title) return;
+
+  // Generate unique id
+  const existing = Object.keys(S.tasks).map(k => k);
+  let id; let n = 100;
+  do { id = phase.replace('fase','') + n++; } while (existing.includes(id));
+
+  S.tasks[id] = { id, phase, title, why, status: 'pendiente', notes: [], created: now() };
+  addLog({ taskId: id, action: 'created', note: title });
+
+  save(); closeM('m-new'); render();
+  toast('Tarea agregada', 'ok');
+  setTimeout(() => el('ph-'+phase)?.scrollIntoView({ behavior:'smooth', block:'start' }), 100);
+}
+
+// ─────────────────────────────────────────────
+// NOTES
+// ─────────────────────────────────────────────
+function toggleNotes(id) {
+  const tk = el('tk-'+id);
+  tk.classList.toggle('notes-visible');
+  if (tk.classList.contains('notes-visible')) el('ni-'+id)?.focus();
+}
+
+function saveNote(id) {
+  const inp  = el('ni-'+id);
+  const text = inp.value.trim();
+  if (!text) return;
+  S.tasks[id].notes.push({ text, date: now(), type: '' });
+  addLog({ taskId: id, action: 'note', note: text });
+  inp.value = '';
+  save();
+  el('nl-'+id).innerHTML = S.tasks[id].notes.slice().reverse()
+    .map(n => `<div class="note-item type-${n.type||''}">${esc(n.text)}<div class="note-ts">${fmtDate(n.date)}</div></div>`).join('');
+  el('tk-'+id).classList.add('notes-visible');
+  toast('Nota guardada', 'ok');
+}
+
+// ─────────────────────────────────────────────
+// PHASE NOTE
+// ─────────────────────────────────────────────
+function editPhaseNote(phaseId) {
+  const ph = S.phases.find(p => p.id === phaseId);
+  const val = prompt(`Nota de contexto para "${ph.nombre}":\n(Ej: "Decidimos priorizar esta fase porque...")`, ph.note || '');
+  if (val === null) return; // cancelled
+  const old = ph.note;
+  ph.note = val.trim();
+  if (old !== ph.note) {
+    addLog({ taskId: phaseId, action: 'phase_note', note: ph.note });
+    save(); render();
+    toast('Nota de fase actualizada', 'ok');
+  }
+}
+
+// ─────────────────────────────────────────────
+// CHANGELOG
+// ─────────────────────────────────────────────
+let _clOpen = false;
+
+function toggleChangelog() {
+  _clOpen = !_clOpen;
+  el('phases-root').style.display = _clOpen ? 'none' : '';
+  el('insight').style.display     = _clOpen ? 'none' : '';
+  const panel = el('cl-panel');
+  if (_clOpen) {
+    panel.classList.add('visible');
+    renderChangelog();
+  } else {
+    panel.classList.remove('visible');
+  }
+}
+
+function renderChangelog() {
+  const list = el('cl-list');
+  if (!S.log || !S.log.length) {
+    list.innerHTML = '<div class="cl-empty">Aún no hay cambios registrados.</div>';
+    return;
+  }
+
+  const statusLabels = { pendiente:'Pendiente', en_progreso:'En progreso',
+                         completado:'✅ Completado', bloqueado:'🚫 Bloqueado', cancelado:'❌ Cancelado' };
+  const actionLabels = { status:'Cambio de estado', edit:'Edición', note:'Nota agregada',
+                         created:'Tarea creada', phase_note:'Nota de fase' };
+
+  list.innerHTML = S.log.slice(0, 150).map(e => {
+    const task = S.tasks[e.taskId];
+    const taskLabel = task ? `#${e.taskId} — ${task.title.substring(0,55)}` : `#${e.taskId}`;
+    let body = '';
+    if (e.action === 'status') {
+      body = `Estado: <strong>${statusLabels[e.from]||e.from}</strong> → <strong>${statusLabels[e.to]||e.to}</strong>`;
+    } else if (e.action === 'note') {
+      body = `📝 "${esc(e.note?.substring(0,80))}"`;
+    } else if (e.action === 'edit') {
+      body = `✏️ ${esc(e.note||'Editada')}`;
+    } else if (e.action === 'created') {
+      body = `➕ Nueva tarea: "${esc(e.note?.substring(0,60))}"`;
+    } else if (e.action === 'phase_note') {
+      body = `📌 Nota de fase: "${esc(e.note?.substring(0,60))}"`;
+    } else {
+      body = esc(e.note || e.action);
+    }
+    return `<div class="cl-entry">
+      <div class="cl-ts">${fmtDate(e.date)}</div>
+      <div class="cl-body">
+        <div class="cl-task">${esc(taskLabel)}</div>
+        <div>${body}</div>
+        ${e.reason ? `<div class="cl-reason">"${esc(e.reason)}"</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─────────────────────────────────────────────
+// EXPORT / IMPORT
+// ─────────────────────────────────────────────
+function doExport() {
+  const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), {
+    href: url, download: `goobra_tareas_${new Date().toISOString().slice(0,10)}.json`
+  });
+  a.click(); URL.revokeObjectURL(url);
+  toast('Exportado', 'ok');
+}
+
+function doImport() { el('file-inp').click(); }
+
+function onImport(ev) {
+  const file = ev.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = e => {
+    try {
+      const d = JSON.parse(e.target.result);
+      if (d.tasks && d.phases && d.log !== undefined) {
+        S = d; save(); render();
+        toast('Datos importados', 'ok');
+      } else { toast('Archivo no válido', 'warn'); }
+    } catch { toast('Error al importar', 'warn'); }
+  };
+  r.readAsText(file);
+  ev.target.value = '';
+}
+
+// ─────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────
+function checkPhaseDone(phaseId) {
+  const st = phaseStats(phaseId);
+  if (st.done === st.total && st.total > 0) {
+    setTimeout(() => toast(`🏆 ${S.phases.find(p=>p.id===phaseId)?.nombre} completada`, 'ok'), 500);
+  }
+}
+
+function addLog(entry) {
+  S.log = S.log || [];
+  S.log.unshift({ date: now(), ...entry });
+  if (S.log.length > 300) S.log = S.log.slice(0, 300);
+}
+
+function populatePhaseSel(selId, currentPhase) {
+  const sel = el(selId);
+  sel.innerHTML = S.phases.map(p =>
+    `<option value="${p.id}" ${p.id===currentPhase?'selected':''}>${esc(p.nombre)}</option>`
+  ).join('');
+}
+
+function openM(id)  { el(id).classList.remove('hidden'); }
+function closeM(id) { el(id).classList.add('hidden'); }
+function el(id)     { return document.getElementById(id); }
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), now2 = Date.now(), diff = now2 - d;
+  const m = Math.floor(diff/60000), h = Math.floor(diff/3600000), day = Math.floor(diff/86400000);
+  if (m < 1) return 'Ahora';
+  if (m < 60) return `Hace ${m}m`;
+  if (h < 24) return `Hace ${h}h`;
+  if (day < 7) return `Hace ${day}d`;
+  return d.toLocaleDateString('es-CO', { day:'2-digit', month:'short', year: day>365 ? 'numeric' : undefined });
+}
+
+let _toastT;
+function toast(msg, type='') {
+  const t = el('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(_toastT);
+  _toastT = setTimeout(() => { t.className = 'toast'; }, 2800);
+}
+
+// ─────────────────────────────────────────────
+// MODAL UX
+// ─────────────────────────────────────────────
+['m-status','m-edit','m-new'].forEach(id => {
+  el(id).addEventListener('click', e => { if (e.target === el(id)) closeM(id); });
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') ['m-status','m-edit','m-new'].forEach(closeM);
+});
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+boot();
+render();
+</script>
+</body>
+</html>
