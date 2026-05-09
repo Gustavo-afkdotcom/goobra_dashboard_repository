@@ -352,6 +352,7 @@ body { font-family: system-ui,-apple-system,sans-serif; background: var(--bg); c
     <button class="btn-sm btn-ghost" onclick="doExport()">⬇ Exportar</button>
     <button class="btn-sm btn-ghost" onclick="doImport()">⬆ Importar</button>
     <input type="file" id="file-inp" accept=".json" style="display:none" onchange="onImport(event)">
+    <button class="btn-sm btn-ghost" onclick="openClaudeSession()">⚡ Sesión Claude</button>
     <button class="btn-sm btn-accent" onclick="openNew()">+ Tarea</button>
   </div>
 </div>
@@ -441,6 +442,36 @@ body { font-family: system-ui,-apple-system,sans-serif; background: var(--bg); c
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeM('m-new')">Cancelar</button>
       <button class="btn-ok" onclick="applyNew()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Sesión Claude -->
+<div class="overlay hidden" id="m-claude">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-h">⚡ Registrar sesión de Claude</div>
+    <div class="modal-sub">Pega el JSON que Claude generó. Se aplicarán los cambios de estado, notas e historial automáticamente.</div>
+    <div class="field">
+      <label>JSON de sesión</label>
+      <textarea class="ta" id="claude-inp" style="min-height:180px;font-family:monospace;font-size:11px" placeholder='{
+  "goobra_session": true,
+  "fecha": "2026-05-09",
+  "titulo": "Nombre de la sesión",
+  "resumen": "Qué se hizo en esta sesión",
+  "cambios": [
+    {
+      "id": "00",
+      "estado": "completado",
+      "nota": "Contexto de lo que se logró"
+    }
+  ]
+}'></textarea>
+    </div>
+    <div id="claude-preview" style="display:none;margin-bottom:14px"></div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeM('m-claude')">Cancelar</button>
+      <button class="btn-ok" id="claude-btn-preview" onclick="previewClaudeSession()">Vista previa</button>
+      <button class="btn-ok" id="claude-btn-apply" style="display:none;background:var(--green)" onclick="applyClaudeSession()">Aplicar cambios</button>
     </div>
   </div>
 </div>
@@ -1072,13 +1103,117 @@ function toast(msg, type='') {
 }
 
 // ─────────────────────────────────────────────
+// SESIÓN CLAUDE
+// ─────────────────────────────────────────────
+let _claudeData = null;
+
+function openClaudeSession() {
+  el('claude-inp').value = '';
+  el('claude-preview').style.display = 'none';
+  el('claude-preview').innerHTML = '';
+  el('claude-btn-preview').style.display = '';
+  el('claude-btn-apply').style.display = 'none';
+  _claudeData = null;
+  openM('m-claude');
+  setTimeout(() => el('claude-inp').focus(), 80);
+}
+
+function previewClaudeSession() {
+  const raw = el('claude-inp').value.trim();
+  const prev = el('claude-preview');
+  el('claude-btn-apply').style.display = 'none';
+  _claudeData = null;
+
+  let d;
+  try { d = JSON.parse(raw); } catch(e) {
+    prev.innerHTML = `<div class="tip" style="color:var(--red);border-color:var(--red)">❌ JSON inválido: ${esc(e.message)}</div>`;
+    prev.style.display = '';
+    return;
+  }
+
+  if (!d.goobra_session || !Array.isArray(d.cambios)) {
+    prev.innerHTML = `<div class="tip" style="color:var(--red);border-color:var(--red)">❌ Formato incorrecto. Debe tener <code>goobra_session: true</code> y array <code>cambios</code>.</div>`;
+    prev.style.display = '';
+    return;
+  }
+
+  const statusLabels = { pendiente:'⏳ Pendiente', en_progreso:'🔄 En progreso',
+                         completado:'✅ Completado', bloqueado:'🚫 Bloqueado', cancelado:'❌ Cancelado' };
+
+  let html = `<div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;font-size:12px">`;
+  html += `<div style="font-weight:700;margin-bottom:6px;color:var(--orange)">${esc(d.titulo||'Sesión sin título')} <span style="color:var(--muted);font-weight:400">${esc(d.fecha||'')}</span></div>`;
+  if (d.resumen) html += `<div style="color:var(--muted);margin-bottom:10px;line-height:1.5">${esc(d.resumen)}</div>`;
+
+  let errores = 0;
+  d.cambios.forEach(c => {
+    const t = S.tasks[c.id];
+    if (!t) {
+      html += `<div style="color:var(--red);padding:4px 0">❌ Tarea #${esc(c.id)} no existe</div>`;
+      errores++;
+      return;
+    }
+    const prev_label = statusLabels[t.status] || t.status;
+    const next_label = statusLabels[c.estado] || c.estado || '(sin cambio)';
+    html += `<div style="padding:5px 0;border-top:1px solid var(--border)">`;
+    html += `<span style="color:var(--muted)">#${esc(c.id)}</span> ${esc(t.title.substring(0,50))}`;
+    if (c.estado && c.estado !== t.status) {
+      html += `<br><span style="color:var(--muted);font-size:11px">${prev_label} → <strong style="color:var(--green)">${next_label}</strong></span>`;
+    }
+    if (c.nota) html += `<br><span style="color:var(--muted);font-size:11px">↳ ${esc(c.nota.substring(0,80))}</span>`;
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  prev.innerHTML = html;
+  prev.style.display = '';
+
+  if (errores === 0) {
+    _claudeData = d;
+    el('claude-btn-apply').style.display = '';
+  }
+}
+
+function applyClaudeSession() {
+  if (!_claudeData) return;
+  const d = _claudeData;
+  const ts = new Date().toISOString();
+
+  const sessionNote = `[${d.titulo||'Sesión Claude'} · ${d.fecha||ts.slice(0,10)}] ${d.resumen||''}`.trim();
+  addLog({ taskId: 'session', action: 'session', note: sessionNote });
+
+  d.cambios.forEach(c => {
+    const t = S.tasks[c.id];
+    if (!t) return;
+    const prev = t.status;
+
+    if (c.estado && c.estado !== t.status) {
+      t.status = c.estado;
+      t.status_changed = ts;
+      addLog({ taskId: c.id, action: 'status', from: prev, to: c.estado, reason: c.nota || '' });
+    }
+
+    if (c.nota) {
+      const type = c.estado === 'bloqueado' ? 'bloqueo' : c.estado === 'completado' ? 'plan' : 'cambio';
+      t.notes.push({ text: c.nota, date: ts, type });
+    }
+
+    if (c.estado === 'completado') checkPhaseDone(t.phase);
+  });
+
+  save();
+  closeM('m-claude');
+  render();
+  toast(`⚡ Sesión aplicada — ${d.cambios.length} tarea(s) actualizada(s)`, 'ok');
+}
+
+// ─────────────────────────────────────────────
 // MODAL UX
 // ─────────────────────────────────────────────
-['m-status','m-edit','m-new'].forEach(id => {
+['m-status','m-edit','m-new','m-claude'].forEach(id => {
   el(id).addEventListener('click', e => { if (e.target === el(id)) closeM(id); });
 });
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') ['m-status','m-edit','m-new'].forEach(closeM);
+  if (e.key === 'Escape') ['m-status','m-edit','m-new','m-claude'].forEach(closeM);
 });
 
 // ─────────────────────────────────────────────
