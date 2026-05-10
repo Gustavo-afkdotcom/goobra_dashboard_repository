@@ -2138,8 +2138,12 @@ async function generarPresupuestoIA(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({prompt})
     });
-    const json=await res.json();
-    if(!json.ok) throw new Error(json.error||'Error desconocido');
+    const rawText=await res.text();
+    if(!rawText) throw new Error(`n8n devolvió respuesta vacía (status ${res.status})`);
+    let json;
+    try{ json=JSON.parse(rawText); }
+    catch(e){ throw new Error(`Respuesta no es JSON válido: ${rawText.slice(0,200)}`); }
+    if(!json.ok) throw new Error(json.error||'Error en n8n: '+JSON.stringify(json).slice(0,200));
     BUDGET_GENERADO=json.budget;
     mostrarDiffPresupuesto(BUDGET_GENERADO);
   }catch(e){
