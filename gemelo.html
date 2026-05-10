@@ -229,16 +229,16 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   </div>
 </div>
 <nav class="tabs">
-  <div class="tab on" onclick="sw('dashboard',this)">📊 Dashboard</div>
-  <div class="tab" onclick="sw('alertas',this)">🔔 Alertas</div>
-  <div class="tab" onclick="sw('misiones',this)">✅ Misiones</div>
   <div class="tab" onclick="sw('obra',this)">🏢 Obra</div>
   <div class="tab" onclick="sw('cronograma',this)">📅 Cronograma</div>
+  <div class="tab" onclick="sw('presupuesto',this)">💰 Presupuesto</div>
+  <div class="tab" onclick="sw('misiones',this)">✅ Misiones</div>
+  <div class="tab" onclick="sw('alertas',this)">🔔 Alertas</div>
   <div class="tab" onclick="sw('materiales',this)">📦 Materiales</div>
   <div class="tab" onclick="sw('equipo',this)">👷 Equipo</div>
-  <div class="tab" onclick="sw('modelo',this)">🏗 Modelo 3D</div>
   <div class="tab" onclick="sw('visita',this)">👁 Visita</div>
-  <div class="tab" onclick="sw('presupuesto',this)">💰 Presupuesto</div>
+  <div class="tab on" onclick="sw('dashboard',this)">📊 Tablero</div>
+  <div class="tab" onclick="sw('modelo',this)">🏗 3D</div>
 </nav>
 <div class="main">
 
@@ -1120,7 +1120,7 @@ async function loadAlertas(){
   document.getElementById('alertas-l').innerHTML=catOrder.filter(cat=>cats[cat]).map(cat=>`
     <div style="margin-bottom:.75rem">
       <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:6px">${catIco[cat]||''} ${cat}</div>
-      ${cats[cat].map(a=>`<div class="al ${a.t==='r'?'r':'a'}" ${a.accion?`style="cursor:pointer" onclick="sw('${a.accion}',document.querySelectorAll('.tab')[${['dashboard','alertas','misiones','obra','cronograma','materiales','equipo','modelo','visita','presupuesto'].indexOf(a.accion)}])"`:''}><span class="al-ico">${a.i}</span><div><div class="al-t">${a.ti}</div><div class="al-d">${a.d}</div></div></div>`).join('')}
+      ${cats[cat].map(a=>`<div class="al ${a.t==='r'?'r':'a'}" ${a.accion?`style="cursor:pointer" onclick="sw('${a.accion}',document.querySelectorAll('.tab')[${['obra','cronograma','presupuesto','misiones','alertas','materiales','equipo','visita','dashboard','modelo'].indexOf(a.accion)}])"`:''}><span class="al-ico">${a.i}</span><div><div class="al-t">${a.ti}</div><div class="al-d">${a.d}</div></div></div>`).join('')}
     </div>`).join('');
 }
 
