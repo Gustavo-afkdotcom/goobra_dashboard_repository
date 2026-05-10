@@ -2140,9 +2140,21 @@ async function generarPresupuestoIA(){
     });
     const rawText=await res.text();
     if(!rawText) throw new Error(`n8n devolvió respuesta vacía (status ${res.status})`);
-    // Extraer JSON del texto de Claude
-    const match=rawText.match(/```json\s*([\s\S]*?)```/)||rawText.match(/(\{[\s\S]*\})/);
-    if(!match) throw new Error(`No se encontró JSON en la respuesta: ${rawText.slice(0,300)}`);
+
+    // Extraer texto de Claude — soporta múltiples formatos de respuesta
+    let claudeText=rawText;
+    try{
+      const parsed=JSON.parse(rawText);
+      // Formato Anthropic directo: {content:[{type:'text',text:'...'}]}
+      if(parsed.content?.[0]?.text) claudeText=parsed.content[0].text;
+      // Formato wrapped: {text:'...'}
+      else if(parsed.text) claudeText=parsed.text;
+      // Formato {ok,budget} de sesiones anteriores
+      else if(parsed.budget) { BUDGET_GENERADO=parsed.budget; mostrarDiffPresupuesto(BUDGET_GENERADO); return; }
+    }catch(e){ /* rawText ya es el texto de Claude */ }
+
+    const match=claudeText.match(/```json\s*([\s\S]*?)```/)||claudeText.match(/(\{[\s\S]*?\})\s*$/s);
+    if(!match) throw new Error(`No se encontró JSON en la respuesta: ${claudeText.slice(0,300)}`);
     let budget;
     try{ budget=JSON.parse(match[1]); }
     catch(e){ throw new Error(`JSON inválido: ${match[1].slice(0,200)}`); }
