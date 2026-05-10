@@ -2083,7 +2083,11 @@ async function generarPresupuestoIA(){
   try{
     const res=await fetch(`${SB}/functions/v1/generar-presupuesto`,{
       method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SK},
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+SK,
+        'apikey':SK
+      },
       body:JSON.stringify({proyecto:PROJ, params, acabados})
     });
     const json=await res.json();
