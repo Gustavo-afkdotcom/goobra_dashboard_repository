@@ -570,6 +570,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div class="sc" id="pre-sem-card"><div class="sl">% Desviación</div><div class="sv" id="pre-pct">—</div></div>
   </div>
 
+  <!-- Banner + botón personalizar -->
+  <div id="pre-personalizar-banner"></div>
+
   <!-- Desglose por etapa -->
   <div class="card" style="margin-bottom:.75rem">
     <div class="ch">Desglose por etapa
@@ -2057,9 +2060,168 @@ function renderPersonalizacion(){
   document.getElementById('pre-tracking-wrap').style.display='none';
 }
 
-function generarPresupuestoIA(){
-  // Sesión 3 — integración Claude
-  alert('Generación IA — próxima sesión');
+let BUDGET_GENERADO=null;
+
+async function generarPresupuestoIA(){
+  const btn=document.getElementById('pre-btn-generar');
+  btn.disabled=true;
+  btn.textContent='Generando presupuesto…';
+
+  // Recoger parámetros
+  const params={
+    unidades: document.getElementById('pre-p-unidades')?.value||0,
+    locales:  document.getElementById('pre-p-locales')?.value||0,
+    parqueos: document.getElementById('pre-p-parqueo')?.value||0,
+    depositos:document.getElementById('pre-p-depositos')?.value||0,
+  };
+  const acabados=ACABADOS_CATS.map(c=>({
+    id:c.id, nombre:c.nombre, unidad:c.unidad,
+    precio:PRE_SELECCION[c.id]?.precio||0,
+    gama:PRE_SELECCION[c.id]?.gama||null
+  }));
+
+  try{
+    const res=await fetch(`${SB}/functions/v1/generar-presupuesto`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SK},
+      body:JSON.stringify({proyecto:PROJ, params, acabados})
+    });
+    const json=await res.json();
+    if(!json.ok) throw new Error(json.error||'Error desconocido');
+    BUDGET_GENERADO=json.budget;
+    mostrarDiffPresupuesto(BUDGET_GENERADO);
+  }catch(e){
+    btn.disabled=false;
+    btn.textContent='Generar presupuesto con IA →';
+    document.getElementById('pre-wizard-wrap').insertAdjacentHTML('beforeend',
+      `<div style="background:var(--red-d);border:1px solid rgba(192,57,43,.3);border-radius:7px;padding:10px 14px;margin-top:.75rem;font-size:12px;color:var(--red)">Error: ${e.message}</div>`);
+  }
+}
+
+function mostrarDiffPresupuesto(budget){
+  const presupuestoActual=parseFloat(PROJ.presupuesto_total)||0;
+  const totalNuevo=budget.total;
+  const diff=totalNuevo-presupuestoActual;
+  const pctDiff=presupuestoActual>0?((diff/presupuestoActual)*100):null;
+  const enRango=budget.en_rango;
+
+  const diffColor=diff>0?'var(--red)':diff<0?'var(--green)':'var(--text3)';
+  const diffSign=diff>0?'+':'';
+  const m2Color=enRango?'var(--green)':'var(--amber)';
+
+  const etapasRows=(budget.etapas||[]).map(e=>{
+    const ant=(parseFloat(PROJ.presupuesto_total)||0)*({prel:.03,mvt:.05,cim:.12,estr:.35,mamp:.18,redes:.10,acab:.12,urb:.03,entr:.02}[e.etapa_id]||0);
+    const nvo=e.monto;
+    const d=nvo-ant;
+    const dc=d>0?'var(--red)':d<0?'var(--green)':'var(--text3)';
+    return`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:7px 8px;font-weight:500">${e.nombre}</td>
+      <td style="padding:7px 8px;text-align:right;color:var(--text3)">${presupuestoActual?fmt(ant):'—'}</td>
+      <td style="padding:7px 8px;text-align:right">${fmt(nvo)}</td>
+      <td style="padding:7px 8px;text-align:right;color:${dc};font-weight:600">${presupuestoActual?(d===0?'—':(diffSign.replace('+',d>0?'+':''))+fmt(Math.abs(d))):'nuevo'}</td>
+    </tr>`;
+  }).join('');
+
+  const tiposRows=Object.entries(budget.resumen_tipos||{}).map(([k,v])=>`
+    <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px">
+      <span style="color:var(--text2);text-transform:capitalize">${k.replace('_',' ')}</span>
+      <span style="font-family:'DM Mono',monospace">${fmt(v)}</span>
+    </div>`).join('');
+
+  document.getElementById('pre-wizard-wrap').innerHTML=`
+    <div class="pre-wizard">
+      <!-- Header diff -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.875rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem">
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:4px">Presupuesto generado</div>
+            <div style="font-family:'DM Mono',monospace;font-size:2rem;font-weight:700;color:var(--text)">${fmt(totalNuevo)}</div>
+            <div style="font-size:11px;margin-top:4px;color:${m2Color}">${fmt(budget.total_m2)}/m² · ${enRango?'dentro del rango Bogotá':'fuera del rango típico Bogotá ($1.8M–$3.2M/m²)'}</div>
+          </div>
+          ${presupuestoActual?`<div style="text-align:right">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:4px">vs presupuesto anterior</div>
+            <div style="font-family:'DM Mono',monospace;font-size:1.4rem;font-weight:700;color:${diffColor}">${diffSign}${fmt(Math.abs(diff))}</div>
+            ${pctDiff!==null?`<div style="font-size:10px;color:${diffColor}">${diffSign}${pctDiff.toFixed(1)}%</div>`:''}
+          </div>`:''}
+        </div>
+        <div style="margin-top:.875rem;padding-top:.875rem;border-top:1px solid var(--border);font-size:11px;color:var(--text2);line-height:1.6">${budget.explicacion||''}</div>
+      </div>
+
+      <!-- Desglose por tipo -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.875rem">
+        <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:.75rem">Desglose por tipo de costo</div>
+        ${tiposRows}
+      </div>
+
+      <!-- Tabla etapas con diff -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.875rem">
+        <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:.75rem">Desglose por etapa</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr>
+            <th style="text-align:left;padding:5px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Etapa</th>
+            <th style="text-align:right;padding:5px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Anterior</th>
+            <th style="text-align:right;padding:5px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Nuevo</th>
+            <th style="text-align:right;padding:5px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Diferencia</th>
+          </tr></thead>
+          <tbody>${etapasRows}</tbody>
+        </table>
+      </div>
+
+      <!-- Nombre de versión + guardar -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.875rem">
+        <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:.5rem">Nombre de esta versión</div>
+        <input id="pre-version-nombre" type="text" value="v1 — IA ${new Date().toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'})}"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:7px 10px;font-size:12px;box-sizing:border-box;margin-bottom:.75rem"/>
+        <div style="display:flex;gap:8px">
+          <button onclick="guardarPresupuestoIA()" style="flex:1;padding:11px;background:var(--amber);color:#000;border:none;border-radius:7px;font-family:'Syne',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">Guardar presupuesto</button>
+          <button onclick="renderPersonalizacion()" style="padding:11px 16px;background:none;border:1px solid var(--border2);color:var(--text3);border-radius:7px;font-size:11px;cursor:pointer">← Volver</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function guardarPresupuestoIA(){
+  if(!BUDGET_GENERADO||!PID) return;
+  const nombre=document.getElementById('pre-version-nombre')?.value||'v1 — IA';
+  const btn=event.target;
+  btn.disabled=true; btn.textContent='Guardando…';
+
+  try{
+    // Contar versiones existentes
+    const {data:versionesAnt}=await db.from('presupuesto_versiones').select('version').eq('proyecto_id',PID).order('version',{ascending:false}).limit(1);
+    const nextV=(versionesAnt?.[0]?.version||0)+1;
+
+    // Guardar versión
+    await db.from('presupuesto_versiones').insert({
+      proyecto_id:PID, org_id:PROJ.org_id,
+      version:nextV, nombre_version:nombre,
+      monto_total:BUDGET_GENERADO.total,
+      notas:BUDGET_GENERADO.explicacion,
+      created_at:new Date().toISOString()
+    });
+
+    // Guardar etapas
+    const etapasInsert=(BUDGET_GENERADO.etapas||[]).map(e=>({
+      proyecto_id:PID, org_id:PROJ.org_id,
+      etapa_id:e.etapa_id, monto:e.monto,
+      version_presupuesto:nextV
+    }));
+    if(etapasInsert.length) await db.from('presupuesto_etapas').upsert(etapasInsert,{onConflict:'proyecto_id,etapa_id'});
+
+    // Actualizar presupuesto_total en proyectos
+    await db.from('proyectos').update({presupuesto_total:BUDGET_GENERADO.total}).eq('id',PID);
+    PROJ.presupuesto_total=BUDGET_GENERADO.total;
+
+    // Volver al tracking
+    BUDGET_GENERADO=null;
+    PRE_SELECCION={};
+    document.getElementById('pre-wizard-wrap').innerHTML='';
+    document.getElementById('pre-tracking-wrap').style.display='';
+    await loadPresupuesto();
+  }catch(e){
+    btn.disabled=false; btn.textContent='Guardar presupuesto';
+    alert('Error al guardar: '+e.message);
+  }
 }
 const fmt=v=>v===null||v===undefined?'—':Math.abs(v)>=1e9?'$'+(v/1e9).toFixed(2)+'B':Math.abs(v)>=1e6?'$'+(v/1e6).toFixed(1)+'M':Math.abs(v)>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+Math.round(v).toLocaleString('es-CO');
 
@@ -2078,6 +2240,21 @@ async function loadPresupuesto(){
   }
   document.getElementById('pre-wizard-wrap').innerHTML='';
   document.getElementById('pre-tracking-wrap').style.display='';
+
+  // Banner: presupuesto manual sin versiones IA → invitar a personalizar
+  const bannerEl=document.getElementById('pre-personalizar-banner');
+  if(bannerEl){
+    if(!versiones?.length && presupuesto>0){
+      bannerEl.innerHTML=`<div style="background:var(--amber-d);border:1px solid var(--amber-b);border-radius:8px;padding:12px 16px;margin-bottom:.875rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap">
+        <div style="font-size:11px;color:var(--text2)"><strong style="color:var(--amber)">Presupuesto ingresado manualmente.</strong> Personalízalo con IA para obtener un desglose detallado por etapa, materiales y mano de obra.</div>
+        <button onclick="renderPersonalizacion()" style="background:var(--amber);color:#000;border:none;padding:7px 16px;border-radius:6px;font-family:'Syne',sans-serif;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer;white-space:nowrap">Personalizar con IA</button>
+      </div>`;
+    } else {
+      bannerEl.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:.75rem">
+        <button onclick="renderPersonalizacion()" style="background:none;border:1px solid var(--border2);color:var(--text3);padding:5px 14px;border-radius:6px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer">Recalcular con IA</button>
+      </div>`;
+    }
+  }
 
   const totalDesv=(desv||[]).reduce((s,d)=>s+parseFloat(d.monto||0),0);
   const sobrec=(desv||[]).filter(d=>d.monto>0).reduce((s,d)=>s+d.monto,0);
