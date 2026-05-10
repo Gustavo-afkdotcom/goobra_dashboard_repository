@@ -132,7 +132,7 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:'DM
 
 <script>
 const SB = 'https://muyezsssnzlxavchabum.supabase.co';
-const SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
+const SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4'; // service_role — no compartir
 const db = supabase.createClient(SB, SK);
 
 let PROJECTS = [];
@@ -325,6 +325,8 @@ async function loadAll() {
 db.channel('obs-eventos')
   .on('postgres_changes', {event:'INSERT', schema:'public', table:'observabilidad_eventos'}, loadEvents)
   .subscribe();
+
+loadAll();
 
 // Refresh cada 30s
 setInterval(loadAll, 30000);
