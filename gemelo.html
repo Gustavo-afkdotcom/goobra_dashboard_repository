@@ -2153,11 +2153,15 @@ async function generarPresupuestoIA(){
       else if(parsed.budget) { BUDGET_GENERADO=parsed.budget; mostrarDiffPresupuesto(BUDGET_GENERADO); return; }
     }catch(e){ /* rawText ya es el texto de Claude */ }
 
-    const match=claudeText.match(/```json\s*([\s\S]*?)```/)||claudeText.match(/(\{[\s\S]*?\})\s*$/s);
-    if(!match) throw new Error(`No se encontró JSON en la respuesta: ${claudeText.slice(0,300)}`);
+    // Intentar extraer JSON — greedy para capturar el objeto completo
     let budget;
-    try{ budget=JSON.parse(match[1]); }
-    catch(e){ throw new Error(`JSON inválido: ${match[1].slice(0,200)}`); }
+    const m1=claudeText.match(/```json\s*([\s\S]*?)```/);
+    const m2=claudeText.match(/(\{[\s\S]*\})/);
+    const jsonStr=(m1?.[1]||m2?.[1]||'').trim();
+    if(!jsonStr) throw new Error(`No se encontró JSON en la respuesta: ${claudeText.slice(0,300)}`);
+    try{ budget=JSON.parse(jsonStr); }
+    catch(e){ throw new Error(`JSON inválido (${e.message}): ${jsonStr.slice(0,300)}`); }
+    if(!budget.total) throw new Error(`Presupuesto sin total. Campos recibidos: ${Object.keys(budget).join(', ')}`);
     BUDGET_GENERADO=budget;
     mostrarDiffPresupuesto(BUDGET_GENERADO);
   }catch(e){
