@@ -2140,11 +2140,13 @@ async function generarPresupuestoIA(){
     });
     const rawText=await res.text();
     if(!rawText) throw new Error(`n8n devolvió respuesta vacía (status ${res.status})`);
-    let json;
-    try{ json=JSON.parse(rawText); }
-    catch(e){ throw new Error(`Respuesta no es JSON válido: ${rawText.slice(0,200)}`); }
-    if(!json.ok) throw new Error(json.error||'Error en n8n: '+JSON.stringify(json).slice(0,200));
-    BUDGET_GENERADO=json.budget;
+    // Extraer JSON del texto de Claude
+    const match=rawText.match(/```json\s*([\s\S]*?)```/)||rawText.match(/(\{[\s\S]*\})/);
+    if(!match) throw new Error(`No se encontró JSON en la respuesta: ${rawText.slice(0,300)}`);
+    let budget;
+    try{ budget=JSON.parse(match[1]); }
+    catch(e){ throw new Error(`JSON inválido: ${match[1].slice(0,200)}`); }
+    BUDGET_GENERADO=budget;
     mostrarDiffPresupuesto(BUDGET_GENERADO);
   }catch(e){
     btn.disabled=false;
