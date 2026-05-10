@@ -185,6 +185,43 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .empty{text-align:center;padding:2rem;color:var(--text3);font-size:12px}
 .spin{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto .5rem}
 @keyframes sp{to{transform:rotate(360deg)}}
+/* PRESUPUESTO WIZARD */
+.pre-wizard{max-width:760px}
+.pre-section-title{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--amber);margin:1.25rem 0 .75rem}
+.pre-param-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1rem}
+.pre-param-item{display:flex;flex-direction:column;gap:4px}
+.pre-param-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+.pre-param-val{font-size:13px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace}
+.pre-param-input{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:5px;padding:6px 10px;font-size:13px;font-family:'DM Mono',monospace;width:100%;box-sizing:border-box}
+.pre-param-input:focus{outline:none;border-color:var(--amber)}
+.pre-cat{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.625rem}
+.pre-cat-name{font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text);margin-bottom:.75rem}
+.pre-gama-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.625rem}
+.pre-gama-card{border-radius:6px;border:1.5px solid var(--border);background:var(--bg3);cursor:pointer;overflow:hidden;transition:border-color .15s,background .15s;position:relative}
+.pre-gama-card:hover{border-color:var(--border2)}
+.pre-gama-bar{height:3px;width:100%}
+.pre-gama-body{padding:.625rem .75rem .5rem}
+.pre-gama-label{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:3px}
+.pre-gama-desc{font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.4}
+.pre-gama-rango{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+.pre-gama-check{position:absolute;top:6px;right:7px;font-size:10px;opacity:0}
+.pre-gama-card.sel{background:var(--bg2)}
+.pre-gama-card.sel .pre-gama-check{opacity:1}
+.pre-gama-eco .pre-gama-bar{background:#27ae60}
+.pre-gama-med .pre-gama-bar{background:#2980b9}
+.pre-gama-alt .pre-gama-bar{background:var(--amber)}
+.pre-gama-eco.sel{border-color:#27ae60}
+.pre-gama-eco.sel .pre-gama-label{color:#27ae60}
+.pre-gama-med.sel{border-color:#2980b9}
+.pre-gama-med.sel .pre-gama-label{color:#2980b9}
+.pre-gama-alt.sel{border-color:var(--amber)}
+.pre-gama-alt.sel .pre-gama-label{color:var(--amber)}
+.pre-exact-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text3)}
+.pre-exact-input{background:var(--bg3);border:1px solid var(--border2);color:var(--amber);border-radius:4px;padding:4px 8px;font-size:11px;font-family:'DM Mono',monospace;width:130px}
+.pre-exact-input:focus{outline:none;border-color:var(--amber)}
+.pre-gen-btn{width:100%;padding:12px;background:var(--amber);color:#000;border:none;border-radius:8px;font-family:'Syne',sans-serif;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;margin-top:1.25rem;transition:opacity .15s}
+.pre-gen-btn:disabled{opacity:.35;cursor:not-allowed}
+@media(max-width:700px){.pre-param-grid{grid-template-columns:repeat(2,1fr)}.pre-gama-grid{grid-template-columns:1fr}}
 /* VISITA FOTO */
 .vis-foto-btn{width:32px;height:32px;border-radius:5px;border:1px solid var(--border2);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:all .15s}
 .vis-foto-btn:hover{border-color:var(--amber);background:var(--amber-d)}
@@ -524,6 +561,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 <!-- PRESUPUESTO -->
 <div class="tp" id="tp-presupuesto">
+  <div id="pre-wizard-wrap"></div>
+  <div id="pre-tracking-wrap">
   <div class="sg" style="grid-template-columns:repeat(4,1fr)">
     <div class="sc"><div class="sl">Presupuesto base</div><div class="sv" id="pre-base">—</div></div>
     <div class="sc r"><div class="sl">Desviaciones</div><div class="sv" id="pre-desv">—</div><div class="ss" id="pre-desv-cnt">0 registradas</div></div>
@@ -552,6 +591,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div class="ch">Historial de cambios al presupuesto</div>
     <div class="cb" id="pre-versiones"><div class="empty"><div class="spin"></div></div></div>
   </div>
+  </div><!-- /pre-tracking-wrap -->
 </div>
 
 <!-- MODAL EDITAR PRESUPUESTO -->
@@ -1875,6 +1915,152 @@ async function guardarWorker(){
 
 // ── PRESUPUESTO ──
 const PRE_PASSWORD='goobra2026';
+
+// ── PRESUPUESTO WIZARD ──
+const ACABADOS_CATS=[
+  {id:'piso_social',      nombre:'Piso área social',              unidad:'m²',        gamas:[
+    {id:'eco',label:'Económica',desc:'Baldosa 30×30 genérica',       min:25000, max:45000},
+    {id:'med',label:'Media',    desc:'Porcelanato 60×60 nacional',   min:55000, max:95000},
+    {id:'alt',label:'Alta',     desc:'Porcelanato 90×90 importado',  min:110000,max:220000}]},
+  {id:'piso_banos',       nombre:'Piso y paredes baños',          unidad:'m²',        gamas:[
+    {id:'eco',label:'Económica',desc:'Cerámica 25×40',               min:20000, max:40000},
+    {id:'med',label:'Media',    desc:'Porcelanato 45×90',            min:50000, max:90000},
+    {id:'alt',label:'Alta',     desc:'Mármol o piedra natural',      min:120000,max:280000}]},
+  {id:'piso_cocina',      nombre:'Piso cocina',                   unidad:'m²',        gamas:[
+    {id:'eco',label:'Económica',desc:'Cerámica antideslizante',      min:22000, max:42000},
+    {id:'med',label:'Media',    desc:'Porcelanato mate 60×60',       min:50000, max:85000},
+    {id:'alt',label:'Alta',     desc:'Porcelanato imitación concreto',min:95000,max:180000}]},
+  {id:'techo',            nombre:'Techo / cielo raso',            unidad:'m²',        gamas:[
+    {id:'eco',label:'Económica',desc:'Pintura sobre concreto',       min:15000, max:25000},
+    {id:'med',label:'Media',    desc:'Drywall liso',                 min:45000, max:75000},
+    {id:'alt',label:'Alta',     desc:'Drywall con detalles / acústico',min:80000,max:150000}]},
+  {id:'iluminacion',      nombre:'Iluminación',                   unidad:'por punto', gamas:[
+    {id:'eco',label:'Económica',desc:'Puntos básicos PVC',           min:80000, max:150000},
+    {id:'med',label:'Media',    desc:'Downlights + dimmers',         min:180000,max:320000},
+    {id:'alt',label:'Alta',     desc:'Diseño + automatización',      min:350000,max:700000}]},
+  {id:'puertas',          nombre:'Puertas interiores',            unidad:'por hoja',  gamas:[
+    {id:'eco',label:'Económica',desc:'HDF enchapado',                min:280000,max:450000},
+    {id:'med',label:'Media',    desc:'MDF lacado',                   min:500000,max:850000},
+    {id:'alt',label:'Alta',     desc:'Madera sólida',                min:900000,max:2200000}]},
+  {id:'ventaneria',       nombre:'Ventanería / carpintería metálica',unidad:'m²',     gamas:[
+    {id:'eco',label:'Económica',desc:'Aluminio estándar',            min:280000,max:420000},
+    {id:'med',label:'Media',    desc:'Aluminio línea arquitectónica',min:450000,max:750000},
+    {id:'alt',label:'Alta',     desc:'Termopanel',                   min:800000,max:1500000}]},
+  {id:'fachada',          nombre:'Fachada',                       unidad:'m²',        gamas:[
+    {id:'eco',label:'Económica',desc:'Pintura + estuco',             min:35000, max:65000},
+    {id:'med',label:'Media',    desc:'Enchape cerámico',             min:85000, max:150000},
+    {id:'alt',label:'Alta',     desc:'Fachada ventilada / piedra',   min:180000,max:380000}]},
+  {id:'cocina',           nombre:'Cocina (mesón + muebles)',      unidad:'por unidad',gamas:[
+    {id:'eco',label:'Económica',desc:'Granito + muebles MDF',        min:1200000,max:2000000},
+    {id:'med',label:'Media',    desc:'Cuarzo + lacado',              min:2500000,max:4500000},
+    {id:'alt',label:'Alta',     desc:'Mármol + madera sólida',       min:5000000,max:12000000}]},
+  {id:'banos',            nombre:'Baños (aparatos + grifería)',   unidad:'por baño',  gamas:[
+    {id:'eco',label:'Económica',desc:'Corona básico',                min:800000, max:1500000},
+    {id:'med',label:'Media',    desc:'Corona / FV línea media',      min:1800000,max:3500000},
+    {id:'alt',label:'Alta',     desc:'Grival / Hansgrohe',           min:4000000,max:12000000}]}
+];
+
+let PRE_SELECCION={};
+
+function fmtRango(min,max){
+  const f=v=>v>=1000000?'$'+(v/1000000).toFixed(1)+'M':v>=1000?'$'+(v/1000).toFixed(0)+'K':'$'+v;
+  return f(min)+' – '+f(max);
+}
+
+function selectGama(catId,gamaId){
+  const cat=ACABADOS_CATS.find(c=>c.id===catId);
+  const gama=cat.gamas.find(g=>g.id===gamaId);
+  PRE_SELECCION[catId]={gama:gamaId,precio:Math.round((gama.min+gama.max)/2)};
+  cat.gamas.forEach(g=>{
+    const card=document.getElementById('pgc-'+catId+'-'+g.id);
+    if(card) card.classList.toggle('sel',g.id===gamaId);
+  });
+  const inp=document.getElementById('pep-'+catId);
+  if(inp) inp.value=PRE_SELECCION[catId].precio;
+  actualizarBtnGenerar();
+}
+
+function updatePrecioExacto(catId,val){
+  if(!PRE_SELECCION[catId]) PRE_SELECCION[catId]={gama:null,precio:0};
+  PRE_SELECCION[catId].precio=parseInt(val)||0;
+}
+
+function actualizarBtnGenerar(){
+  const btn=document.getElementById('pre-btn-generar');
+  if(!btn) return;
+  const completo=ACABADOS_CATS.every(c=>PRE_SELECCION[c.id]?.precio>0);
+  btn.disabled=!completo;
+  btn.textContent=completo?'Generar presupuesto con IA →':'Selecciona todos los acabados para continuar';
+}
+
+function renderPersonalizacion(){
+  const p=PROJ;
+  const fr=parseFloat(p.frente)||0, fo=parseFloat(p.fondo)||0;
+  const pi=parseInt(p.numero_pisos)||0, so=parseInt(p.sotanos)||0;
+  const m2=parseInt(p.m2_por_piso)||Math.round(fr*fo*0.72)||0;
+  const SIST_L={'porticos':'Pórticos','ipe':'IPE','mixto':'Mixto','muros_vaciados':'Muros vaciados','mamposteria_estructural':'Mampostería estructural','metalica':'Metálica'};
+
+  const paramsHtml=`
+    <div class="pre-section-title">Datos del proyecto</div>
+    <div class="pre-param-grid" style="grid-template-columns:repeat(6,1fr)">
+      <div class="pre-param-item"><div class="pre-param-label">Sistema</div><div class="pre-param-val">${SIST_L[p.sistema_constructivo]||p.sistema_constructivo||'—'}</div></div>
+      <div class="pre-param-item"><div class="pre-param-label">Pisos</div><div class="pre-param-val">${pi}${so?' +'+so+'S':''}</div></div>
+      <div class="pre-param-item"><div class="pre-param-label">M² / piso</div><div class="pre-param-val">${m2}</div></div>
+      <div class="pre-param-item"><div class="pre-param-label">M² total</div><div class="pre-param-val">${m2*pi}</div></div>
+      <div class="pre-param-item"><div class="pre-param-label">Frente</div><div class="pre-param-val">${fr}m</div></div>
+      <div class="pre-param-item"><div class="pre-param-label">Fondo</div><div class="pre-param-val">${fo}m</div></div>
+    </div>
+    <div class="pre-section-title">Unidades del proyecto</div>
+    <div class="pre-param-grid">
+      <div class="pre-param-item"><div class="pre-param-label">Aptos / casas</div><input class="pre-param-input" id="pre-p-unidades" type="number" min="0" placeholder="Ej: 8" oninput="actualizarBtnGenerar()"/></div>
+      <div class="pre-param-item"><div class="pre-param-label">Locales comerciales</div><input class="pre-param-input" id="pre-p-locales" type="number" min="0" placeholder="Ej: 2"/></div>
+      <div class="pre-param-item"><div class="pre-param-label">Parqueaderos</div><input class="pre-param-input" id="pre-p-parqueo" type="number" min="0" placeholder="Ej: 10"/></div>
+      <div class="pre-param-item"><div class="pre-param-label">Depósitos</div><input class="pre-param-input" id="pre-p-depositos" type="number" min="0" placeholder="Ej: 4"/></div>
+    </div>`;
+
+  const acabadosHtml=ACABADOS_CATS.map(cat=>`
+    <div class="pre-cat">
+      <div class="pre-cat-name">${cat.nombre} <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0;font-family:'DM Sans',sans-serif;font-size:10px">— ${cat.unidad}</span></div>
+      <div class="pre-gama-grid">
+        ${cat.gamas.map(g=>`
+          <div class="pre-gama-card pre-gama-${g.id}" id="pgc-${cat.id}-${g.id}" onclick="selectGama('${cat.id}','${g.id}')">
+            <div class="pre-gama-bar"></div>
+            <div class="pre-gama-body">
+              <div class="pre-gama-label">${g.label}</div>
+              <div class="pre-gama-desc">${g.desc}</div>
+              <div class="pre-gama-rango">${fmtRango(g.min,g.max)}</div>
+            </div>
+            <div class="pre-gama-check">✓</div>
+          </div>`).join('')}
+      </div>
+      <div class="pre-exact-row">
+        <span>O ingresa precio exacto:</span>
+        <input class="pre-exact-input" id="pep-${cat.id}" type="number" placeholder="precio"
+          oninput="updatePrecioExacto('${cat.id}',this.value);actualizarBtnGenerar()"/>
+        <span>${cat.unidad}</span>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('pre-wizard-wrap').innerHTML=`
+    <div class="pre-wizard">
+      <div style="background:var(--amber-d);border:1px solid var(--amber-b);border-radius:8px;padding:12px 16px;margin-bottom:1rem;font-size:11px;color:var(--text2)">
+        <strong style="color:var(--amber)">Personaliza el presupuesto</strong> — Selecciona la gama de acabados para cada categoría o ingresa el precio exacto si ya tienes cotización. Luego la IA genera un presupuesto desglosado por etapa.
+      </div>
+      ${paramsHtml}
+      <div class="pre-section-title">Acabados</div>
+      ${acabadosHtml}
+      <button class="pre-gen-btn" id="pre-btn-generar" disabled onclick="generarPresupuestoIA()">
+        Selecciona todos los acabados para continuar
+      </button>
+    </div>`;
+
+  document.getElementById('pre-tracking-wrap').style.display='none';
+}
+
+function generarPresupuestoIA(){
+  // Sesión 3 — integración Claude
+  alert('Generación IA — próxima sesión');
+}
 const fmt=v=>v===null||v===undefined?'—':Math.abs(v)>=1e9?'$'+(v/1e9).toFixed(2)+'B':Math.abs(v)>=1e6?'$'+(v/1e6).toFixed(1)+'M':Math.abs(v)>=1e3?'$'+(v/1e3).toFixed(0)+'K':'$'+Math.round(v).toLocaleString('es-CO');
 
 async function loadPresupuesto(){
@@ -1884,6 +2070,14 @@ async function loadPresupuesto(){
   const {data:desv}=await db.from('desviaciones').select('*').eq('proyecto_id',PID).order('created_at',{ascending:false});
   const {data:etapas}=await db.from('presupuesto_etapas').select('*').eq('proyecto_id',PID).order('etapa_id');
   const {data:versiones}=await db.from('presupuesto_versiones').select('*').eq('proyecto_id',PID).order('version',{ascending:false});
+
+  // Sin presupuesto → mostrar wizard de personalización
+  if(!versiones?.length && !presupuesto){
+    renderPersonalizacion();
+    return;
+  }
+  document.getElementById('pre-wizard-wrap').innerHTML='';
+  document.getElementById('pre-tracking-wrap').style.display='';
 
   const totalDesv=(desv||[]).reduce((s,d)=>s+parseFloat(d.monto||0),0);
   const sobrec=(desv||[]).filter(d=>d.monto>0).reduce((s,d)=>s+d.monto,0);
