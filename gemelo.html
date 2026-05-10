@@ -2130,7 +2130,7 @@ async function generarPresupuestoIA(){
     const {data:materiales}=await db.from('materiales_catalogo').select('codigo,nombre,unidad,tipo,precio_referencia').limit(120);
     const precios=[];
 
-    const prompt=buildPromptPresupuesto(PROJ,params,acabados,materiales||[],precios||[]);
+    const prompt=await buildPromptPresupuesto(PROJ,params,acabados,materiales||[],precios||[]);
 
     const N8N_PRESUPUESTO='https://goobra.app.n8n.cloud/webhook/presupuesto-ia';
     const res=await fetch(N8N_PRESUPUESTO,{
