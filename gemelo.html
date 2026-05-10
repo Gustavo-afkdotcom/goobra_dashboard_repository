@@ -2126,9 +2126,9 @@ async function generarPresupuestoIA(){
   }));
 
   try{
-    // Traer catálogo de materiales y precios desde Supabase
+    // Traer catálogo de materiales desde Supabase
     const {data:materiales}=await db.from('materiales_catalogo').select('codigo,nombre,unidad,tipo,precio_referencia').limit(120);
-    const {data:precios}=await db.from('precios_reales').select('material_codigo,precio').order('fecha',{ascending:false}).limit(80);
+    const precios=[];
 
     const prompt=buildPromptPresupuesto(PROJ,params,acabados,materiales||[],precios||[]);
 
