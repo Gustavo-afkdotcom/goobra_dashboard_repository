@@ -2062,6 +2062,51 @@ function renderPersonalizacion(){
 
 let BUDGET_GENERADO=null;
 
+async function buildPromptPresupuesto(proyecto,params,acabados,materiales,precios){
+  const preciosMap={};
+  precios.forEach(p=>{preciosMap[p.material_codigo]=p.precio;});
+  const matStr=materiales.slice(0,60).map(m=>
+    `${m.codigo} | ${m.nombre} | ${m.unidad} | $${(preciosMap[m.codigo]||m.precio_referencia||0).toLocaleString('es-CO')}`
+  ).join('\n');
+  const fr=parseFloat(proyecto.frente)||12, fo=parseFloat(proyecto.fondo)||24;
+  const pi=parseInt(proyecto.numero_pisos)||0, so=parseInt(proyecto.sotanos)||0;
+  const m2p=parseInt(proyecto.m2_por_piso)||Math.round(fr*fo*0.72);
+  const m2t=m2p*pi;
+  const acabadosStr=acabados.map(a=>`${a.nombre}: $${parseInt(a.precio).toLocaleString('es-CO')} / ${a.unidad}`).join('\n');
+  return `Eres experto en presupuestos de construcción en Bogotá, Colombia (2026).
+
+PROYECTO:
+- Sistema: ${proyecto.sistema_constructivo} | Pisos: ${pi}${so?' +'+so+'S':''} | M²/piso: ${m2p} | M² total: ${m2t}
+- Frente: ${fr}m | Fondo: ${fo}m
+- Unidades vivienda: ${params.unidades||0} | Locales: ${params.locales||0} | Parqueaderos: ${params.parqueos||0} | Depósitos: ${params.depositos||0}
+
+ACABADOS (precio que el cliente espera gastar):
+${acabadosStr}
+
+CATÁLOGO DE MATERIALES (precios COP 2026):
+${matStr}
+
+Genera un presupuesto detallado. Incluye materiales, mano de obra, equipos, imprevistos (12%), honorarios (5%).
+Benchmark Bogotá: $1.800.000–$3.200.000/m² construido.
+
+Responde ÚNICAMENTE con este JSON, sin texto adicional:
+\`\`\`json
+{
+  "total": <COP>,
+  "total_m2": <total/m2t>,
+  "benchmark_min": 1800000,
+  "benchmark_max": 3200000,
+  "en_rango": <boolean>,
+  "explicacion": "<2-3 oraciones sobre distribución del costo>",
+  "etapas": [
+    {"etapa_id":"<prel|mvt|cim|estr|mamp|redes|acab|urb|entr>","nombre":"<nombre>","monto":<COP>,"pct":<0-1>,
+     "items":[{"nombre":"<item>","cantidad":<n>,"unidad":"<u>","precio_unitario":<COP>,"subtotal":<COP>,"tipo":"<material|mano_obra|equipo|imprevisto|honorario>"}]}
+  ],
+  "resumen_tipos":{"materiales":<COP>,"mano_obra":<COP>,"equipos":<COP>,"imprevistos":<COP>,"honorarios":<COP>}
+}
+\`\`\``;
+}
+
 async function generarPresupuestoIA(){
   const btn=document.getElementById('pre-btn-generar');
   btn.disabled=true;
@@ -2081,14 +2126,17 @@ async function generarPresupuestoIA(){
   }));
 
   try{
-    const res=await fetch(`${SB}/functions/v1/generar-presupuesto`,{
+    // Traer catálogo de materiales y precios desde Supabase
+    const {data:materiales}=await db.from('materiales_catalogo').select('codigo,nombre,unidad,tipo,precio_referencia').limit(120);
+    const {data:precios}=await db.from('precios_reales').select('material_codigo,precio').order('fecha',{ascending:false}).limit(80);
+
+    const prompt=buildPromptPresupuesto(PROJ,params,acabados,materiales||[],precios||[]);
+
+    const N8N_PRESUPUESTO='https://goobra.app.n8n.cloud/webhook/presupuesto-ia';
+    const res=await fetch(N8N_PRESUPUESTO,{
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Bearer '+SK,
-        'apikey':SK
-      },
-      body:JSON.stringify({proyecto:PROJ, params, acabados})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({prompt})
     });
     const json=await res.json();
     if(!json.ok) throw new Error(json.error||'Error desconocido');
