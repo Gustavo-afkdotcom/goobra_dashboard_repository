@@ -2165,7 +2165,7 @@ async function generarPresupuestoIA(){
     if(!jsonStr) throw new Error(`No se encontró JSON en la respuesta: ${claudeText.slice(0,300)}`);
     try{ budget=JSON.parse(jsonStr); }
     catch(e){ throw new Error(`JSON inválido (${e.message}): ${jsonStr.slice(0,300)}`); }
-    if(!budget.total) throw new Error(`Presupuesto sin total. Campos recibidos: ${Object.keys(budget).join(', ')}`);
+    if(!budget.total) throw new Error(`Presupuesto sin total. Keys: ${Object.keys(budget).join(',')} | claudeText[0:200]: ${claudeText.slice(0,200)}`);
     BUDGET_GENERADO=budget;
     mostrarDiffPresupuesto(BUDGET_GENERADO);
   }catch(e){
