@@ -2144,13 +2144,17 @@ async function generarPresupuestoIA(){
     // Extraer texto de Claude — soporta múltiples formatos de respuesta
     let claudeText=rawText;
     try{
-      const parsed=JSON.parse(rawText);
+      let parsed=JSON.parse(rawText);
+      // n8n puede doble-serializar: si parsed es string, parsear de nuevo
+      if(typeof parsed==='string') parsed=JSON.parse(parsed);
       // Formato Anthropic directo: {content:[{type:'text',text:'...'}]}
       if(parsed.content?.[0]?.text) claudeText=parsed.content[0].text;
       // Formato wrapped: {text:'...'}
       else if(parsed.text) claudeText=parsed.text;
       // Formato {ok,budget} de sesiones anteriores
       else if(parsed.budget) { BUDGET_GENERADO=parsed.budget; mostrarDiffPresupuesto(BUDGET_GENERADO); return; }
+      // Fallback: dump para diagnóstico
+      else claudeText=JSON.stringify(parsed);
     }catch(e){ /* rawText ya es el texto de Claude */ }
 
     // Intentar extraer JSON — greedy para capturar el objeto completo
