@@ -711,9 +711,21 @@ async function activar(){
     const frente=parseFloat(g('c-frente'))||10;
     const fondo=parseFloat(g('c-fondo'))||20;
 
-    // Proyecto — intentar crear; si ya existe (23505 nombre+dir) reutilizar el existente
+    // 1. Organización — necesaria para org_id (NOT NULL en todas las tablas)
+    const orgResp=await supa('organizaciones',{method:'POST',body:JSON.stringify({
+      nombre:g('c-nombre')||'Sin nombre',
+      codigo_corto:codigo.slice(0,6),
+      plan:'launch',
+      contacto_nombre:g('c-dueno'),
+      contacto_tel:g('c-wa'),
+      ciudad:g('c-ciudad')||'Bogotá',
+    })});
+    const orgId=orgResp?.[0]?.id;
+    if(!orgId) throw new Error('No se pudo crear la organización');
+
+    // 2. Proyecto — intentar crear; si ya existe (23505 nombre+dir) reutilizar el existente
     const proyPayload={
-      id:pid,nombre:g('c-nombre'),direccion:g('c-dir'),
+      id:pid,org_id:orgId,nombre:g('c-nombre'),direccion:g('c-dir'),
       codigo_corto:codigo,dueno_wa:g('c-wa'),
       numero_pisos:pisos,sotanos:parseInt(g('c-sotanos'))||0,
       frente,fondo,altura_piso:2.8,
@@ -728,17 +740,18 @@ async function activar(){
       presupuesto_total:parseFloat(g('c-presupuesto'))||0,
       estado:'activo',moneda:'COP',
     };
-    let pidFinal=pid, codigoFinal=codigo;
+    let pidFinal=pid, codigoFinal=codigo, orgIdFinal=orgId;
     try{
       await supa('proyectos',{method:'POST',body:JSON.stringify(proyPayload)});
     }catch(dupErr){
       let dp={};try{dp=JSON.parse(dupErr.message);}catch(_){}
       if(dp.code==='23505'&&(dp.details||'').includes('nombre_normalizado')){
-        // Proyecto duplicado — recuperar el existente
-        const existentes=await supa('proyectos?nombre=eq.'+encodeURIComponent(g('c-nombre')||'')+'&direccion=eq.'+encodeURIComponent(g('c-dir')||'')+'&select=id,codigo_corto');
+        // Proyecto duplicado — recuperar el existente (con org_id)
+        const existentes=await supa('proyectos?nombre=eq.'+encodeURIComponent(g('c-nombre')||'')+'&direccion=eq.'+encodeURIComponent(g('c-dir')||'')+'&select=id,codigo_corto,org_id');
         if(existentes&&existentes.length>0){
           pidFinal=existentes[0].id;
           codigoFinal=existentes[0].codigo_corto||codigo;
+          orgIdFinal=existentes[0].org_id||orgId;
         }else{
           throw dupErr;
         }
@@ -747,31 +760,33 @@ async function activar(){
       }
     }
 
-    // Token
-    await supa('proyecto_tokens',{method:'POST',body:JSON.stringify({proyecto_id:pidFinal,token,activo:true})});
+    // 3. Token
+    await supa('proyecto_tokens',{method:'POST',body:JSON.stringify({
+      id:pidFinal+'_tok1',proyecto_id:pidFinal,org_id:orgIdFinal,token,activo:true
+    })});
 
-    // Worker residente — guardamos la respuesta para obtener el codigo_corto generado por el trigger
+    // 4. Worker residente — guardamos la respuesta para obtener el codigo_corto generado por el trigger
     const rn=g('c-res-nombre');const rt=g('c-res-tel');
     let workerCodigo=null;
     if(rn&&rt){
       try{
         const workerResp=await supa('workers',{method:'POST',body:JSON.stringify({
-          proyecto_id:pidFinal,nombre:rn,rol:'res',numero_wa:rt,telegram_id:rt,activo:true
+          proyecto_id:pidFinal,org_id:orgIdFinal,nombre:rn,rol:'res',numero_wa:rt,telegram_id:rt,activo:true
         })});
         workerCodigo = workerResp?.[0]?.codigo_corto || null;
       }catch(e){console.warn('No se pudo crear worker:',e);}
     }
 
-    // Presupuesto
+    // 5. Presupuesto
     const pres=parseFloat(g('c-presupuesto'))||0;
     if(pres>0){
       await supa('presupuesto_versiones',{method:'POST',body:JSON.stringify({
-        proyecto_id:pidFinal,version:1,presupuesto_total:pres,motivo_cambio:'Presupuesto inicial'
+        proyecto_id:pidFinal,org_id:orgIdFinal,version:1,presupuesto_total:pres,motivo_cambio:'Presupuesto inicial'
       })});
     }
 
-    // Misiones básicas
-    await generarMisionesBásicas(pidFinal,{frente,fondo,pisos,sistema:g('c-sistema')||'porticos',
+    // 6. Misiones básicas
+    await generarMisionesBásicas(pidFinal,orgIdFinal,{frente,fondo,pisos,sistema:g('c-sistema')||'porticos',
       fecha_inicio:g('c-inicio'),presupuesto_total:pres});
 
     // Links
@@ -815,7 +830,7 @@ async function activar(){
   }
 }
 
-async function generarMisionesBásicas(pid,p){
+async function generarMisionesBásicas(pid,orgId,p){
   const TMPL={
     prel:[{id:'limpieza_descapote',u:'m2',m:p.frente*p.fondo,d:3},{id:'cerramiento_provisional',u:'ml',m:2*(p.frente+p.fondo),d:5}],
     mvt:[{id:'excavacion_mecanica',u:'m3',m:p.frente*p.fondo*2,d:8}],
@@ -938,6 +953,7 @@ async function generarMisionesBásicas(pid,p){
       rows.push({
         id:`${pid}_${eid}_${m.id}__${i}`,
         proyecto_id:pid,
+        org_id:orgId,
         etapa_id:eid,
         mision_id:m.id,
         nivel:null,
@@ -973,6 +989,7 @@ async function generarMisionesBásicas(pid,p){
       rows.push({
         id:`${pid}_estr_${m.id}_piso ${pp}_${i}`,
         proyecto_id:pid,
+        org_id:orgId,
         etapa_id:'estr',
         mision_id:m.id,
         nivel:`piso ${pp}`,
