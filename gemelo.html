@@ -30,6 +30,20 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 .hdr-btn{font-size:10px;padding:4px 9px;border-radius:5px;border:1px solid var(--border2);color:var(--text3);background:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
 .hdr-btn:hover{border-color:var(--amber);color:var(--amber)}
+/* SWITCHER */
+.switcher{position:relative;display:none}
+.sw-btn{font-size:10px;padding:4px 9px;border-radius:5px;border:1px solid var(--border2);color:var(--text3);background:none;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.sw-btn:hover{border-color:var(--amber);color:var(--amber)}
+.sw-count{background:var(--amber);color:#000;border-radius:20px;padding:0 5px;font-size:9px;font-weight:800;margin-left:3px}
+.sw-drop{position:absolute;top:calc(100% + 8px);right:0;background:var(--bg2);border:1px solid var(--border2);border-radius:8px;min-width:220px;z-index:500;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.sw-drop.open{display:block}
+.sw-hdr{padding:8px 14px;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)}
+.sw-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
+.sw-item:last-child{border:none}
+.sw-item:hover{background:var(--bg3)}
+.sw-item.cur{background:var(--amber-d)}
+.sw-name{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px}
+.sw-cod{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
 .tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 1.25rem;display:flex;position:fixed;top:48px;left:0;right:0;z-index:199;overflow-x:auto}
 .tabs::-webkit-scrollbar{display:none}
 .tab{padding:11px 13px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s}
@@ -105,6 +119,22 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 .obra-label{color:var(--text2)}.obra-val{color:var(--text);font-weight:500;text-align:right}
 .lote-wrap{display:flex;justify-content:center;align-items:center;padding:1.5rem}
 .lote-svg{max-width:280px;width:100%}
+/* OBRA SUBTABS */
+.obra-subnav{display:flex;gap:0;margin-bottom:.875rem;border-bottom:1px solid var(--border)}
+.obra-subbtn{padding:8px 18px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:none;border:none;border-bottom:2px solid transparent;color:var(--text3);cursor:pointer;white-space:nowrap;transition:color .15s}
+.obra-subbtn.act{border-bottom-color:var(--amber);color:var(--amber)}
+/* REPORTES */
+.rep-period-bar{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.rep-pill{padding:5px 14px;border-radius:20px;font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;background:var(--bg3);border:1px solid var(--border2);color:var(--text3);cursor:pointer;transition:all .15s}
+.rep-pill.act{background:var(--amber-d);border-color:var(--amber-b);color:var(--amber)}
+.rep-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:.75rem}
+.rep-card-title{font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:.75rem}
+.rep-table{width:100%;border-collapse:collapse;font-size:11px}
+.rep-table th{text-align:left;padding:5px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)}
+.rep-table td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:top}
+.rep-table tr:last-child td{border:none}
+.rep-bar-wrap{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-top:3px}
+.rep-bar-fill{height:100%;background:var(--amber);border-radius:2px;transition:width .4s}
 /* GANTT */
 .gantt-outer{overflow-x:auto}
 .gantt-outer::-webkit-scrollbar{height:3px}
@@ -186,6 +216,13 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   <div class="hdr-sep"></div>
   <div id="proj-name">Cargando...</div>
   <div id="cod-tag">—</div>
+  <div class="switcher" id="switcher">
+    <button class="sw-btn" id="sw-btn" onclick="toggleSwitcher(event)">⌂ Mis obras</button>
+    <div class="sw-drop" id="sw-drop">
+      <div class="sw-hdr">Mis obras</div>
+      <div id="sw-list"></div>
+    </div>
+  </div>
   <div class="hdr-r">
     <div class="live"><div class="live-dot"></div>En vivo</div>
     <button class="hdr-btn" onclick="loadAll()">↻</button>
@@ -264,22 +301,42 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 <!-- OBRA -->
 <div class="tp" id="tp-obra">
-  <div class="obra-grid">
-    <div class="obra-block"><div class="obra-block-title">Información general</div><div id="obra-info"><div class="empty"><div class="spin"></div></div></div></div>
-    <div class="obra-block">
-      <div class="obra-block-title">Geometría del lote</div>
-      <div id="obra-geo"><div class="empty"><div class="spin"></div></div></div>
-      <div class="lote-wrap"><svg id="lote-svg" class="lote-svg" viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg"></svg></div>
-    </div>
-    <div class="obra-block"><div class="obra-block-title">Residente asignado</div><div id="obra-worker"><div class="empty"><div class="spin"></div></div></div></div>
-    <div class="obra-block">
-      <div class="obra-block-title">Código de obra</div>
-      <div style="text-align:center;padding:1rem 0">
-        <div style="font-family:'DM Mono',monospace;font-size:3rem;font-weight:700;color:var(--amber);letter-spacing:8px" id="obra-cod-big">—</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:8px">El residente reporta así:</div>
-        <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--amber);margin-top:4px" id="obra-ejemplo">— 1: hice 25 m²</div>
+  <!-- subtab nav -->
+  <div class="obra-subnav">
+    <button class="obra-subbtn act" id="obra-sub-info" onclick="setObraSub('info')">Información</button>
+    <button class="obra-subbtn" id="obra-sub-reportes" onclick="setObraSub('reportes')">Reportes</button>
+  </div>
+
+  <!-- panel: información -->
+  <div id="obra-panel-info">
+    <div class="obra-grid">
+      <div class="obra-block"><div class="obra-block-title">Información general</div><div id="obra-info"><div class="empty"><div class="spin"></div></div></div></div>
+      <div class="obra-block">
+        <div class="obra-block-title">Geometría del lote</div>
+        <div id="obra-geo"><div class="empty"><div class="spin"></div></div></div>
+        <div class="lote-wrap"><svg id="lote-svg" class="lote-svg" viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      </div>
+      <div class="obra-block"><div class="obra-block-title">Residente asignado</div><div id="obra-worker"><div class="empty"><div class="spin"></div></div></div></div>
+      <div class="obra-block">
+        <div class="obra-block-title">Código de obra</div>
+        <div style="text-align:center;padding:1rem 0">
+          <div style="font-family:'DM Mono',monospace;font-size:3rem;font-weight:700;color:var(--amber);letter-spacing:8px" id="obra-cod-big">—</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:8px">El residente reporta así:</div>
+          <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--amber);margin-top:4px" id="obra-ejemplo">— 1: hice 25 m²</div>
+        </div>
       </div>
     </div>
+  </div>
+
+  <!-- panel: reportes -->
+  <div id="obra-panel-reportes" style="display:none">
+    <div class="rep-period-bar">
+      <button class="rep-pill act" id="rep-pill-diario"   onclick="setRepPeriodo('diario')">Diario</button>
+      <button class="rep-pill"     id="rep-pill-semanal"  onclick="setRepPeriodo('semanal')">Semanal</button>
+      <button class="rep-pill"     id="rep-pill-mensual"  onclick="setRepPeriodo('mensual')">Mensual</button>
+      <button class="rep-pill"     id="rep-pill-etapa"    onclick="setRepPeriodo('etapa')">Por etapa</button>
+    </div>
+    <div id="rep-contenido"><div class="empty"><div class="spin"></div></div></div>
   </div>
 </div>
 
@@ -794,10 +851,44 @@ function timeAgo(ts){
   return d<60?`hace ${d}m`:d<1440?`hace ${Math.round(d/60)}h`:new Date(ts).toLocaleDateString('es-CO',{day:'numeric',month:'short'});
 }
 
+// ── MULTI-CUENTA ──
+const HIST_KEY='goobra_hist_v1';
+function getHistory(){try{return JSON.parse(localStorage.getItem(HIST_KEY))||[];}catch{return[];}}
+
+function saveToHistory(proj){
+  if(!proj?.id) return;
+  const hist=getHistory().filter(h=>h.pid!==proj.id);
+  hist.unshift({pid:proj.id,nombre:proj.nombre||'—',codigo:proj.codigo_corto||'—',url:location.href,ts:Date.now()});
+  localStorage.setItem(HIST_KEY,JSON.stringify(hist.slice(0,10)));
+  renderSwitcher();
+}
+
+function renderSwitcher(){
+  const hist=getHistory();
+  const sw=document.getElementById('switcher');
+  const btn=document.getElementById('sw-btn');
+  const list=document.getElementById('sw-list');
+  if(!sw||!btn||!list) return;
+  if(hist.length<2){sw.style.display='none';return;}
+  sw.style.display='block';
+  btn.innerHTML=`⌂ Mis obras <span class="sw-count">${hist.length}</span>`;
+  list.innerHTML=hist.map(h=>`
+    <div class="sw-item ${h.pid===PID?'cur':''}" onclick="switchProj('${encodeURIComponent(h.url)}')">
+      <div class="sw-name">${h.nombre}</div>
+      <div class="sw-cod">${h.codigo}</div>
+    </div>`).join('');
+}
+
+function toggleSwitcher(e){e.stopPropagation();document.getElementById('sw-drop').classList.toggle('open');}
+function switchProj(encodedUrl){location.href=decodeURIComponent(encodedUrl);}
+document.addEventListener('click',()=>document.getElementById('sw-drop')?.classList.remove('open'));
+
+renderSwitcher();
+
 // ── LOAD ALL ──
 async function loadAll(){
   const {data:proj}=await db.from('proyectos').select('*').eq('id',PID).single();
-  if(proj){PROJ=proj;document.getElementById('proj-name').textContent=proj.nombre||'—';document.getElementById('cod-tag').textContent=proj.codigo_corto||CODIGO;}
+  if(proj){PROJ=proj;document.getElementById('proj-name').textContent=proj.nombre||'—';document.getElementById('cod-tag').textContent=proj.codigo_corto||CODIGO;saveToHistory(proj);}
   // Load workers and misiones first — other functions depend on MDATA and WMAPS
   await Promise.all([loadWorkers(),loadMisiones()]);
   await Promise.all([loadDash(),loadAlertas(),loadObra()]);
@@ -1126,6 +1217,155 @@ async function loadObra(){
   document.getElementById('obra-worker').innerHTML=workers.length?workers.map(w=>`<div class="obra-row"><span class="obra-label">${w.rol==='res'?'Residente':'Worker'}</span><span class="obra-val">${w.nombre}</span></div>`).join(''):'<div class="obra-row"><span class="obra-label" style="color:var(--text3)">Sin residente vinculado</span></div>';
   document.getElementById('obra-cod-big').textContent=cod;
   document.getElementById('obra-ejemplo').textContent=cod+' 1: hice 25 m², 3 bultos cemento';
+}
+
+// ── OBRA SUBTABS ──
+let REP_PERIODO='diario';
+
+function setObraSub(sub){
+  ['info','reportes'].forEach(s=>{
+    document.getElementById('obra-panel-'+s).style.display=s===sub?'block':'none';
+    const btn=document.getElementById('obra-sub-'+s);
+    btn.classList.toggle('act',s===sub);
+  });
+  if(sub==='reportes') loadReportes(REP_PERIODO);
+}
+
+function setRepPeriodo(periodo){
+  REP_PERIODO=periodo;
+  ['diario','semanal','mensual','etapa'].forEach(p=>{
+    document.getElementById('rep-pill-'+p).classList.toggle('act',p===periodo);
+  });
+  loadReportes(periodo);
+}
+
+async function loadReportes(periodo){
+  const el=document.getElementById('rep-contenido');
+  el.innerHTML='<div class="empty"><div class="spin"></div></div>';
+  if(!PID){el.innerHTML='<div class="empty">Sin proyecto</div>';return;}
+
+  const {data:avs,error}=await db.from('avances')
+    .select('etapa_id,mision_id,nivel,cantidad_primaria_valor,cantidad_primaria_unidad,desviacion_detectada,timestamp_mensaje,trabajador_id')
+    .eq('proyecto_id',PID)
+    .order('timestamp_mensaje',{ascending:false})
+    .limit(500);
+
+  if(error||!avs?.length){
+    el.innerHTML='<div class="empty">Sin avances registrados aún</div>';
+    return;
+  }
+
+  if(periodo==='diario') el.innerHTML=repDiario(avs);
+  else if(periodo==='semanal') el.innerHTML=repSemanal(avs);
+  else if(periodo==='mensual') el.innerHTML=repMensual(avs);
+  else el.innerHTML=repEtapa(avs);
+}
+
+function fmtFecha(iso,opts){return new Date(iso).toLocaleDateString('es-CO',opts||{day:'numeric',month:'short'});}
+function isoWeek(d){const dt=new Date(d);dt.setHours(0,0,0,0);dt.setDate(dt.getDate()+4-(dt.getDay()||7));const yStart=new Date(dt.getFullYear(),0,1);return Math.ceil(((dt-yStart)/86400000+1)/7);}
+function weekLabel(iso){const d=new Date(iso);const mo=new Date(d);mo.setDate(mo.getDate()-(mo.getDay()||7)+1);const fr=new Date(mo);fr.setDate(fr.getDate()+6);return fmtFecha(mo.toISOString())+' – '+fmtFecha(fr.toISOString());}
+function monthLabel(iso){return new Date(iso).toLocaleDateString('es-CO',{month:'long',year:'numeric'});}
+
+function _repGroupTable(groups, keyLabel, keyFmt){
+  if(!groups.size) return '<div class="empty">Sin datos</div>';
+  let html='';
+  for(const [key,rows] of [...groups.entries()].slice(0,30)){
+    const desvs=rows.filter(r=>r.desviacion_detectada).length;
+    const workers=new Set(rows.map(r=>r.trabajador_id)).size;
+    html+=`<div class="rep-card">
+      <div class="rep-card-title">${keyFmt(key)}</div>
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:11px;margin-bottom:.75rem">
+        <span style="color:var(--text2)">Reportes: <strong style="color:var(--text)">${rows.length}</strong></span>
+        <span style="color:var(--text2)">Workers: <strong style="color:var(--text)">${workers}</strong></span>
+        ${desvs?`<span style="color:var(--red)">Desviaciones: <strong>${desvs}</strong></span>`:''}
+      </div>
+      <table class="rep-table">
+        <thead><tr>
+          <th>Misión</th><th>Nivel</th><th>Cantidad</th><th>Hora</th>
+        </tr></thead>
+        <tbody>
+          ${rows.slice(0,20).map(r=>`<tr ${r.desviacion_detectada?'style="color:var(--red)"':''}>
+            <td>${(r.mision_id||'—').replace(/_/g,' ')}</td>
+            <td style="color:var(--text3)">${r.nivel||'—'}</td>
+            <td>${r.cantidad_primaria_valor!=null?r.cantidad_primaria_valor+' '+(r.cantidad_primaria_unidad||''):'—'}</td>
+            <td style="color:var(--text3);white-space:nowrap">${new Date(r.timestamp_mensaje).toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'})}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      ${rows.length>20?`<div style="font-size:10px;color:var(--text3);margin-top:6px">+${rows.length-20} más</div>`:''}
+    </div>`;
+  }
+  return html;
+}
+
+function repDiario(avs){
+  const groups=new Map();
+  avs.forEach(a=>{
+    const k=a.timestamp_mensaje.slice(0,10);
+    if(!groups.has(k))groups.set(k,[]);
+    groups.get(k).push(a);
+  });
+  return _repGroupTable(groups,'fecha',k=>fmtFecha(k+'T12:00:00',{weekday:'short',day:'numeric',month:'short'}));
+}
+
+function repSemanal(avs){
+  const groups=new Map();
+  avs.forEach(a=>{
+    const k=a.timestamp_mensaje.slice(0,4)+'-W'+String(isoWeek(a.timestamp_mensaje)).padStart(2,'0');
+    if(!groups.has(k))groups.set(k,[]);
+    groups.get(k).push(a);
+  });
+  return _repGroupTable(groups,'semana',k=>{
+    const [yr,w]=k.split('-W');
+    const first=avs.find(a=>a.timestamp_mensaje.slice(0,4)+'-W'+String(isoWeek(a.timestamp_mensaje)).padStart(2,'0')===k);
+    return first?weekLabel(first.timestamp_mensaje):'Sem '+w+'/'+yr;
+  });
+}
+
+function repMensual(avs){
+  const groups=new Map();
+  avs.forEach(a=>{
+    const k=a.timestamp_mensaje.slice(0,7);
+    if(!groups.has(k))groups.set(k,[]);
+    groups.get(k).push(a);
+  });
+  return _repGroupTable(groups,'mes',k=>monthLabel(k+'-15'));
+}
+
+function repEtapa(avs){
+  const groups=new Map();
+  avs.forEach(a=>{
+    const k=a.etapa_id||'sin_etapa';
+    if(!groups.has(k))groups.set(k,[]);
+    groups.get(k).push(a);
+  });
+  const etapaLabel=k=>EN[k]||k.replace(/_/g,' ');
+  if(!groups.size) return '<div class="empty">Sin datos</div>';
+  let html='';
+  for(const [key,rows] of groups){
+    const misiones=new Map();
+    rows.forEach(r=>{const mk=r.mision_id||'sin_mision';if(!misiones.has(mk))misiones.set(mk,[]);misiones.get(mk).push(r);});
+    const desvs=rows.filter(r=>r.desviacion_detectada).length;
+    html+=`<div class="rep-card">
+      <div class="rep-card-title">${etapaLabel(key)}</div>
+      <div style="display:flex;gap:1.5rem;flex-wrap:wrap;font-size:11px;margin-bottom:.75rem">
+        <span style="color:var(--text2)">Total reportes: <strong style="color:var(--text)">${rows.length}</strong></span>
+        <span style="color:var(--text2)">Misiones: <strong style="color:var(--text)">${misiones.size}</strong></span>
+        ${desvs?`<span style="color:var(--red)">Desviaciones: <strong>${desvs}</strong></span>`:''}
+      </div>
+      <table class="rep-table">
+        <thead><tr><th>Misión</th><th>Reportes</th><th>Última actividad</th></tr></thead>
+        <tbody>
+          ${[...misiones.entries()].map(([mk,mr])=>`<tr>
+            <td>${mk.replace(/_/g,' ')}</td>
+            <td>${mr.length}</td>
+            <td style="color:var(--text3)">${fmtFecha(mr[0].timestamp_mensaje,{day:'numeric',month:'short',year:'numeric'})}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+  return html;
 }
 
 // ── CRONOGRAMA (Gantt semanal) ──
