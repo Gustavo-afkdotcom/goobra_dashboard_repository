@@ -960,7 +960,7 @@ async function loadWorkers(){
 async function loadConfigData(){
   const [{data:vs},{data:pm}]=await Promise.all([
     db.from('presupuesto_versiones').select('version').eq('proyecto_id',PID),
-    db.from('presupuesto_misiones').select('etapa_id,costo_estimado').eq('proyecto_id',PID)
+    db.from('presupuesto_misiones').select('etapa_id,nota,cantidad_presupuestada,unidad,precio_unitario_est,costo_estimado').eq('proyecto_id',PID)
   ]);
   VDATA=(vs||[]).length;
   PMDATA=pm||[];
@@ -1023,6 +1023,14 @@ async function activarProyecto(){
 }
 
 // ── PLAN DE OBRA (sub-tab misiones) ──
+function togglePlanEtapa(id){
+  const el=document.getElementById(id);
+  const ch=document.getElementById(id+'-ch');
+  const open=el.style.display==='none';
+  el.style.display=open?'':'none';
+  if(ch) ch.textContent=open?'▴':'▾';
+}
+
 function renderMisPlan(){
   const el=document.getElementById('mis-plan-wrap');
   if(!el) return;
@@ -1031,53 +1039,100 @@ function renderMisPlan(){
     return;
   }
 
-  // Agrupar misiones por etapa con rango de fechas
-  const etapaInfo={};
+  // Agrupar MDATA por etapa, ordenadas por fecha_inicio_plan
+  const byEtapa={};
   MDATA.forEach(m=>{
-    if(!etapaInfo[m.etapa_id]) etapaInfo[m.etapa_id]={misiones:[],ini:null,fin:null,dias:0};
-    const ei=etapaInfo[m.etapa_id];
-    ei.misiones.push(m);
-    if(m.fecha_inicio_plan){const d=new Date(m.fecha_inicio_plan);if(!ei.ini||d<ei.ini)ei.ini=d;}
-    if(m.fecha_fin_plan){const d=new Date(m.fecha_fin_plan);if(!ei.fin||d>ei.fin)ei.fin=d;}
-    ei.dias+=parseInt(m.dias_plan||0);
+    if(!byEtapa[m.etapa_id]) byEtapa[m.etapa_id]=[];
+    byEtapa[m.etapa_id].push(m);
   });
+  Object.values(byEtapa).forEach(ms=>ms.sort((a,b)=>(a.fecha_inicio_plan||'9999')>(b.fecha_inicio_plan||'9999')?1:-1));
 
-  // Costo presupuestado por etapa (de PMDATA)
+  // Items presupuestados por etapa
+  const itemsByEtapa={};
   const costoEtapa={};
   PMDATA.forEach(p=>{
-    if(!costoEtapa[p.etapa_id])costoEtapa[p.etapa_id]=0;
-    costoEtapa[p.etapa_id]+=parseFloat(p.costo_estimado||0);
+    if(!itemsByEtapa[p.etapa_id]) itemsByEtapa[p.etapa_id]=[];
+    itemsByEtapa[p.etapa_id].push(p);
+    costoEtapa[p.etapa_id]=(costoEtapa[p.etapa_id]||0)+parseFloat(p.costo_estimado||0);
   });
 
-  const tieneM=!!localStorage.getItem('mis_revisadas_'+PID);
-  const fmtDate=d=>d?d.toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'}):'—';
+  const fmtD=d=>d?new Date(d).toLocaleDateString('es-CO',{day:'numeric',month:'short'}):'—';
 
-  el.innerHTML=`
-    <div style="margin-bottom:.875rem">
-      ${EO.filter(e=>etapaInfo[e]).map(e=>{
-        const ei=etapaInfo[e];
-        const costo=costoEtapa[e]||0;
-        const comp=ei.misiones.filter(m=>m.estado==='completada').length;
-        const pct=Math.round(ei.misiones.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/ei.misiones.length);
-        return`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.875rem;margin-bottom:8px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;flex-wrap:wrap">
-            <div>
-              <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700">${EN[e]||e}</div>
-              <div style="font-size:10px;color:var(--text3);margin-top:2px">${fmtDate(ei.ini)} → ${fmtDate(ei.fin)} · ${ei.dias} días · ${ei.misiones.length} misiones</div>
-            </div>
-            <div style="text-align:right;flex-shrink:0">
-              ${costo?`<div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--amber)">${fmt(costo)}</div><div style="font-size:9px;color:var(--text3)">presupuestado</div>`:`<div style="font-size:10px;color:var(--text3)">sin costo IA</div>`}
-            </div>
+  let html='';
+  EO.filter(e=>byEtapa[e]).forEach(e=>{
+    const ms=byEtapa[e];
+    const costo=costoEtapa[e]||0;
+    const items=itemsByEtapa[e]||[];
+    const eid='pe-'+e;
+
+    const misionRows=ms.map(m=>{
+      const pct=parseFloat(m.pct_avance||0);
+      const col=pct===100?'var(--green)':pct>0?'var(--amber)':'var(--text3)';
+      const ico=m.estado==='completada'?`<span style="color:var(--green)">✓</span>`:m.estado==='en_curso'?`<span style="color:var(--amber)">↗</span>`:`<span style="color:var(--text3)">○</span>`;
+      return`<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:6px 8px">${ico} <span style="font-weight:500">${(m.mision_id||'').replace(/_/g,' ')}</span>${m.nivel?` <span style="font-size:9px;color:var(--text3)">${m.nivel}</span>`:''}</td>
+        <td style="padding:6px 8px;color:var(--text2);text-align:right;white-space:nowrap">${fmtD(m.fecha_inicio_plan)}</td>
+        <td style="padding:6px 8px;color:var(--text2);text-align:right;white-space:nowrap">${fmtD(m.fecha_fin_plan)}</td>
+        <td style="padding:6px 8px;color:var(--text3);text-align:right">${m.dias_plan||'—'}d</td>
+        <td style="padding:6px 8px;text-align:right"><span style="color:${col};font-weight:600">${pct.toFixed(0)}%</span></td>
+      </tr>`;
+    }).join('');
+
+    const itemRows=items.map(p=>`
+      <tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:4px 8px 4px 20px;color:var(--text2)">${p.nota||'—'}</td>
+        <td style="padding:4px 8px;color:var(--text3);white-space:nowrap">${p.cantidad_presupuestada||'—'} ${p.unidad||''}</td>
+        <td style="padding:4px 8px;color:var(--text3)">${p.precio_unitario_est?fmt(p.precio_unitario_est)+'/un':''}</td>
+        <td style="padding:4px 8px;text-align:right;color:var(--amber);font-weight:600">${fmt(p.costo_estimado||0)}</td>
+      </tr>`).join('');
+
+    html+=`
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden">
+        <div style="padding:.75rem 1rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="togglePlanEtapa('${eid}')">
+          <div>
+            <span style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700">${EN[e]||e}</span>
+            <span style="font-size:10px;color:var(--text3);margin-left:8px">${ms.length} misiones</span>
           </div>
-          <div style="margin-top:.5rem;display:flex;align-items:center;gap:8px">
-            <div style="flex:1;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden"><div style="height:100%;background:${pct===100?'var(--green)':pct>0?'var(--amber)':'var(--bg4)'};width:${pct}%"></div></div>
-            <span style="font-size:10px;color:var(--text3);flex-shrink:0">${comp}/${ei.misiones.length} · ${pct}%</span>
+          <div style="display:flex;align-items:center;gap:12px">
+            ${costo?`<span style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--amber)">${fmt(costo)}</span>`:`<span style="font-size:10px;color:var(--text3)">sin presupuesto IA</span>`}
+            <span id="${eid}-ch" style="color:var(--text3)">▾</span>
           </div>
-        </div>`;
-      }).join('')}
-    </div>
-    ${!tieneM?`<button onclick="marcarMisionesRevisadas()" style="width:100%;padding:12px;background:var(--amber);color:#000;border:none;border-radius:7px;font-family:'Syne',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">He revisado el plan de obra ✓</button>`
-    :`<div style="text-align:center;padding:10px;background:var(--green-d);border:1px solid rgba(39,174,96,.2);border-radius:7px;font-size:11px;color:var(--green);font-weight:600">✓ Plan de obra revisado — ve al Tablero para activar el proyecto</div>`}`;
+        </div>
+        <div id="${eid}" style="display:none;border-top:1px solid var(--border)">
+          <table style="width:100%;border-collapse:collapse;font-size:11px">
+            <thead><tr style="background:var(--bg3)">
+              <th style="text-align:left;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Misión</th>
+              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Inicio</th>
+              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Fin</th>
+              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Dur.</th>
+              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Avance</th>
+            </tr></thead>
+            <tbody>${misionRows}</tbody>
+          </table>
+          ${items.length?`
+          <div style="border-top:1px solid var(--border);background:var(--bg3)">
+            <div style="padding:5px 8px 3px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Items presupuestados (IA)</div>
+            <table style="width:100%;border-collapse:collapse;font-size:11px">
+              <thead><tr>
+                <th style="text-align:left;padding:3px 8px 3px 20px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Item</th>
+                <th style="text-align:left;padding:3px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Cantidad</th>
+                <th style="text-align:left;padding:3px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">P. unitario</th>
+                <th style="text-align:right;padding:3px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Subtotal</th>
+              </tr></thead>
+              <tbody>${itemRows}</tbody>
+            </table>
+          </div>`:''}
+        </div>
+      </div>`;
+  });
+
+  const revisado=!!localStorage.getItem('mis_revisadas_'+PID);
+  el.innerHTML=html+`
+    <div style="margin-top:.75rem">
+      ${!revisado
+        ?`<button onclick="marcarMisionesRevisadas()" style="width:100%;padding:12px;background:var(--amber);color:#000;border:none;border-radius:7px;font-family:'Syne',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">He revisado el plan de obra ✓</button>`
+        :`<div style="text-align:center;padding:10px;background:var(--green-d);border:1px solid rgba(39,174,96,.2);border-radius:7px;font-size:11px;color:var(--green);font-weight:600">✓ Plan de obra revisado — ve al Tablero para activar el proyecto</div>`}
+    </div>`;
 }
 
 function marcarMisionesRevisadas(){
@@ -2575,10 +2630,11 @@ async function loadPresupuesto(){
   MDATA.forEach(m=>{if(!avByEtapa[m.etapa_id])avByEtapa[m.etapa_id]={p:0,n:0};avByEtapa[m.etapa_id].p+=parseFloat(m.pct_avance||0);avByEtapa[m.etapa_id].n++;});
 
   // Mapa de montos guardados por IA (versión más alta disponible)
-  const maxVer=(etapas||[]).reduce((m,r)=>Math.max(m,r.version||0),0);
+  const latestEtapaRow=(etapas||[]).reduce((best,r)=>(!best||new Date(r.created_at)>new Date(best.created_at))?r:best,null);
+  const latestVer=latestEtapaRow?.version||0;
   const etapasMontoMap={};
-  (etapas||[]).filter(r=>r.version===maxVer).forEach(r=>{etapasMontoMap[r.etapa_id]=r.monto_ajustado;});
-  const tieneEtapasIA=maxVer>0;
+  (etapas||[]).filter(r=>r.version===latestVer).forEach(r=>{etapasMontoMap[r.etapa_id]=r.monto_ajustado;});
+  const tieneEtapasIA=latestVer>0;
 
   document.getElementById('pre-etapas').innerHTML=`
     <table style="width:100%;border-collapse:collapse;font-size:11px">
