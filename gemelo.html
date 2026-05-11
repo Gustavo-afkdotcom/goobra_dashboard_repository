@@ -1065,63 +1065,57 @@ function renderMisPlan(){
     const items=itemsByEtapa[e]||[];
     const eid='pe-'+e;
 
-    const misionRows=ms.map(m=>{
-      const pct=parseFloat(m.pct_avance||0);
-      const col=pct===100?'var(--green)':pct>0?'var(--amber)':'var(--text3)';
+    // Misiones: lista compacta como contexto de fechas
+    const misionesCompact=ms.map(m=>{
       const ico=m.estado==='completada'?`<span style="color:var(--green)">✓</span>`:m.estado==='en_curso'?`<span style="color:var(--amber)">↗</span>`:`<span style="color:var(--text3)">○</span>`;
-      return`<tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:6px 8px">${ico} <span style="font-weight:500">${(m.mision_id||'').replace(/_/g,' ')}</span>${m.nivel?` <span style="font-size:9px;color:var(--text3)">${m.nivel}</span>`:''}</td>
-        <td style="padding:6px 8px;color:var(--text2);text-align:right;white-space:nowrap">${fmtD(m.fecha_inicio_plan)}</td>
-        <td style="padding:6px 8px;color:var(--text2);text-align:right;white-space:nowrap">${fmtD(m.fecha_fin_plan)}</td>
-        <td style="padding:6px 8px;color:var(--text3);text-align:right">${m.dias_plan||'—'}d</td>
-        <td style="padding:6px 8px;text-align:right"><span style="color:${col};font-weight:600">${pct.toFixed(0)}%</span></td>
-      </tr>`;
+      return`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:10px">${ico} ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?` <span style="color:var(--text3)">${m.nivel}</span>`:''}</div>
+        <div style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;margin-left:8px">${fmtD(m.fecha_inicio_plan)} → ${fmtD(m.fecha_fin_plan)}</div>
+      </div>`;
     }).join('');
 
-    const itemRows=items.map(p=>`
-      <tr style="border-bottom:1px solid var(--border)">
-        <td style="padding:4px 8px 4px 20px;color:var(--text2)">${p.nota||'—'}</td>
-        <td style="padding:4px 8px;color:var(--text3);white-space:nowrap">${p.cantidad_presupuestada||'—'} ${p.unidad||''}</td>
-        <td style="padding:4px 8px;color:var(--text3)">${p.precio_unitario_est?fmt(p.precio_unitario_est)+'/un':''}</td>
-        <td style="padding:4px 8px;text-align:right;color:var(--amber);font-weight:600">${fmt(p.costo_estimado||0)}</td>
-      </tr>`).join('');
+    // Items de recursos (contenido principal)
+    const itemRows=items.length
+      ?items.map(p=>`
+        <tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:7px 8px;font-weight:500">${p.nota||'—'}</td>
+          <td style="padding:7px 8px;color:var(--text2);text-align:right;white-space:nowrap">${p.cantidad_presupuestada||'—'} ${p.unidad||''}</td>
+          <td style="padding:7px 8px;color:var(--text3);text-align:right;white-space:nowrap">${p.precio_unitario_est?fmt(p.precio_unitario_est):''}</td>
+          <td style="padding:7px 8px;text-align:right;font-family:'Syne',sans-serif;font-weight:700;color:var(--amber)">${fmt(p.costo_estimado||0)}</td>
+        </tr>`).join('')
+      :`<tr><td colspan="4" style="padding:10px 8px;color:var(--text3);font-size:11px">Sin presupuesto IA — genera el presupuesto para ver recursos detallados.</td></tr>`;
 
     html+=`
-      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden">
-        <div style="padding:.75rem 1rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="togglePlanEtapa('${eid}')">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden">
+        <!-- Header etapa -->
+        <div style="padding:.75rem 1rem;display:flex;justify-content:space-between;align-items:center">
           <div>
-            <span style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700">${EN[e]||e}</span>
+            <span style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700">${EN[e]||e}</span>
             <span style="font-size:10px;color:var(--text3);margin-left:8px">${ms.length} misiones</span>
           </div>
-          <div style="display:flex;align-items:center;gap:12px">
-            ${costo?`<span style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--amber)">${fmt(costo)}</span>`:`<span style="font-size:10px;color:var(--text3)">sin presupuesto IA</span>`}
-            <span id="${eid}-ch" style="color:var(--text3)">▾</span>
-          </div>
+          ${costo?`<span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--amber)">${fmt(costo)}</span>`:''}
         </div>
-        <div id="${eid}" style="display:none;border-top:1px solid var(--border)">
+
+        <!-- Recursos (principal) -->
+        <div style="border-top:1px solid var(--border)">
           <table style="width:100%;border-collapse:collapse;font-size:11px">
             <thead><tr style="background:var(--bg3)">
-              <th style="text-align:left;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Misión</th>
-              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Inicio</th>
-              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Fin</th>
-              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Dur.</th>
-              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Avance</th>
+              <th style="text-align:left;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Recurso</th>
+              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Cantidad</th>
+              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">P. unitario</th>
+              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Costo</th>
             </tr></thead>
-            <tbody>${misionRows}</tbody>
+            <tbody>${itemRows}</tbody>
           </table>
-          ${items.length?`
-          <div style="border-top:1px solid var(--border);background:var(--bg3)">
-            <div style="padding:5px 8px 3px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Items presupuestados (IA)</div>
-            <table style="width:100%;border-collapse:collapse;font-size:11px">
-              <thead><tr>
-                <th style="text-align:left;padding:3px 8px 3px 20px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Item</th>
-                <th style="text-align:left;padding:3px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Cantidad</th>
-                <th style="text-align:left;padding:3px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">P. unitario</th>
-                <th style="text-align:right;padding:3px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Subtotal</th>
-              </tr></thead>
-              <tbody>${itemRows}</tbody>
-            </table>
-          </div>`:''}
+        </div>
+
+        <!-- Misiones: contexto de fechas (colapsable) -->
+        <div style="border-top:1px solid var(--border)">
+          <div style="padding:5px 1rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="togglePlanEtapa('${eid}')">
+            <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Misiones del cronograma</span>
+            <span id="${eid}-ch" style="font-size:11px;color:var(--text3)">▾</span>
+          </div>
+          <div id="${eid}" style="display:none;padding:0 1rem .75rem">${misionesCompact}</div>
         </div>
       </div>`;
   });
