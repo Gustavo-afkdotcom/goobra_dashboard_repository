@@ -2065,9 +2065,11 @@ let BUDGET_GENERADO=null;
 async function buildPromptPresupuesto(proyecto,params,acabados,materiales,precios){
   const preciosMap={};
   precios.forEach(p=>{preciosMap[p.material_codigo]=p.precio;});
-  const matStr=materiales.slice(0,60).map(m=>
-    `${m.codigo} | ${m.nombre} | ${m.unidad} | $${(preciosMap[m.codigo]||m.precio_referencia||0).toLocaleString('es-CO')}`
-  ).join('\n');
+  const matStr=materiales
+    .filter(m=>m.codigo && (m.precio_referencia||0)>0)
+    .slice(0,30)
+    .map(m=>`${m.codigo}|${m.nombre}|${m.unidad}|${(preciosMap[m.codigo]||m.precio_referencia||0)}`)
+    .join('\n');
   const fr=parseFloat(proyecto.frente)||12, fo=parseFloat(proyecto.fondo)||24;
   const pi=parseInt(proyecto.numero_pisos)||0, so=parseInt(proyecto.sotanos)||0;
   const m2p=parseInt(proyecto.m2_por_piso)||Math.round(fr*fo*0.72);
@@ -2086,7 +2088,7 @@ ${acabadosStr}
 CATÁLOGO DE MATERIALES (precios COP 2026):
 ${matStr}
 
-Genera un presupuesto detallado. Incluye materiales, mano de obra, equipos, imprevistos (12%), honorarios (5%).
+Genera un presupuesto ejecutivo. Máximo 3 ítems por etapa. Incluye imprevistos (12%) y honorarios (5%).
 Benchmark Bogotá: $1.800.000–$3.200.000/m² construido.
 
 Responde ÚNICAMENTE con este JSON, sin texto adicional:
@@ -2110,7 +2112,41 @@ Responde ÚNICAMENTE con este JSON, sin texto adicional:
 async function generarPresupuestoIA(){
   const btn=document.getElementById('pre-btn-generar');
   btn.disabled=true;
-  btn.textContent='Generando presupuesto…';
+
+  // Barra de progreso simulada (~70s estimado)
+  btn.innerHTML=`
+    <span style="display:block;font-size:11px;margin-bottom:6px;opacity:.85">Consultando IA — puede tardar hasta 70 segundos</span>
+    <div style="background:rgba(255,255,255,.2);border-radius:4px;height:6px;overflow:hidden;width:100%">
+      <div id="pre-progress-bar" style="height:100%;width:0%;background:#fff;border-radius:4px;transition:width .8s ease"></div>
+    </div>
+    <span id="pre-progress-label" style="display:block;font-size:10px;margin-top:5px;opacity:.7">0%</span>`;
+
+  // Anima la barra: llega al 90% en ~65s, nunca al 100% hasta que termina
+  let pct=0;
+  const steps=[
+    {target:15, duration:5000},
+    {target:40, duration:12000},
+    {target:65, duration:15000},
+    {target:80, duration:15000},
+    {target:90, duration:18000},
+  ];
+  let stepIdx=0;
+  let stepStart=Date.now();
+  const tick=()=>{
+    if(stepIdx>=steps.length) return;
+    const {target,duration}=steps[stepIdx];
+    const prev=stepIdx===0?0:steps[stepIdx-1].target;
+    const elapsed=Date.now()-stepStart;
+    const t=Math.min(elapsed/duration,1);
+    pct=prev+(target-prev)*t;
+    const bar=document.getElementById('pre-progress-bar');
+    const lbl=document.getElementById('pre-progress-label');
+    if(bar) bar.style.width=pct.toFixed(1)+'%';
+    if(lbl) lbl.textContent=Math.round(pct)+'%';
+    if(t>=1){ stepIdx++; stepStart=Date.now(); }
+    if(pct<90) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
 
   // Recoger parámetros
   const params={
@@ -2167,10 +2203,16 @@ async function generarPresupuestoIA(){
     catch(e){ throw new Error(`JSON inválido (${e.message}): ${jsonStr.slice(0,300)}`); }
     if(!budget.total) throw new Error(`Presupuesto sin total. Keys: ${Object.keys(budget).join(',')} | claudeText[0:200]: ${claudeText.slice(0,200)}`);
     BUDGET_GENERADO=budget;
+    // Barra al 100% antes de mostrar resultado
+    const bar=document.getElementById('pre-progress-bar');
+    const lbl=document.getElementById('pre-progress-label');
+    if(bar) bar.style.width='100%';
+    if(lbl) lbl.textContent='100%';
+    await new Promise(r=>setTimeout(r,400));
     mostrarDiffPresupuesto(BUDGET_GENERADO);
   }catch(e){
     btn.disabled=false;
-    btn.textContent='Generar presupuesto con IA →';
+    btn.innerHTML='Generar presupuesto con IA →';
     document.getElementById('pre-wizard-wrap').insertAdjacentHTML('beforeend',
       `<div style="background:var(--red-d);border:1px solid rgba(192,57,43,.3);border-radius:7px;padding:10px 14px;margin-top:.75rem;font-size:12px;color:var(--red)">Error: ${e.message}</div>`);
   }
@@ -2272,19 +2314,21 @@ async function guardarPresupuestoIA(){
     // Guardar versión
     await db.from('presupuesto_versiones').insert({
       proyecto_id:PID, org_id:PROJ.org_id,
-      version:nextV, nombre_version:nombre,
-      monto_total:BUDGET_GENERADO.total,
-      notas:BUDGET_GENERADO.explicacion,
-      created_at:new Date().toISOString()
+      version:nextV,
+      presupuesto_total:BUDGET_GENERADO.total,   // columna real (era monto_total)
+      motivo_cambio:nombre,                       // columna real (era notas/nombre_version)
+      cambiado_por:'dueno'
     });
 
-    // Guardar etapas
+    // Guardar etapas (insert — cada versión IA es nueva)
     const etapasInsert=(BUDGET_GENERADO.etapas||[]).map(e=>({
       proyecto_id:PID, org_id:PROJ.org_id,
-      etapa_id:e.etapa_id, monto:e.monto,
-      version_presupuesto:nextV
+      etapa_id:e.etapa_id,
+      monto_ajustado:e.monto,   // columna real (override del CAMACOL)
+      monto_base:e.monto,       // NOT NULL — mismo valor
+      version:nextV             // columna real (era version_presupuesto)
     }));
-    if(etapasInsert.length) await db.from('presupuesto_etapas').upsert(etapasInsert,{onConflict:'proyecto_id,etapa_id'});
+    if(etapasInsert.length) await db.from('presupuesto_etapas').insert(etapasInsert);
 
     // Actualizar presupuesto_total en proyectos
     await db.from('proyectos').update({presupuesto_total:BUDGET_GENERADO.total}).eq('id',PID);
