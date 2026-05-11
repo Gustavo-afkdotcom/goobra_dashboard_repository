@@ -281,6 +281,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
 
 <!-- DASHBOARD -->
 <div class="tp on" id="tp-dashboard">
+  <!-- Barra de configuración -->
+  <div id="config-progress"></div>
   <!-- Banner financiero estilo goobra.co -->
   <div id="fin-banner" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.875rem 1.25rem;margin-bottom:.875rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
     <div style="display:flex;align-items:center;gap:10px">
@@ -324,16 +326,23 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
     <div class="sc"><div class="sl">Pendientes</div><div class="sv" id="m-p">—</div></div>
     <div class="sc b"><div class="sl">Avance global</div><div class="sv" id="m-g">—</div></div>
   </div>
-  <div class="card">
-    <div class="ch">Misiones
-      <select class="fsel" id="f-orden" onchange="renderMis()">
-        <option value="urgencia">Por urgencia</option>
-        <option value="cronologico">Cronológico</option>
-        <option value="etapa">Por etapa</option>
-      </select>
-    </div>
-    <div class="cb" id="mis-l"><div class="empty"><div class="spin"></div></div></div>
+  <div style="display:flex;gap:6px;margin-bottom:.75rem">
+    <button id="mis-sub-activas" class="obra-subbtn act" onclick="setMisSub('activas')">Misiones activas</button>
+    <button id="mis-sub-plan" class="obra-subbtn" onclick="setMisSub('plan')">Plan de obra</button>
   </div>
+  <div id="mis-lista-wrap">
+    <div class="card">
+      <div class="ch">Misiones
+        <select class="fsel" id="f-orden" onchange="renderMis()">
+          <option value="urgencia">Por urgencia</option>
+          <option value="cronologico">Cronológico</option>
+          <option value="etapa">Por etapa</option>
+        </select>
+      </div>
+      <div class="cb" id="mis-l"><div class="empty"><div class="spin"></div></div></div>
+    </div>
+  </div>
+  <div id="mis-plan-wrap" style="display:none"><div class="empty"><div class="spin"></div></div></div>
 </div>
 
 <!-- OBRA -->
@@ -871,7 +880,7 @@ if(!PID){
 }
 if(PID) localStorage.setItem('goobra_last_proj',PID);
 
-let MDATA=[], WMAPS={}, PROJ={}, curTab='dashboard';
+let MDATA=[], WMAPS={}, PROJ={}, VDATA=0, PMDATA=[], curTab='dashboard';
 
 function sw(name,btn){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
@@ -933,7 +942,8 @@ async function loadAll(){
   const {data:proj}=await db.from('proyectos').select('*').eq('id',PID).single();
   if(proj){PROJ=proj;document.getElementById('proj-name').textContent=proj.nombre||'—';document.getElementById('cod-tag').textContent=proj.codigo_corto||CODIGO;saveToHistory(proj);}
   // Load workers and misiones first — other functions depend on MDATA and WMAPS
-  await Promise.all([loadWorkers(),loadMisiones()]);
+  await Promise.all([loadWorkers(),loadMisiones(),loadConfigData()]);
+  renderConfigProgress();
   await Promise.all([loadDash(),loadAlertas(),loadObra()]);
   if(curTab==='cronograma') renderGantt();
   if(curTab==='materiales') renderMateriales();
@@ -944,6 +954,151 @@ async function loadAll(){
 async function loadWorkers(){
   const {data}=await db.from('workers').select('id,nombre,rol,telegram_id').eq('proyecto_id',PID);
   WMAPS={};(data||[]).forEach(w=>WMAPS[w.id]=w);
+}
+
+// ── CONFIG DATA (versiones + presupuesto_misiones) ──
+async function loadConfigData(){
+  const [{data:vs},{data:pm}]=await Promise.all([
+    db.from('presupuesto_versiones').select('version').eq('proyecto_id',PID),
+    db.from('presupuesto_misiones').select('etapa_id,costo_estimado').eq('proyecto_id',PID)
+  ]);
+  VDATA=(vs||[]).length;
+  PMDATA=pm||[];
+}
+
+// ── BARRA DE PROGRESO DE CONFIGURACIÓN ──
+function renderConfigProgress(){
+  const el=document.getElementById('config-progress');
+  if(!el) return;
+  const tieneC=MDATA.length>0;
+  const tieneP=VDATA>0;
+  const tieneM=!!localStorage.getItem('mis_revisadas_'+PID);
+  const listo=tieneC&&tieneP&&tieneM;
+
+  if(listo && PROJ.estado==='activo'){
+    el.style.display='none'; return;
+  }
+  el.style.display='';
+
+  const paso=(ok,label,sub,navArg)=>`
+    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:140px">
+      <div style="width:28px;height:28px;border-radius:50%;border:2px solid ${ok?'var(--green)':'var(--border2)'};background:${ok?'var(--green-d)':'var(--bg3)'};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px">${ok?'✓':'○'}</div>
+      <div style="flex:1">
+        <div style="font-family:'Syne',sans-serif;font-size:10px;font-weight:700;color:${ok?'var(--green)':'var(--text2)'}">${label}</div>
+        <div style="font-size:9px;color:var(--text3)">${ok?'Listo':sub}</div>
+      </div>
+      ${(!ok&&navArg)?`<button onclick="navToTab(${navArg})" style="padding:4px 10px;background:var(--amber);color:#000;border:none;border-radius:5px;font-family:'Syne',sans-serif;font-size:8px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;white-space:nowrap">Ir →</button>`:''}
+    </div>`;
+
+  el.innerHTML=`
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.875rem 1.25rem;margin-bottom:.875rem">
+      <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);margin-bottom:.75rem">Configuración del proyecto</div>
+      <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center">
+        ${paso(tieneC,'Cronograma','Agrega misiones al cronograma',"'cronograma'")}
+        <div style="color:var(--border2);font-size:16px">›</div>
+        ${paso(tieneP,'Presupuesto IA','Personaliza el presupuesto',"'presupuesto'")}
+        <div style="color:var(--border2);font-size:16px">›</div>
+        ${paso(tieneM,'Misiones revisadas','Revisa el plan de obra',"'misiones','plan'")}
+        ${listo?`<div style="color:var(--border2);font-size:16px">›</div>
+        <button onclick="activarProyecto()" style="padding:9px 20px;background:var(--green);color:#fff;border:none;border-radius:7px;font-family:'Syne',sans-serif;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;cursor:pointer">Activar proyecto</button>`:''}
+      </div>
+    </div>`;
+}
+
+// ── ACTIVAR PROYECTO ──
+async function activarProyecto(){
+  const {error}=await db.from('proyectos').update({estado:'activo'}).eq('id',PID);
+  if(error){alert('Error: '+error.message);return;}
+  PROJ.estado='activo';
+  renderConfigProgress();
+  document.getElementById('config-progress').innerHTML=`
+    <div style="background:var(--green-d);border:1px solid rgba(39,174,96,.3);border-radius:8px;padding:.875rem 1.25rem;margin-bottom:.875rem;display:flex;align-items:center;gap:10px">
+      <span style="font-size:1.5rem">🎉</span>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800;color:var(--green)">Proyecto activo</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">Cronograma, presupuesto y misiones configurados. El gemelo digital está listo.</div>
+      </div>
+    </div>`;
+  setTimeout(()=>document.getElementById('config-progress').style.display='none',4000);
+}
+
+// ── PLAN DE OBRA (sub-tab misiones) ──
+function renderMisPlan(){
+  const el=document.getElementById('mis-plan-wrap');
+  if(!el) return;
+  if(!MDATA.length){
+    el.innerHTML='<div class="empty">Sin misiones en el cronograma. Agrega misiones primero.</div>';
+    return;
+  }
+
+  // Agrupar misiones por etapa con rango de fechas
+  const etapaInfo={};
+  MDATA.forEach(m=>{
+    if(!etapaInfo[m.etapa_id]) etapaInfo[m.etapa_id]={misiones:[],ini:null,fin:null,dias:0};
+    const ei=etapaInfo[m.etapa_id];
+    ei.misiones.push(m);
+    if(m.fecha_inicio_plan){const d=new Date(m.fecha_inicio_plan);if(!ei.ini||d<ei.ini)ei.ini=d;}
+    if(m.fecha_fin_plan){const d=new Date(m.fecha_fin_plan);if(!ei.fin||d>ei.fin)ei.fin=d;}
+    ei.dias+=parseInt(m.dias_plan||0);
+  });
+
+  // Costo presupuestado por etapa (de PMDATA)
+  const costoEtapa={};
+  PMDATA.forEach(p=>{
+    if(!costoEtapa[p.etapa_id])costoEtapa[p.etapa_id]=0;
+    costoEtapa[p.etapa_id]+=parseFloat(p.costo_estimado||0);
+  });
+
+  const tieneM=!!localStorage.getItem('mis_revisadas_'+PID);
+  const fmtDate=d=>d?d.toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'}):'—';
+
+  el.innerHTML=`
+    <div style="margin-bottom:.875rem">
+      ${EO.filter(e=>etapaInfo[e]).map(e=>{
+        const ei=etapaInfo[e];
+        const costo=costoEtapa[e]||0;
+        const comp=ei.misiones.filter(m=>m.estado==='completada').length;
+        const pct=Math.round(ei.misiones.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/ei.misiones.length);
+        return`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.875rem;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;flex-wrap:wrap">
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-size:11px;font-weight:700">${EN[e]||e}</div>
+              <div style="font-size:10px;color:var(--text3);margin-top:2px">${fmtDate(ei.ini)} → ${fmtDate(ei.fin)} · ${ei.dias} días · ${ei.misiones.length} misiones</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              ${costo?`<div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--amber)">${fmt(costo)}</div><div style="font-size:9px;color:var(--text3)">presupuestado</div>`:`<div style="font-size:10px;color:var(--text3)">sin costo IA</div>`}
+            </div>
+          </div>
+          <div style="margin-top:.5rem;display:flex;align-items:center;gap:8px">
+            <div style="flex:1;height:3px;background:var(--bg4);border-radius:2px;overflow:hidden"><div style="height:100%;background:${pct===100?'var(--green)':pct>0?'var(--amber)':'var(--bg4)'};width:${pct}%"></div></div>
+            <span style="font-size:10px;color:var(--text3);flex-shrink:0">${comp}/${ei.misiones.length} · ${pct}%</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    ${!tieneM?`<button onclick="marcarMisionesRevisadas()" style="width:100%;padding:12px;background:var(--amber);color:#000;border:none;border-radius:7px;font-family:'Syne',sans-serif;font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">He revisado el plan de obra ✓</button>`
+    :`<div style="text-align:center;padding:10px;background:var(--green-d);border:1px solid rgba(39,174,96,.2);border-radius:7px;font-size:11px;color:var(--green);font-weight:600">✓ Plan de obra revisado — ve al Tablero para activar el proyecto</div>`}`;
+}
+
+function marcarMisionesRevisadas(){
+  localStorage.setItem('mis_revisadas_'+PID,'1');
+  renderConfigProgress();
+  renderMisPlan();
+}
+
+function navToTab(name, sub){
+  const t=document.querySelector(`.tab[onclick*="${name}"]`);
+  if(t) sw(name,t);
+  if(sub) setTimeout(()=>setMisSub(sub),100);
+}
+
+// ── SUB-TABS MISIONES ──
+function setMisSub(tab){
+  document.getElementById('mis-sub-activas').classList.toggle('act',tab==='activas');
+  document.getElementById('mis-sub-plan').classList.toggle('act',tab==='plan');
+  document.getElementById('mis-lista-wrap').style.display=tab==='activas'?'':'none';
+  document.getElementById('mis-plan-wrap').style.display=tab==='plan'?'':'none';
+  if(tab==='plan') renderMisPlan();
 }
 
 // ── DASHBOARD ──
