@@ -2330,6 +2330,25 @@ async function guardarPresupuestoIA(){
     }));
     if(etapasInsert.length) await db.from('presupuesto_etapas').insert(etapasInsert);
 
+    // Guardar items detallados en presupuesto_misiones
+    const misionesInsert=[];
+    (BUDGET_GENERADO.etapas||[]).forEach(e=>{
+      (e.items||[]).forEach((item,idx)=>{
+        misionesInsert.push({
+          id:`${PID}-${e.etapa_id}-v${nextV}-${idx}`,
+          proyecto_id:PID, org_id:PROJ.org_id,
+          mision_id:null,
+          etapa_id:e.etapa_id,
+          cantidad_presupuestada:item.cantidad,
+          unidad:item.unidad,
+          precio_unitario_est:item.precio_unitario,
+          costo_estimado:item.subtotal,
+          nota:item.nombre
+        });
+      });
+    });
+    if(misionesInsert.length) await db.from('presupuesto_misiones').insert(misionesInsert);
+
     // Actualizar presupuesto_total en proyectos
     await db.from('proyectos').update({presupuesto_total:BUDGET_GENERADO.total}).eq('id',PID);
     PROJ.presupuesto_total=BUDGET_GENERADO.total;
@@ -2400,24 +2419,31 @@ async function loadPresupuesto(){
   const avByEtapa={};
   MDATA.forEach(m=>{if(!avByEtapa[m.etapa_id])avByEtapa[m.etapa_id]={p:0,n:0};avByEtapa[m.etapa_id].p+=parseFloat(m.pct_avance||0);avByEtapa[m.etapa_id].n++;});
 
+  // Mapa de montos guardados por IA (versión más alta disponible)
+  const maxVer=(etapas||[]).reduce((m,r)=>Math.max(m,r.version||0),0);
+  const etapasMontoMap={};
+  (etapas||[]).filter(r=>r.version===maxVer).forEach(r=>{etapasMontoMap[r.etapa_id]=r.monto_ajustado;});
+  const tieneEtapasIA=maxVer>0;
+
   document.getElementById('pre-etapas').innerHTML=`
     <table style="width:100%;border-collapse:collapse;font-size:11px">
       <thead><tr>
         <th style="text-align:left;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Etapa</th>
-        <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">% CAMACOL</th>
+        <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">${tieneEtapasIA?'% real IA':'% CAMACOL'}</th>
         <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Presupuesto</th>
         <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Desviaciones</th>
         <th style="text-align:right;padding:6px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border)">Avance</th>
       </tr></thead>
       <tbody>${EO.map(e=>{
         const pct=PCTS[e]||0;
-        const monto=presupuesto*pct;
+        const monto=etapasMontoMap[e]!=null?etapasMontoMap[e]:presupuesto*pct;
+        const pctReal=presupuesto>0?monto/presupuesto:pct;
         const dEtapa=desvByEtapa[e]||0;
         const av=avByEtapa[e]?Math.round(avByEtapa[e].p/avByEtapa[e].n):0;
         const col=dEtapa>0?'var(--red)':dEtapa<0?'var(--green)':'var(--text3)';
         return`<tr style="border-bottom:1px solid var(--border)">
           <td style="padding:7px 8px;font-weight:500">${EN[e]||e}</td>
-          <td style="padding:7px 8px;text-align:right;color:var(--text2)">${(pct*100).toFixed(0)}%</td>
+          <td style="padding:7px 8px;text-align:right;color:var(--text2)">${(pctReal*100).toFixed(1)}%</td>
           <td style="padding:7px 8px;text-align:right">${fmt(monto)}</td>
           <td style="padding:7px 8px;text-align:right;color:${col};font-weight:500">${dEtapa?((dEtapa>0?'+':'')+fmt(dEtapa)):'—'}</td>
           <td style="padding:7px 8px;text-align:right">
