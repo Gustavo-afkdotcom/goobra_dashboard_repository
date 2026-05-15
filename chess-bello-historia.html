@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>♟ Chess Bello — Aldenmere</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#080810; --surface:#0e0e1c; --border:#1c1c30;
+  --text:#ddd5c0; --muted:#545468; --gold:#c8a045; --gold-dim:#7a5f28;
+  --sq-l:#eedcb8; --sq-d:#9b6644;
+  --amber:#c8a045; --teal:#1d9e75; --red:#e83030;
+}
+body { background:var(--bg); color:var(--text); font-family:'Libre Baskerville',Georgia,serif; height:100vh; overflow:hidden; }
+
+/* ── SCREENS ── */
+.screen { display:none; height:100vh; flex-direction:column; overflow:hidden; }
+.screen.active { display:flex; }
+
+/* ── KINGDOM SCREEN ── */
+#screen-kingdom { background:var(--bg); }
+#k-header { padding:18px 28px 14px; border-bottom:1px solid var(--border); flex-shrink:0; display:flex; align-items:flex-end; justify-content:space-between; }
+#k-logo { font-size:22px; font-weight:700; letter-spacing:3px; color:var(--gold); }
+#k-logo span { font-size:10px; font-family:'Source Code Pro',monospace; color:var(--muted); letter-spacing:4px; display:block; margin-bottom:2px; }
+#k-res { font-family:'Source Code Pro',monospace; font-size:10px; color:var(--muted); text-align:right; }
+#k-res .val { font-size:18px; color:var(--gold); display:block; font-weight:600; }
+
+#k-body { flex:1; display:grid; grid-template-columns:1fr 340px; overflow:hidden; }
+
+#k-map { padding:24px 28px; overflow-y:auto; }
+#k-map-title { font-family:'Source Code Pro',monospace; font-size:8px; letter-spacing:5px; color:var(--muted); margin-bottom:16px; }
+#buildings-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+
+.bld { border-radius:10px; padding:14px 14px 12px; border:0.5px solid var(--border); background:var(--surface); position:relative; transition:border-color .2s; }
+.bld.ruins { opacity:0.38; }
+.bld.ruins .bld-icon { color:var(--muted); }
+.bld.damaged { border:1px dashed var(--amber); background:#1a130a; }
+.bld.damaged .bld-icon { color:var(--amber); }
+.bld.damaged .bld-status { color:var(--amber); }
+.bld.built { border:1px solid var(--teal); background:#0a1a14; }
+.bld.built .bld-icon { color:var(--teal); }
+.bld.built .bld-status { color:var(--teal); }
+.bld-icon { font-size:22px; margin-bottom:8px; display:block; }
+.bld-name { font-size:12px; font-weight:700; color:var(--text); margin-bottom:2px; line-height:1.3; }
+.bld-piece { font-family:'Source Code Pro',monospace; font-size:9px; color:var(--muted); margin-bottom:6px; }
+.bld-status { font-family:'Source Code Pro',monospace; font-size:9px; letter-spacing:2px; color:var(--muted); }
+.bld-pattern { font-family:'Source Code Pro',monospace; font-size:9px; color:var(--muted); margin-top:4px; padding-top:4px; border-top:0.5px solid var(--border); }
+.bld-lvl-badge { position:absolute; top:8px; right:8px; font-family:'Source Code Pro',monospace; font-size:8px; padding:2px 6px; border:1px solid; border-radius:4px; }
+.bld.damaged .bld-lvl-badge { color:var(--amber); border-color:var(--amber); }
+.bld.ruins .bld-lvl-badge { color:var(--muted); border-color:var(--border); }
+
+#k-side { border-left:1px solid var(--border); padding:24px 22px; display:flex; flex-direction:column; gap:14px; overflow-y:auto; }
+#k-lore { font-size:13px; line-height:1.8; color:var(--muted); font-style:italic; }
+#k-lore strong { color:var(--text); font-style:normal; }
+.k-level-card { background:var(--surface); border:1px solid var(--amber); padding:16px; border-radius:8px; }
+.k-level-card .klc-tag { font-family:'Source Code Pro',monospace; font-size:8px; letter-spacing:4px; color:var(--amber); margin-bottom:6px; }
+.k-level-card .klc-name { font-size:15px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.k-level-card .klc-boss { font-size:12px; color:var(--muted); margin-bottom:10px; }
+.k-level-card .klc-pieces { font-family:'Source Code Pro',monospace; font-size:10px; color:var(--amber); padding:4px 8px; border:1px solid var(--amber)44; display:inline-block; margin-bottom:12px; }
+.k-level-card .klc-note { font-size:11px; color:var(--muted); line-height:1.5; margin-bottom:14px; }
+#start-btn { width:100%; padding:12px; background:var(--amber); color:#000; border:none; cursor:pointer; font-family:'Source Code Pro',monospace; font-size:11px; letter-spacing:3px; font-weight:600; transition:opacity .2s; border-radius:4px; }
+#start-btn:hover { opacity:0.85; }
+
+/* ── BOSS INTRO SCREEN ── */
+#screen-boss { background:var(--bg); align-items:center; justify-content:center; }
+#boss-card { max-width:500px; width:90%; background:var(--surface); border:1px solid var(--red); }
+#boss-header { background:#160808; padding:20px 24px 16px; border-bottom:1px solid var(--border); }
+#boss-lvl-badge { font-family:'Source Code Pro',monospace; font-size:8px; letter-spacing:4px; color:var(--red); margin-bottom:8px; }
+#boss-name { font-size:28px; font-weight:700; color:var(--text); line-height:1; margin-bottom:2px; }
+#boss-title { font-size:12px; color:var(--muted); font-style:italic; }
+#boss-body { padding:20px 24px; }
+.boss-field { margin-bottom:14px; }
+.boss-field-label { font-family:'Source Code Pro',monospace; font-size:8px; letter-spacing:4px; color:var(--muted); margin-bottom:4px; }
+.boss-field-text { font-size:13px; line-height:1.7; color:var(--text); }
+.boss-attack { padding:10px 12px; border-left:3px solid var(--red); background:#120808; font-size:12px; color:var(--muted); line-height:1.6; }
+.boss-weak { padding:10px 12px; border-left:3px solid var(--teal); background:#080e0c; font-size:12px; color:var(--muted); line-height:1.6; }
+#boss-footer { padding:14px 24px; border-top:1px solid var(--border); display:flex; gap:8px; }
+.boss-btn { flex:1; padding:10px; border:1px solid; background:transparent; cursor:pointer; font-family:'Source Code Pro',monospace; font-size:10px; letter-spacing:2px; transition:all .2s; }
+.boss-btn.primary { border-color:var(--red); color:var(--red); }
+.boss-btn.primary:hover { background:var(--red); color:#fff; }
+.boss-btn.sec { border-color:var(--border); color:var(--muted); }
+.boss-btn.sec:hover { border-color:var(--muted); color:var(--text); }
+
+/* ── GAME SCREEN ── */
+#screen-game { flex-direction:column; background:var(--bg); }
+#g-header { background:var(--surface); border-bottom:1px solid var(--border); padding:8px 20px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+#g-boss-info { display:flex; align-items:center; gap:12px; }
+#g-boss-name { font-size:14px; font-weight:700; letter-spacing:1px; color:var(--red); }
+#g-level-badge { font-family:'Source Code Pro',monospace; font-size:9px; letter-spacing:2px; color:var(--muted); padding:3px 8px; border:1px solid var(--border); }
+#g-pieces-badge { font-family:'Source Code Pro',monospace; font-size:9px; letter-spacing:1px; color:var(--amber); padding:3px 8px; border:1px solid var(--amber)66; background:var(--amber)11; }
+#g-header-right { display:flex; align-items:center; gap:10px; }
+#g-status { font-family:'Source Code Pro',monospace; font-size:10px; letter-spacing:2px; color:var(--muted); padding:3px 10px; border:1px solid var(--border); min-width:130px; text-align:center; }
+#g-status.danger { color:var(--red); border-color:var(--red); }
+#g-status.win { color:var(--gold); border-color:var(--gold); }
+#g-abandon { font-family:'Source Code Pro',monospace; font-size:9px; color:var(--muted); background:transparent; border:1px solid var(--border); padding:4px 10px; cursor:pointer; }
+#g-abandon:hover { border-color:var(--muted); color:var(--text); }
+
+#g-main { display:flex; flex:1; overflow:hidden; }
+
+/* Board */
+#g-board-area { display:flex; align-items:center; justify-content:center; padding:14px 20px; flex-shrink:0; }
+.rank-labels { display:flex; flex-direction:column; margin-right:6px; }
+.rank-label  { height:56px; display:flex; align-items:center; justify-content:center; font-family:'Source Code Pro',monospace; font-size:10px; color:var(--muted); width:12px; }
+.file-labels { display:flex; margin-top:6px; margin-left:18px; }
+.file-label  { width:56px; text-align:center; font-family:'Source Code Pro',monospace; font-size:10px; color:var(--muted); }
+#g-board { display:grid; grid-template-columns:repeat(8,56px); grid-template-rows:repeat(8,56px); border:2px solid #3a2a14; box-shadow:0 0 0 1px #1a0e04,0 8px 40px rgba(0,0,0,.6); }
+.sq { width:56px; height:56px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; transition:filter .1s; user-select:none; }
+.sq:hover { filter:brightness(1.1); }
+.sq-l { background:var(--sq-l); } .sq-d { background:var(--sq-d); }
+.sq-sel  { background:#e8e040!important; }
+.sq-last { background:#c8d840!important; }
+.sq-last.sq-d { background:#9ea828!important; }
+.sq-chk  { background:#e83030!important; }
+.sq-legal::after { content:''; position:absolute; width:18px; height:18px; background:rgba(0,0,0,.22); border-radius:50%; pointer-events:none; z-index:2; }
+.sq-cap::after   { content:''; position:absolute; inset:2px; border:4px solid rgba(0,0,0,.22); border-radius:50%; pointer-events:none; z-index:2; }
+.piece { font-size:38px; line-height:1; position:relative; z-index:3; pointer-events:none; }
+.piece-w { color:#f8f0e0; filter:drop-shadow(0 1px 3px rgba(0,0,0,.7)); }
+.piece-b { color:#1a1008; filter:drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
+
+/* Panel */
+#g-panel { flex:1; border-left:1px solid var(--border); display:flex; flex-direction:column; overflow:hidden; max-width:300px; }
+#g-score-zone { padding:12px 18px 10px; background:var(--surface); border-bottom:1px solid var(--border); flex-shrink:0; }
+#g-score-lbl { font-family:'Source Code Pro',monospace; font-size:7px; letter-spacing:5px; color:var(--muted); margin-bottom:2px; }
+#g-score-num { font-size:44px; font-weight:700; color:var(--gold); line-height:1; transition:transform .2s,color .2s; }
+#g-score-num.flash { transform:scale(1.14); color:#fff; }
+#g-mult-row { min-height:14px; margin-top:4px; font-family:'Source Code Pro',monospace; font-size:9px; color:var(--muted); }
+#g-feed-zone { padding:10px 18px; border-bottom:1px solid var(--border); flex-shrink:0; max-height:160px; overflow-y:auto; }
+#g-feed-title { font-family:'Source Code Pro',monospace; font-size:7px; letter-spacing:5px; color:var(--muted); margin-bottom:6px; }
+.feed-item  { display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #0f0f1e; animation:slideIn .2s ease; font-size:11px; }
+.feed-empty { font-size:11px; color:var(--muted); font-style:italic; padding:4px 0; }
+@keyframes slideIn { from{opacity:0;transform:translateX(6px)} to{opacity:1;transform:translateX(0)} }
+#g-hist-zone { flex:1; overflow-y:auto; padding:10px 18px; }
+#g-hist-title { font-family:'Source Code Pro',monospace; font-size:7px; letter-spacing:5px; color:var(--muted); margin-bottom:6px; }
+.move-row { display:flex; gap:3px; padding:2px 0; font-family:'Source Code Pro',monospace; font-size:11px; }
+.mv-num { color:var(--muted); width:22px; flex-shrink:0; }
+.mv-san { color:var(--text); width:52px; }
+.mv-san.beauty { color:var(--gold); font-weight:600; }
+.mv-tag { font-size:8px; padding:1px 4px; border:1px solid; }
+
+/* Win hint bar */
+#g-win-hint { font-family:'Source Code Pro',monospace; font-size:9px; letter-spacing:2px; color:var(--amber); text-align:center; padding:5px; background:var(--amber)11; border-top:1px solid var(--amber)33; flex-shrink:0; }
+
+/* Toast */
+#g-toast { position:fixed; top:56px; right:14px; background:var(--surface); border:1px solid var(--gold); padding:12px 16px; min-width:180px; z-index:200; opacity:0; transform:translateY(-6px); pointer-events:none; transition:opacity .2s,transform .2s; }
+#g-toast.show { opacity:1; transform:translateY(0); }
+#g-toast-tag  { font-family:'Source Code Pro',monospace; font-size:7px; letter-spacing:4px; color:var(--muted); margin-bottom:3px; }
+#g-toast-name { font-size:14px; font-weight:700; margin-bottom:2px; }
+#g-toast-pts  { font-family:'Source Code Pro',monospace; font-size:20px; font-weight:700; }
+
+/* ── REPORT SCREEN ── */
+#screen-report { align-items:center; justify-content:center; background:var(--bg); }
+#report-box { max-width:520px; width:92%; background:var(--surface); border:1px solid; max-height:90vh; overflow-y:auto; }
+#rep-header { padding:22px 26px 18px; border-bottom:1px solid var(--border); }
+#rep-result-tag { font-family:'Source Code Pro',monospace; font-size:8px; letter-spacing:5px; margin-bottom:6px; }
+#rep-title { font-size:26px; font-weight:700; margin-bottom:4px; }
+#rep-sub { font-family:'Source Code Pro',monospace; font-size:10px; color:var(--muted); letter-spacing:2px; }
+#rep-body { padding:22px 26px; }
+.rep-section { margin-bottom:20px; }
+.rep-sec-title { font-family:'Source Code Pro',monospace; font-size:7px; letter-spacing:5px; color:var(--muted); margin-bottom:10px; padding-bottom:6px; border-bottom:0.5px solid var(--border); }
+.rep-score-display { font-size:48px; font-weight:700; line-height:1; margin-bottom:4px; }
+.rep-lore { font-size:13px; line-height:1.8; color:var(--text); font-style:italic; margin-bottom:16px; padding:12px 16px; border-left:3px solid; }
+.unlock-card { padding:14px 16px; border:1px solid; border-radius:8px; margin-bottom:10px; }
+.unlock-card .uc-tag { font-family:'Source Code Pro',monospace; font-size:7px; letter-spacing:4px; color:var(--muted); margin-bottom:4px; }
+.unlock-card .uc-name { font-size:16px; font-weight:700; margin-bottom:4px; }
+.unlock-card .uc-lore { font-size:12px; line-height:1.6; color:var(--muted); font-style:italic; }
+.rep-patterns-list { display:flex; flex-direction:column; gap:0; }
+.rep-pat-row { display:flex; justify-content:space-between; padding:5px 0; border-bottom:0.5px solid var(--border); font-size:12px; }
+.rep-pat-row:last-child { border-bottom:none; }
+.rep-pat-pts { font-family:'Source Code Pro',monospace; font-size:11px; font-weight:600; }
+#rep-footer { padding:14px 26px; border-top:1px solid var(--border); display:flex; gap:8px; }
+.rep-btn { flex:1; padding:10px; border:1px solid; background:transparent; cursor:pointer; font-family:'Source Code Pro',monospace; font-size:10px; letter-spacing:2px; transition:all .2s; }
+.rep-btn.primary { }
+.rep-btn.primary:hover { }
+.rep-btn.sec { border-color:var(--border); color:var(--muted); }
+.rep-btn.sec:hover { border-color:var(--muted); }
+
+::-webkit-scrollbar { width:3px; } ::-webkit-scrollbar-track { background:var(--bg); } ::-webkit-scrollbar-thumb { background:var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ KINGDOM SCREEN ═══════════════════════════ -->
+<div id="screen-kingdom" class="screen active">
+  <div id="k-header">
+    <div id="k-logo">
+      <span>REINO DE</span>
+      ALDENMERE
+    </div>
+    <div id="k-res">
+      <span id="k-res-val" class="val">0</span>
+      RESONANCIA TOTAL
+    </div>
+  </div>
+  <div id="k-body">
+    <div id="k-map">
+      <div id="k-map-title">MAPA DEL REINO — EDIFICIOS</div>
+      <div id="buildings-grid">
+
+        <div class="bld damaged" id="bld-puerta">
+          <div class="bld-lvl-badge">N1</div>
+          <span class="bld-icon">🏛</span>
+          <div class="bld-name">La Puerta del Guardián</div>
+          <div class="bld-piece">♙ Peones</div>
+          <div class="bld-status">DAÑADA — NIVEL ACTIVO</div>
+          <div class="bld-pattern">Enseña: Peón Pasado</div>
+        </div>
+
+        <div class="bld ruins" id="bld-establos">
+          <div class="bld-lvl-badge">N2</div>
+          <span class="bld-icon">🐴</span>
+          <div class="bld-name">Establos de la Oblicua</div>
+          <div class="bld-piece">♘ Caballos</div>
+          <div class="bld-status">RUINAS</div>
+          <div class="bld-pattern">Enseña: Horquilla</div>
+        </div>
+
+        <div class="bld ruins" id="bld-observatorio">
+          <div class="bld-lvl-badge">N3</div>
+          <span class="bld-icon">🔭</span>
+          <div class="bld-name">Observatorio de las Diagonales</div>
+          <div class="bld-piece">♗ Alfiles</div>
+          <div class="bld-status">RUINAS</div>
+          <div class="bld-pattern">Enseña: Clavada</div>
+        </div>
+
+        <div class="bld ruins" id="bld-ciudadela">
+          <div class="bld-lvl-badge">N4</div>
+          <span class="bld-icon">🏰</span>
+          <div class="bld-name">La Gran Ciudadela</div>
+          <div class="bld-piece">♖ Torres</div>
+          <div class="bld-status">RUINAS</div>
+          <div class="bld-pattern">Enseña: Batería</div>
+        </div>
+
+        <div class="bld ruins" id="bld-consejo">
+          <div class="bld-lvl-badge">N5</div>
+          <span class="bld-icon">👑</span>
+          <div class="bld-name">La Sala del Consejo</div>
+          <div class="bld-piece">♕ Dama</div>
+          <div class="bld-status">RUINAS</div>
+          <div class="bld-pattern">Enseña: Sacrificio</div>
+        </div>
+
+        <div class="bld ruins" id="bld-bastion">
+          <div class="bld-lvl-badge">N6</div>
+          <span class="bld-icon">🛡</span>
+          <div class="bld-name">El Bastión Final</div>
+          <div class="bld-piece">♔ Rey</div>
+          <div class="bld-status">RUINAS</div>
+          <div class="bld-pattern">Enseña: Zugzwang</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="k-side">
+      <p id="k-lore">
+        <strong>Aldenmere</strong> fue durante generaciones el guardián de un arte perdido: la guerra bella.<br><br>
+        Sus edificios están en ruinas. Su ejército, olvidado. Seis reinos rivales se acercan, uno por uno.<br><br>
+        Tú eres el <strong>Estratega de la Corona</strong>. Defiende al rey. Reconstruye el reino. Recuerda el arte.
+      </p>
+      <div class="k-level-card">
+        <div class="klc-tag">NIVEL 1 — DISPONIBLE</div>
+        <div class="klc-name">El Primer Asedio</div>
+        <div class="klc-boss">Enemigo: Rudek el Ansioso</div>
+        <div class="klc-pieces">♙ Solo peones y rey</div>
+        <p class="klc-note">Tu reino es pequeño. Solo tienes peones y a tu rey. Un peón que llega al final se convierte en reina. Esa es tu única arma hoy.</p>
+        <button id="start-btn" onclick="goToBossIntro()">ENFRENTAR A RUDEK →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ BOSS INTRO SCREEN ═══════════════════════════ -->
+<div id="screen-boss" class="screen">
+  <div id="boss-card">
+    <div id="boss-header">
+      <div id="boss-lvl-badge">NIVEL 1 · PRIMER ENEMIGO</div>
+      <div id="boss-name">Rudek el Ansioso</div>
+      <div id="boss-title">Soldado impaciente del reino de Veth · 0–400 ELO</div>
+    </div>
+    <div id="boss-body">
+      <div class="boss-field">
+        <div class="boss-field-label">HISTORIA</div>
+        <div class="boss-field-text">Aprendió una sola táctica en toda su carrera y la usa sin pensar. Su reina sale antes de que sus peones sepan hacia dónde marchar. Ha ganado muchas batallas contra quienes nunca lo vieron venir — pero quien reconoce su patrón, lo derrota con facilidad.</div>
+      </div>
+      <div class="boss-attack">
+        <strong style="color:#e87070">Táctica:</strong> Despliegue agresivo de la Dama. Busca capturar tus peones y acorralar a tu rey desde lejos. No tiene plan secundario.
+      </div>
+      <div style="height:8px"></div>
+      <div class="boss-weak">
+        <strong style="color:#50c898">Debilidad:</strong> No sabe defender. Una vez que su reina está lejos del rey, es vulnerable. Un peón que avanza sin parar lo confunde.
+      </div>
+      <div style="height:12px"></div>
+      <div class="boss-field">
+        <div class="boss-field-label">CONDICIÓN DE VICTORIA</div>
+        <div class="boss-field-text" style="font-size:12px;color:var(--amber)">Corona un peón <span style="color:var(--muted)">— o da mate al rey de Rudek.</span></div>
+      </div>
+    </div>
+    <div id="boss-footer">
+      <button class="boss-btn sec" onclick="goToKingdom()">← VOLVER</button>
+      <button class="boss-btn primary" onclick="startGame()">COMENZAR BATALLA →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ GAME SCREEN ═══════════════════════════ -->
+<div id="screen-game" class="screen">
+  <div id="g-header">
+    <div id="g-boss-info">
+      <div id="g-level-badge">N1</div>
+      <div id="g-boss-name">Rudek el Ansioso</div>
+      <div id="g-pieces-badge">♙ Solo peones + rey</div>
+    </div>
+    <div id="g-header-right">
+      <div id="g-status">TU TURNO</div>
+      <button id="g-abandon" onclick="goToKingdom()">✕ ABANDONAR</button>
+    </div>
+  </div>
+
+  <div id="g-main">
+    <div id="g-board-area">
+      <div>
+        <div style="display:flex">
+          <div class="rank-labels" id="g-rank-labels"></div>
+          <div id="g-board"></div>
+        </div>
+        <div class="file-labels" id="g-file-labels"></div>
+      </div>
+    </div>
+
+    <div id="g-panel">
+      <div id="g-score-zone">
+        <div id="g-score-lbl">RESONANCIA</div>
+        <div id="g-score-num">0</div>
+        <div id="g-mult-row"></div>
+      </div>
+      <div id="g-feed-zone">
+        <div id="g-feed-title">PATRONES DETECTADOS</div>
+        <div id="g-feed-list"><div class="feed-empty">Avanza tus peones...</div></div>
+      </div>
+      <div id="g-hist-zone">
+        <div id="g-hist-title">HISTORIAL</div>
+        <div id="g-move-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="g-win-hint">OBJETIVO: CORONA UN PEÓN o da mate · Corona = victoria automática</div>
+</div>
+
+<!-- Toast -->
+<div id="g-toast">
+  <div id="g-toast-tag">PATRÓN DETECTADO</div>
+  <div id="g-toast-name"></div>
+  <div id="g-toast-pts"></div>
+</div>
+
+<!-- ═══════════════════════════ REPORT SCREEN ═══════════════════════════ -->
+<div id="screen-report" class="screen">
+  <div id="report-box">
+    <div id="rep-header">
+      <div id="rep-result-tag"></div>
+      <div id="rep-title"></div>
+      <div id="rep-sub"></div>
+    </div>
+    <div id="rep-body"></div>
+    <div id="rep-footer">
+      <button class="rep-btn primary" id="rep-continue-btn">CONTINUAR →</button>
+      <button class="rep-btn sec" onclick="goToKingdom()">← REINO</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+// PATTERN DEFINITIONS
+// ════════════════════════════════════════
+const PATTERNS = {
+  mate:              { pts:900,  label:'♛ Mate',              lore:'El rey cae. La batalla ha terminado.',                color:'#f0e8d8' },
+  jaque_doble:       { pts:280,  label:'Jaque Doble',         lore:'Dos voces de amenaza. Solo el rey responde.',         color:'#fde68a' },
+  jaque_descubierto: { pts:200,  label:'Jaque Descubierto',   lore:'El velo se rasga. El rey no lo vio venir.',          color:'#fde68a' },
+  sacrificio:        { pts:160,  label:'Sacrificio',          lore:'Entregado por un bien que el enemigo no comprende.',  color:'#f472b6' },
+  horquilla_caballo: { pts:150,  label:'Horquilla ♞',        lore:'El jinete planta su lanza entre dos enemigos.',       color:'#fb923c' },
+  jaque_amenaza:     { pts:110,  label:'Jaque + Amenaza',     lore:'Dos males sin cura simultánea.',                     color:'#ef4444' },
+  ataque_descubierto:{ pts:100,  label:'Ataque Descubierto',  lore:'Una amenaza dormida despierta.',                     color:'#fcd34d' },
+  ensarte:           { pts:90,   label:'Ensarte',             lore:'El mayor retrocede. El menor queda expuesto.',       color:'#f97316' },
+  horquilla:         { pts:80,   label:'Horquilla',           lore:'Dos frentes acorralados con un solo movimiento.',    color:'#fb923c' },
+  clavada:           { pts:70,   label:'Clavada',             lore:'La pieza no puede moverse sin traicionar al rey.',   color:'#e879f9' },
+  bateria:           { pts:65,   label:'Batería ♜♜',         lore:'Las torres hablan en unísono.',                      color:'#a78bfa' },
+  espalda:           { pts:65,   label:'Torre en 7ª',         lore:'La ciudadela avanza a las puertas del enemigo.',     color:'#a78bfa' },
+  torre_col_abierta: { pts:50,   label:'Columna Abierta',     lore:'La línea despejada. Dominio sin obstáculos.',        color:'#818cf8' },
+  outpost_caballo:   { pts:55,   label:'Outpost ♞',          lore:'El jinete planta bandera en tierra sin dueño.',      color:'#67e8f9' },
+  captura_libre:     { pts:45,   label:'Captura Libre',       lore:'Pieza abandonada. El enemigo olvidó lo que tenía.',  color:'#86efac' },
+  peon_pasado:       { pts:55,   label:'Peón Pasado',         lore:'Un guardián sin obstáculos. La coronación espera.',  color:'#86efac' },
+  coronacion:        { pts:220,  label:'Coronación ♛',       lore:'El guardián llegó al altar. Nueva reina para Aldenmere.', color:'#fde68a' },
+  centralizacion:    { pts:35,   label:'Centralización ♞',   lore:'El jinete toma el corazón del tablero.',             color:'#67e8f9' },
+};
+
+const SYMBOLS = {
+  wp:'♙',wn:'♘',wb:'♗',wr:'♖',wq:'♕',wk:'♔',
+  bp:'♟',bn:'♞',bb:'♝',br:'♜',bq:'♛',bk:'♚'
+};
+const PVAL = { p:100,n:320,b:330,r:500,q:900,k:20000 };
+
+// LEVEL 1 FEN: White = King e1 + 8 pawns. Black = King e8 + Queen d8 + 2 pawns
+const L1_FEN = '3qk3/3pp3/8/8/8/8/PPPPPPPP/4K3 w - - 0 1';
+
+// ════════════════════════════════════════
+// GAME STATE
+// ════════════════════════════════════════
+let game, selected, legalDests, lastMoved;
+let beautyScore, multiplier, patternSet, moveBeauty, thinking, gameOver;
+let resonanciaTotal = 0;
+let unlockedBuildings = [];
+let toastTimer = null;
+let rudekMoveIndex = 0;
+
+// ════════════════════════════════════════
+// SCREEN NAVIGATION
+// ════════════════════════════════════════
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+function goToKingdom() {
+  updateKingdomBuildings();
+  document.getElementById('k-res-val').textContent = resonanciaTotal.toLocaleString();
+  showScreen('kingdom');
+}
+
+function goToBossIntro() { showScreen('boss'); }
+
+function updateKingdomBuildings() {
+  const bldMap = {
+    puerta:'bld-puerta', establos:'bld-establos', observatorio:'bld-observatorio',
+    ciudadela:'bld-ciudadela', consejo:'bld-consejo', bastion:'bld-bastion'
+  };
+  Object.entries(bldMap).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (unlockedBuildings.includes(key)) {
+      el.className = 'bld built';
+      const statusEl = el.querySelector('.bld-status');
+      if (statusEl) statusEl.textContent = 'CONSTRUIDA ✓';
+    }
+  });
+}
+
+// ════════════════════════════════════════
+// GAME INIT
+// ════════════════════════════════════════
+function startGame() {
+  game        = new Chess(L1_FEN);
+  selected    = null;
+  legalDests  = [];
+  lastMoved   = [];
+  beautyScore = 0;
+  multiplier  = 1.0;
+  patternSet  = new Set();
+  moveBeauty  = {};
+  thinking    = false;
+  gameOver    = false;
+  rudekMoveIndex = 0;
+
+  document.getElementById('g-score-num').textContent = '0';
+  document.getElementById('g-mult-row').textContent  = '';
+  document.getElementById('g-feed-list').innerHTML   = '<div class="feed-empty">Avanza tus peones...</div>';
+  document.getElementById('g-status').className      = '';
+  document.getElementById('g-status').textContent    = 'TU TURNO';
+  clearTimeout(toastTimer);
+  document.getElementById('g-toast').classList.remove('show');
+
+  initBoard();
+  updateMoveHistory();
+  showScreen('game');
+}
+
+// ════════════════════════════════════════
+// BOARD
+// ════════════════════════════════════════
+function initBoard() {
+  const rl = document.getElementById('g-rank-labels');
+  rl.innerHTML = '';
+  for (let r = 8; r >= 1; r--) {
+    const d = document.createElement('div'); d.className = 'rank-label'; d.textContent = r; rl.appendChild(d);
+  }
+  const fl = document.getElementById('g-file-labels');
+  fl.innerHTML = '';
+  'abcdefgh'.split('').forEach(f => {
+    const d = document.createElement('div'); d.className = 'file-label'; d.textContent = f; fl.appendChild(d);
+  });
+  const board = document.getElementById('g-board');
+  board.innerHTML = '';
+  for (let row = 0; row < 8; row++) for (let col = 0; col < 8; col++) {
+    const sq = sqName(col, row);
+    const d  = document.createElement('div');
+    d.id = 'sq' + sq; d.className = 'sq ' + ((row + col) % 2 === 0 ? 'sq-l' : 'sq-d');
+    d.onclick = () => onSquareClick(sq);
+    board.appendChild(d);
+  }
+  renderBoard();
+}
+
+function sqName(col, row) { return String.fromCharCode(97 + col) + (8 - row); }
+
+function renderBoard() {
+  for (let row = 0; row < 8; row++) for (let col = 0; col < 8; col++) {
+    const sq = sqName(col, row);
+    const el = document.getElementById('sq' + sq);
+    if (!el) continue;
+    el.className = 'sq ' + ((row + col) % 2 === 0 ? 'sq-l' : 'sq-d');
+    if (lastMoved.includes(sq)) el.classList.add('sq-last');
+    if (sq === selected)        el.classList.add('sq-sel');
+    if (legalDests.includes(sq)) el.classList.add(game.get(sq) ? 'sq-cap' : 'sq-legal');
+    if (game.in_check()) { const k = findKing(game.turn()); if (sq === k) el.classList.add('sq-chk'); }
+    const p = game.get(sq);
+    el.innerHTML = p ? `<span class="piece piece-${p.color}">${SYMBOLS[p.color + p.type]}</span>` : '';
+  }
+}
+
+function findKing(color) {
+  for (let f = 0; f < 8; f++) for (let r = 1; r <= 8; r++) {
+    const sq = String.fromCharCode(97 + f) + r, p = game.get(sq);
+    if (p && p.type === 'k' && p.color === color) return sq;
+  }
+  return null;
+}
+
+// ════════════════════════════════════════
+// INTERACTION
+// ════════════════════════════════════════
+function onSquareClick(sq) {
+  if (thinking || game.turn() !== 'w' || gameOver) return;
+  const piece = game.get(sq);
+  if (selected === sq) { selected = null; legalDests = []; }
+  else if (legalDests.includes(sq)) { doPlayerMove(selected, sq); return; }
+  else if (piece && piece.color === 'w') {
+    selected = sq; legalDests = game.moves({ square: sq, verbose: true }).map(m => m.to);
+  } else { selected = null; legalDests = []; }
+  renderBoard();
+}
+
+function doPlayerMove(from, to) {
+  const promo = needsPromo(from, to) ? 'q' : undefined;
+  const mv    = game.move({ from, to, promotion: promo });
+  if (!mv) return;
+  selected = null; legalDests = []; lastMoved = [from, to];
+
+  const patterns = analyzeMove(mv);
+  applyBeauty(patterns, game.history().length - 1);
+
+  // Check: coronación
+  if (mv.promotion) {
+    applyBeauty(['coronacion'], game.history().length - 1);
+    renderBoard(); updateMoveHistory(); updateStatus();
+    setTimeout(() => handleWin('promotion'), 600);
+    return;
+  }
+
+  renderBoard(); updateMoveHistory(); updateStatus();
+  if (game.in_checkmate()) { handleWin('checkmate'); return; }
+  if (game.in_draw())      { handleDefeat('draw');   return; }
+
+  thinking = true;
+  setTimeout(doRudekMove, 520);
+}
+
+function needsPromo(from, to) {
+  const p = game.get(from);
+  return p && p.type === 'p' && ((p.color === 'w' && to[1] === '8') || (p.color === 'b' && to[1] === '1'));
+}
+
+// ════════════════════════════════════════
+// RUDEK SCRIPTED AI
+// ════════════════════════════════════════
+const RUDEK_SCRIPT = ['e5','Qd6','Qb4','Qa5','Qxa2'];
+
+function doRudekMove() {
+  if (game.turn() !== 'b' || game.game_over()) { thinking = false; return; }
+
+  const mv = pickRudekMove();
+  if (mv) { game.move(mv); lastMoved = [mv.from, mv.to]; }
+
+  thinking = false;
+  renderBoard(); updateMoveHistory(); updateStatus();
+
+  if (game.in_checkmate()) { handleDefeat('checkmate'); return; }
+  if (game.in_draw())      { handleDefeat('draw');      return; }
+}
+
+function pickRudekMove() {
+  const moves = game.moves({ verbose: true });
+  if (!moves.length) return null;
+
+  // Scripted opening phase
+  if (rudekMoveIndex < RUDEK_SCRIPT.length) {
+    const script = RUDEK_SCRIPT[rudekMoveIndex];
+    const found  = moves.find(m => m.san === script);
+    rudekMoveIndex++;
+    if (found) return found;
+  }
+
+  // Always: look for checkmate
+  for (const mv of moves) {
+    game.move(mv); const isMate = game.in_checkmate(); game.undo();
+    if (isMate) return mv;
+  }
+
+  // Capture white pawns (Rudek's main threat)
+  const captures = moves.filter(m => m.captured);
+  if (captures.length > 0) {
+    // Prefer pawn captures (eat the advancing pawns)
+    const pawnCaps = captures.filter(m => m.captured === 'p');
+    if (pawnCaps.length > 0) return pawnCaps[Math.floor(Math.random() * pawnCaps.length)];
+    return captures[Math.floor(Math.random() * captures.length)];
+  }
+
+  // Move queen aggressively (toward white's side)
+  const queenMoves = moves.filter(m => {
+    const p = game.get(m.from); return p && p.type === 'q';
+  });
+  if (queenMoves.length > 0) {
+    queenMoves.sort((a, b) => parseInt(a.to[1]) - parseInt(b.to[1]));
+    return queenMoves[0];
+  }
+
+  return moves[Math.floor(Math.random() * moves.length)];
+}
+
+// ════════════════════════════════════════
+// ATTACK GEOMETRY
+// ════════════════════════════════════════
+function attacksFrom(sq, pType, pColor) {
+  const file = sq.charCodeAt(0) - 97, rank = parseInt(sq[1]) - 1;
+  const out  = [];
+  const add  = (f, r) => { if (f >= 0 && f <= 7 && r >= 0 && r <= 7) out.push(String.fromCharCode(97 + f) + (r + 1)); };
+  const ray  = (df, dr) => { let f = file+df, r = rank+dr; while (f>=0&&f<=7&&r>=0&&r<=7) { const s=String.fromCharCode(97+f)+(r+1); out.push(s); if (game.get(s)) break; f+=df; r+=dr; } };
+  switch (pType) {
+    case 'p': { const d=pColor==='w'?1:-1; add(file-1,rank+d); add(file+1,rank+d); break; }
+    case 'n': [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([df,dr])=>add(file+df,rank+dr)); break;
+    case 'b': [[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([df,dr])=>ray(df,dr)); break;
+    case 'r': [[1,0],[-1,0],[0,1],[0,-1]].forEach(([df,dr])=>ray(df,dr)); break;
+    case 'q': [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]].forEach(([df,dr])=>ray(df,dr)); break;
+    case 'k': [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]].forEach(([df,dr])=>add(file+df,rank+dr)); break;
+  }
+  return out;
+}
+
+function attackersOf(targetSq, byColor) {
+  const res = [];
+  for (let f = 0; f < 8; f++) for (let r = 1; r <= 8; r++) {
+    const sq = String.fromCharCode(97+f)+r, p = game.get(sq);
+    if (p && p.color === byColor && attacksFrom(sq,p.type,p.color).includes(targetSq)) res.push({sq,piece:p});
+  }
+  return res;
+}
+
+function rayPieces(sq, df, dr) {
+  const file=sq.charCodeAt(0)-97, rank=parseInt(sq[1])-1;
+  const res=[]; let f=file+df, r=rank+dr;
+  while(f>=0&&f<=7&&r>=0&&r<=7){ const s=String.fromCharCode(97+f)+(r+1), p=game.get(s); if(p){ res.push({sq:s,piece:p}); if(res.length>=2) break; } f+=df; r+=dr; }
+  return res;
+}
+
+// ════════════════════════════════════════
+// BEAUTY ANALYSIS
+// ════════════════════════════════════════
+function analyzeMove(mv) {
+  const found=[], myColor=mv.color, ec=myColor==='w'?'b':'w';
+  const toSq=mv.to, movedPiece=game.get(toSq);
+  if(!movedPiece) return found;
+  if(game.in_checkmate()){ found.push('mate'); return found; }
+  if(game.in_check()){
+    const givers=attackersOf(findKing(ec),myColor);
+    if(givers.length>=2) found.push('jaque_doble');
+  }
+  if(!found.includes('jaque_doble')){ const dc=checkDiscovered(mv.from,toSq,myColor,ec); if(dc==='check') found.push('jaque_descubierto'); else if(dc==='attack') found.push('ataque_descubierto'); }
+  const myAttacks=attacksFrom(toSq,movedPiece.type,movedPiece.color);
+  const eTargets=myAttacks.filter(sq=>{ const t=game.get(sq); return t&&t.color===ec&&t.type!=='k'; });
+  if(game.in_check()&&eTargets.length>=1&&!found.includes('jaque_doble')&&!found.includes('jaque_descubierto')) found.push('jaque_amenaza');
+  else if(!game.in_check()&&eTargets.length>=2) found.push(movedPiece.type==='n'?'horquilla_caballo':'horquilla');
+  if(mv.captured){ const defs=attackersOf(toSq,ec); if(defs.length>0&&PVAL[movedPiece.type]>PVAL[mv.captured]+60) found.push('sacrificio'); }
+  if(mv.captured&&!found.includes('sacrificio')){ game.undo(); const wd=attackersOf(toSq,ec).length>0; game.move(mv); if(!wd) found.push('captura_libre'); }
+  if(detectNewPin(myColor,ec)) found.push('clavada');
+  if(detectSkewer(toSq,myColor,ec)) found.push('ensarte');
+  if((movedPiece.type==='r'||movedPiece.type==='q')&&toSq[1]===(myColor==='w'?'7':'2')) found.push('espalda');
+  if(movedPiece.type==='r'&&isOpenFile(toSq)) found.push('torre_col_abierta');
+  if((movedPiece.type==='r'||movedPiece.type==='q')&&formsBattery(toSq,myColor)) found.push('bateria');
+  if(movedPiece.type==='n'&&isOutpost(toSq,myColor,ec)) found.push('outpost_caballo');
+  else if(movedPiece.type==='n'&&['d4','d5','e4','e5','c3','c6','f3','f6'].includes(toSq)) found.push('centralizacion');
+  if((movedPiece.type==='p'||mv.captured==='p')&&hasNewPassedPawn(myColor)) found.push('peon_pasado');
+  return [...new Set(found)];
+}
+
+function checkDiscovered(fromSq,toSq,myColor,ec){
+  const fFile=fromSq.charCodeAt(0)-97, fRank=parseInt(fromSq[1])-1;
+  for(const [df,dr] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){
+    let f=fFile-df, r=fRank-dr;
+    while(f>=0&&f<=7&&r>=0&&r<=7){
+      const s=String.fromCharCode(97+f)+(r+1), p=game.get(s);
+      if(p){ if(p.color===myColor&&['r','b','q'].includes(p.type)){ const na=attacksFrom(s,p.type,p.color); if(na.includes(findKing(ec))&&attackersOf(findKing(ec),myColor).some(a=>a.sq===s)) return 'check'; const vt=na.filter(sq=>{ const t=game.get(sq); return t&&t.color===ec&&['q','r','n','b'].includes(t.type); }); if(vt.length>0) return 'attack'; } break; }
+      f-=df; r-=dr;
+    }
+  }
+  return null;
+}
+
+function detectNewPin(myColor,ec){
+  for(let f=0;f<8;f++) for(let r=1;r<=8;r++){ const sq=String.fromCharCode(97+f)+r, p=game.get(sq); if(!p||p.color!==myColor||!['b','r','q'].includes(p.type)) continue; const dirs=[]; if(p.type==='b'||p.type==='q') dirs.push(...[[1,1],[1,-1],[-1,1],[-1,-1]]); if(p.type==='r'||p.type==='q') dirs.push(...[[1,0],[-1,0],[0,1],[0,-1]]); for(const [df,dr] of dirs){ const pieces=rayPieces(sq,df,dr); if(pieces.length>=2&&pieces[0].piece.color===ec&&pieces[1].piece.color===ec&&PVAL[pieces[1].piece.type]>PVAL[pieces[0].piece.type]) return true; } }
+  return false;
+}
+
+function detectSkewer(sq,myColor,ec){ const p=game.get(sq); if(!p||!['b','r','q'].includes(p.type)) return false; const dirs=[]; if(p.type==='b'||p.type==='q') dirs.push(...[[1,1],[1,-1],[-1,1],[-1,-1]]); if(p.type==='r'||p.type==='q') dirs.push(...[[1,0],[-1,0],[0,1],[0,-1]]); for(const [df,dr] of dirs){ const pieces=rayPieces(sq,df,dr); if(pieces.length>=2&&pieces[0].piece.color===ec&&pieces[1].piece.color===ec&&PVAL[pieces[0].piece.type]>PVAL[pieces[1].piece.type]+100) return true; } return false; }
+function isOpenFile(sq){ const file=sq.charCodeAt(0)-97; for(let r=1;r<=8;r++){ const s=String.fromCharCode(97+file)+r, p=game.get(s); if(p&&p.type==='p') return false; } return true; }
+function formsBattery(sq,myColor){ const file=sq.charCodeAt(0)-97, rank=parseInt(sq[1])-1; for(let f=0;f<8;f++){ if(f===file) continue; const s=String.fromCharCode(97+f)+(rank+1), p=game.get(s); if(p&&p.color===myColor&&(p.type==='r'||p.type==='q')) return true; } for(let r=0;r<8;r++){ if(r===rank) continue; const s=String.fromCharCode(97+file)+(r+1), p=game.get(s); if(p&&p.color===myColor&&(p.type==='r'||p.type==='q')) return true; } return false; }
+function isOutpost(sq,myColor,ec){ const file=sq.charCodeAt(0)-97, rank=parseInt(sq[1]); if(myColor==='w'&&rank<4) return false; if(myColor==='b'&&rank>5) return false; const dir=myColor==='w'?-1:1; for(const df of[-1,1]){ let r=rank+dir; while(r>=1&&r<=8){ const s=String.fromCharCode(97+file+df)+r, p=game.get(s); if(p&&p.type==='p'&&p.color===ec) return false; r+=dir; } } return true; }
+function hasNewPassedPawn(color){ const ec=color==='w'?'b':'w', dir=color==='w'?1:-1; for(let f=0;f<8;f++) for(let r=1;r<=8;r++){ const sq=String.fromCharCode(97+f)+r, p=game.get(sq); if(!p||p.type!=='p'||p.color!==color) continue; let passed=true, sr=r+dir; while(sr>=1&&sr<=8){ for(const df of[-1,0,1]){ const sf=f+df; if(sf<0||sf>7) continue; const ss=String.fromCharCode(97+sf)+sr, ep=game.get(ss); if(ep&&ep.type==='p'&&ep.color===ec){ passed=false; break; } } if(!passed) break; sr+=dir; } if(passed&&r>1&&r<8) return true; } return false; }
+
+// ════════════════════════════════════════
+// SCORING
+// ════════════════════════════════════════
+function applyBeauty(patternTypes, moveIdx) {
+  if (!patternTypes.length) return;
+  const earned = []; let movePts = 0;
+  patternTypes.forEach(type => {
+    const def = PATTERNS[type]; if (!def) return;
+    const pts = Math.round(def.pts * multiplier);
+    movePts += pts; earned.push({ type, pts }); patternSet.add(type);
+  });
+  const u = patternSet.size;
+  if (u >= 6) multiplier = 2.5; else if (u >= 4) multiplier = 2.0; else if (u >= 2) multiplier = 1.5;
+  beautyScore += movePts;
+  if (!moveBeauty[moveIdx]) moveBeauty[moveIdx] = [];
+  moveBeauty[moveIdx].push(...earned);
+  updateScoreDisplay();
+  updateFeed(earned);
+  showToast(earned[0]);
+  if (multiplier > 1) document.getElementById('g-mult-row').textContent = `× ${multiplier.toFixed(1)} multiplicador`;
+}
+
+function updateScoreDisplay() {
+  const el = document.getElementById('g-score-num');
+  el.textContent = beautyScore.toLocaleString();
+  el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 300);
+}
+
+function updateFeed(earned) {
+  const c = document.getElementById('g-feed-list');
+  if (c.querySelector('.feed-empty')) c.innerHTML = '';
+  earned.forEach(({ type, pts }) => {
+    const def = PATTERNS[type]; if (!def) return;
+    const item = document.createElement('div'); item.className = 'feed-item';
+    item.innerHTML = `<span style="color:${def.color}">${def.label}</span><span style="color:${def.color};font-family:'Source Code Pro',monospace;font-size:11px;font-weight:600">+${pts}</span>`;
+    c.insertBefore(item, c.firstChild);
+  });
+  while (c.children.length > 12) c.removeChild(c.lastChild);
+}
+
+function showToast(item) {
+  if (!item) return; const def = PATTERNS[item.type]; if (!def) return;
+  clearTimeout(toastTimer);
+  const toast = document.getElementById('g-toast');
+  toast.style.borderColor = def.color;
+  document.getElementById('g-toast-name').style.color = def.color;
+  document.getElementById('g-toast-name').textContent = def.label;
+  document.getElementById('g-toast-pts').style.color  = def.color;
+  document.getElementById('g-toast-pts').textContent  = `+${item.pts}`;
+  toast.classList.add('show'); toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function updateMoveHistory() {
+  const history = game.history({ verbose: true }), list = document.getElementById('g-move-list');
+  list.innerHTML = '';
+  for (let i = 0; i < history.length; i += 2) {
+    const wMv = history[i], bMv = history[i+1], num = Math.floor(i/2)+1;
+    const wB = moveBeauty[i]||[], bB = moveBeauty[i+1]||[];
+    const row = document.createElement('div'); row.className = 'move-row';
+    const wTag = wB.length ? `<span class="mv-tag" style="color:${PATTERNS[wB[0].type]?.color};border-color:${PATTERNS[wB[0].type]?.color}44">${PATTERNS[wB[0].type]?.label?.split(' ')[0]}</span>` : '';
+    row.innerHTML = `<span class="mv-num">${num}.</span><span class="mv-san${wB.length?' beauty':''}">${wMv.san}</span>${wTag}${bMv?`<span class="mv-san">${bMv.san}</span>`:''}`;
+    list.appendChild(row);
+  }
+  document.getElementById('g-hist-zone').scrollTop = 9999;
+}
+
+function updateStatus() {
+  const el = document.getElementById('g-status'); el.className = '';
+  if (game.in_checkmate()) { el.textContent = game.turn()==='w'?'DERROTA':'VICTORIA'; el.classList.add(game.turn()==='w'?'danger':'win'); }
+  else if (game.in_draw()) { el.textContent = 'TABLAS'; }
+  else if (game.in_check()) { el.textContent = game.turn()==='w'?'⚠ EN JAQUE':'RUDEK EN JAQUE'; el.classList.add('danger'); }
+  else if (thinking) { el.textContent = '· RUDEK PIENSA'; }
+  else { el.textContent = 'TU TURNO'; }
+}
+
+// ════════════════════════════════════════
+// WIN / DEFEAT
+// ════════════════════════════════════════
+function handleWin(type) {
+  gameOver = true;
+  const history = game.history();
+  const moves   = Math.ceil(history.length / 2);
+  const avg     = moves > 0 ? Math.round(beautyScore / moves) : 0;
+  resonanciaTotal += beautyScore;
+
+  // Unlock building
+  if (!unlockedBuildings.includes('puerta')) unlockedBuildings.push('puerta');
+
+  // Build report
+  const isPromotion = type === 'promotion';
+  const resultTag   = '⚔ VICTORIA';
+  const resultTitle = isPromotion ? 'Un Guardián llegó al altar.' : 'El rey de Rudek cayó.';
+  const loreText    = isPromotion
+    ? 'Un peón de Aldenmere llegó al final del tablero y se convirtió en reina. Rudek, que nunca lo vio venir, retiró su ejército en desorden.'
+    : 'La batalla concluyó con honor. Aldenmere recuperó su primer fragmento del arte olvidado.';
+
+  showReport({
+    resultTag, resultTitle, loreText,
+    score: beautyScore, moves, avg,
+    win: true,
+    buildingUnlocked: { name: 'La Puerta del Guardián', lore: 'Las ruinas se consolidan. Los Guardianes tienen hogar. Aldenmere recuerda por primera vez lo que significa defender.' },
+    patternUnlocked:  { name: 'Peón Pasado', lore: PATTERNS['peon_pasado'].lore },
+    color: '#c8a045',
+  });
+}
+
+function handleDefeat(type) {
+  gameOver = true;
+  const history = game.history();
+  const moves   = Math.ceil(history.length / 2);
+
+  const loreText = type === 'checkmate'
+    ? 'Rudek encontró al rey de Aldenmere solo y sin defensa. La batalla fue perdida. Pero el reino sobrevive — y la lección fue pagada con sangre.'
+    : 'La posición llegó a un punto sin salida. Ni victoria ni derrota. Aldenmere aún no ha ganado la batalla que necesita.';
+
+  showReport({
+    resultTag: '✕ DERROTA',
+    resultTitle: 'Aldenmere resiste, por ahora.',
+    loreText,
+    score: beautyScore, moves,
+    avg: moves > 0 ? Math.round(beautyScore / moves) : 0,
+    win: false,
+    color: '#e87070',
+  });
+}
+
+function showReport({ resultTag, resultTitle, loreText, score, moves, avg, win, buildingUnlocked, patternUnlocked, color }) {
+  updateKingdomBuildings();
+
+  document.getElementById('rep-result-tag').style.color  = color;
+  document.getElementById('rep-result-tag').style.fontFamily = "'Source Code Pro',monospace";
+  document.getElementById('rep-result-tag').style.fontSize   = '9px';
+  document.getElementById('rep-result-tag').style.letterSpacing = '5px';
+  document.getElementById('rep-result-tag').textContent   = resultTag;
+  document.getElementById('rep-title').textContent        = resultTitle;
+  document.getElementById('rep-sub').textContent          = `${moves} MOVIMIENTOS · ${avg} RESONANCIA/TURNO`;
+
+  document.getElementById('report-box').style.borderColor = color;
+
+  let html = '';
+
+  // Lore narration
+  html += `<div class="rep-section">
+    <div class="rep-lore" style="border-color:${color};background:${color}11">${loreText}</div>
+  </div>`;
+
+  // Score
+  html += `<div class="rep-section">
+    <div class="rep-sec-title">RESONANCIA GANADA</div>
+    <div class="rep-score-display" style="color:${color}">${score.toLocaleString()}</div>
+    <div style="font-family:'Source Code Pro',monospace;font-size:10px;color:var(--muted);margin-top:4px">Total acumulado: ${resonanciaTotal.toLocaleString()} ecos</div>
+  </div>`;
+
+  // Unlocks (only on win)
+  if (win && buildingUnlocked) {
+    html += `<div class="rep-section">
+      <div class="rep-sec-title">EDIFICIO RESTAURADO</div>
+      <div class="unlock-card" style="border-color:${color};background:${color}0d">
+        <div class="uc-tag">CONSTRUCCIÓN COMPLETADA</div>
+        <div class="uc-name" style="color:${color}">🏛 ${buildingUnlocked.name}</div>
+        <div class="uc-lore">${buildingUnlocked.lore}</div>
+      </div>
+    </div>`;
+  }
+  if (win && patternUnlocked) {
+    html += `<div class="rep-section">
+      <div class="rep-sec-title">PATRÓN DESBLOQUEADO</div>
+      <div class="unlock-card" style="border-color:#86efac;background:#86efac0d">
+        <div class="uc-tag">NUEVO CONOCIMIENTO</div>
+        <div class="uc-name" style="color:#86efac">♙ ${patternUnlocked.name}</div>
+        <div class="uc-lore">${patternUnlocked.lore}</div>
+      </div>
+    </div>`;
+  }
+
+  // Patterns breakdown
+  const breakdown = {};
+  Object.values(moveBeauty).flat().forEach(({ type, pts }) => {
+    if (!breakdown[type]) breakdown[type] = { count: 0, total: 0 };
+    breakdown[type].count++; breakdown[type].total += pts;
+  });
+  const sortedPatterns = Object.entries(breakdown).sort((a,b) => b[1].total - a[1].total);
+
+  if (sortedPatterns.length > 0) {
+    html += `<div class="rep-section">
+      <div class="rep-sec-title">PATRONES EJECUTADOS</div>
+      <div class="rep-patterns-list">`;
+    sortedPatterns.forEach(([type, { count, total }]) => {
+      const def = PATTERNS[type] || { label: type, color: '#888' };
+      html += `<div class="rep-pat-row"><span style="color:${def.color}">${def.label} ×${count}</span><span class="rep-pat-pts" style="color:${def.color}">+${total}</span></div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  // Next step
+  if (win) {
+    html += `<div class="rep-section" style="padding:12px 14px;border:1px solid var(--amber)44;background:var(--amber)09;border-radius:6px">
+      <div style="font-family:'Source Code Pro',monospace;font-size:8px;letter-spacing:4px;color:var(--amber);margin-bottom:6px">SIGUIENTE</div>
+      <div style="font-size:13px;color:var(--text)">Nivel 2 — Los Establos de la Oblicua</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px">Se añade un caballo a tu ejército. Próximamente.</div>
+    </div>`;
+  }
+
+  document.getElementById('rep-body').innerHTML = html;
+
+  // Footer buttons
+  const btn = document.getElementById('rep-continue-btn');
+  if (win) {
+    btn.textContent = '↺ VOLVER A INTENTAR';
+    btn.style.borderColor = color; btn.style.color = color;
+    btn.onclick = () => startGame();
+  } else {
+    btn.textContent = '↺ INTENTAR DE NUEVO';
+    btn.style.borderColor = color; btn.style.color = color;
+    btn.onclick = () => startGame();
+  }
+
+  showScreen('report');
+}
+
+// Init
+goToKingdom();
+</script>
+</body>
+</html>
