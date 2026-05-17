@@ -1,343 +1,673 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GO OBRA — Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-  :root {
-    --amarillo: #F5C800;
-    --negro: #0A0A0A;
-    --gris-medio: #1E1E1E;
-    --gris-borde: #2A2A2A;
-    --gris-texto: #888;
-    --blanco: #F0EDE8;
-    --rojo: #E03A3A;
-    --verde: #2ECC71;
-    --naranja: #F59300;
-  }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--negro); color: var(--blanco); font-family: 'DM Sans', sans-serif; font-size: 14px; min-height: 100vh; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GoGuerrero — Dashboard</title>
+  <style>
+    :root {
+      --bg:       #090b10;
+      --surface:  #111520;
+      --border:   #1e2535;
+      --accent:   #4f8ef7;
+      --gold:     #f7c948;
+      --green:    #2ecc71;
+      --purple:   #a78bfa;
+      --orange:   #f39c12;
+      --muted:    #4a5568;
+      --text:     #e2e8f0;
+      --dim:      #718096;
+      --r:        12px;
+      --font:     'SF Pro Display','Segoe UI',system-ui,sans-serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;padding:20px}
 
-  .header { display: flex; align-items: center; justify-content: space-between; padding: 0 2rem; height: 56px; border-bottom: 1px solid var(--gris-borde); background: var(--negro); position: sticky; top: 0; z-index: 100; }
-  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 3px; color: var(--amarillo); }
-  .logo span { color: var(--blanco); }
-  .header-meta { display: flex; align-items: center; gap: 1.5rem; }
-  .proyecto-selector { background: var(--gris-medio); border: 1px solid var(--gris-borde); color: var(--blanco); padding: 6px 12px; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; }
-  .live-dot { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--gris-texto); }
-  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--verde); animation: pulse 2s infinite; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    /* HEADER */
+    header{display:flex;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+    .logo{font-size:20px;font-weight:700;letter-spacing:-.5px;white-space:nowrap}
+    .logo span{color:var(--accent)}
+    .level-badge{background:linear-gradient(135deg,#1a2040,#243060);border:1px solid var(--accent);border-radius:20px;padding:5px 14px;font-size:12px;font-weight:600;color:var(--accent);white-space:nowrap}
+    .xp-wrap{flex:1;min-width:160px}
+    .xp-label{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:4px}
+    .xp-bar{background:var(--border);border-radius:6px;height:7px;overflow:hidden}
+    .xp-fill{height:100%;background:linear-gradient(90deg,var(--accent),#7bb3ff);border-radius:6px;transition:width .6s}
+    .streak{background:#1a1208;border:1px solid var(--gold);border-radius:20px;padding:5px 13px;font-size:12px;color:var(--gold);font-weight:600;white-space:nowrap}
 
-  .main { padding: 2rem; max-width: 1400px; margin: 0 auto; }
+    /* NAV TABS */
+    .nav-tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:4px;width:fit-content}
+    .tab-btn{padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--dim);transition:all .2s}
+    .tab-btn.active{background:var(--accent);color:#fff}
 
-  /* SEMÁFORO */
-  .semaforo-banner { border-radius: 6px; padding: 1.25rem 1.75rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; border: 1px solid var(--gris-borde); position: relative; overflow: hidden; }
-  .semaforo-banner::before { content:''; position:absolute; top:0; left:0; width:4px; height:100%; }
-  .semaforo-banner.ganando { background: rgba(46,204,113,0.06); } .semaforo-banner.ganando::before { background: var(--verde); }
-  .semaforo-banner.en_riesgo { background: rgba(245,147,0,0.06); } .semaforo-banner.en_riesgo::before { background: var(--naranja); }
-  .semaforo-banner.perdiendo { background: rgba(224,58,58,0.06); } .semaforo-banner.perdiendo::before { background: var(--rojo); }
-  .semaforo-left { display: flex; align-items: center; gap: 1.25rem; }
-  .semaforo-icon { font-size: 32px; line-height: 1; }
-  .semaforo-titulo { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; }
-  .semaforo-sub { font-size: 12px; color: var(--gris-texto); margin-top: 3px; }
-  .semaforo-right { display: flex; gap: 2.5rem; }
-  .semaforo-dato { text-align: right; }
-  .semaforo-dato-val { font-family: 'Bebas Neue', sans-serif; font-size: 26px; }
-  .semaforo-dato-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--gris-texto); }
-  .rojo { color: var(--rojo); } .naranja { color: var(--naranja); } .verde { color: var(--verde); } .amarillo { color: var(--amarillo); }
+    /* PANELS */
+    .panel{display:none}.panel.active{display:block}
 
-  /* STATS */
-  .grid-top { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 1.5rem; }
-  .stat-card { background: var(--gris-medio); border: 1px solid var(--gris-borde); border-radius: 6px; padding: 1.25rem 1.5rem; position: relative; overflow: hidden; }
-  .stat-card::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background: var(--amarillo); }
-  .stat-card.alerta::before { background: var(--rojo); }
-  .stat-card.ok::before { background: var(--verde); }
-  .stat-label { font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--gris-texto); margin-bottom: 0.5rem; }
-  .stat-value { font-family: 'Bebas Neue', sans-serif; font-size: 32px; letter-spacing: 1px; line-height: 1; }
-  .stat-sub { font-size: 11px; color: var(--gris-texto); margin-top: 4px; }
+    /* GRID */
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+    .wide{grid-column:1/-1}
 
-  /* PANELES */
-  .grid-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-  .panel { background: var(--gris-medio); border: 1px solid var(--gris-borde); border-radius: 6px; padding: 1.5rem; }
-  .section-title { font-size: 11px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--gris-texto); margin-bottom: 1rem; }
+    /* CARD */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:18px}
+    .card-title{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
 
-  /* BARRAS */
-  .avance-wrap { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
-  .avance-label { font-size: 11px; color: var(--gris-texto); white-space: nowrap; width: 90px; }
-  .avance-track { flex: 1; height: 8px; background: var(--gris-borde); border-radius: 4px; overflow: hidden; }
-  .avance-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; }
-  .avance-fill.real { background: var(--amarillo); }
-  .avance-fill.costo { background: var(--rojo); }
-  .avance-pct { font-family: 'Bebas Neue', sans-serif; font-size: 18px; width: 55px; text-align: right; }
+    /* RITUALS */
+    .rituals{display:flex;flex-direction:column;gap:8px}
+    .ritual-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .2s}
+    .ritual-item:hover{border-color:var(--accent)}
+    .ritual-item.done{border-color:var(--green);opacity:.65;pointer-events:none}
+    .r-check{width:18px;height:18px;border-radius:50%;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .2s}
+    .ritual-item.done .r-check{background:var(--green);border-color:var(--green);color:#fff}
+    .r-text{font-size:13px;flex:1}
+    .r-xp{font-size:11px;color:var(--gold);font-weight:600}
 
-  /* TABLA */
-  .fin-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-  .fin-table th { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--gris-texto); text-align: right; padding: 0 0 0.5rem 0; font-weight: 500; }
-  .fin-table th:first-child { text-align: left; }
-  .fin-table td { padding: 0.55rem 0; border-bottom: 1px solid var(--gris-borde); font-size: 12px; text-align: right; }
-  .fin-table td:first-child { text-align: left; }
-  .fin-table tr:last-child td { border-bottom: none; }
-  .etapa-tag { display: inline-block; padding: 2px 7px; border-radius: 3px; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; background: rgba(245,200,0,0.1); color: var(--amarillo); margin-right: 4px; }
+    /* STATS */
+    .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .stat-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center}
+    .stat-val{font-size:26px;font-weight:700;color:var(--accent);line-height:1}
+    .stat-lbl{font-size:10px;color:var(--dim);margin-top:3px}
 
-  /* FEED */
-  .avance-item { display: flex; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid var(--gris-borde); }
-  .avance-item:last-child { border-bottom: none; }
-  .avance-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amarillo); flex-shrink: 0; margin-top: 5px; }
-  .avance-dot.desviacion { background: var(--rojo); }
-  .avance-body { flex: 1; }
-  .avance-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
-  .avance-mision { font-size: 13px; font-weight: 500; }
-  .avance-time { font-size: 11px; color: var(--gris-texto); white-space: nowrap; margin-left: 1rem; }
-  .avance-meta { font-size: 12px; color: var(--gris-texto); }
-  .avance-cantidad { display: inline-block; background: rgba(245,200,0,0.1); color: var(--amarillo); font-size: 11px; padding: 2px 8px; border-radius: 3px; margin-top: 4px; }
-  .badge-desviacion { display: inline-block; background: rgba(224,58,58,0.15); color: var(--rojo); font-size: 10px; padding: 2px 8px; border-radius: 3px; margin-left: 6px; text-transform: uppercase; }
+    /* SOCIAL SKILLS */
+    .social-levels{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+    .social-lvl{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-size:13px;opacity:.35}
+    .social-lvl.current{opacity:1;border-color:var(--purple)}
+    .social-lvl.done{opacity:.5;border-color:var(--green)}
+    .social-lvl .lvl-num{width:22px;height:22px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+    .social-lvl.current .lvl-num{background:var(--purple);color:#fff}
+    .social-lvl.done .lvl-num{background:var(--green);color:#fff}
+    .quest-box{background:var(--bg);border:1px solid var(--purple);border-radius:8px;padding:12px;margin-bottom:12px;font-size:13px;color:var(--text)}
+    .quest-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--purple);margin-bottom:4px;font-weight:600}
+    .rep-btn{width:100%;padding:10px;background:var(--purple);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .2s}
+    .rep-btn:hover{opacity:.85}
+    .rep-btn:disabled{opacity:.35;cursor:not-allowed}
+    .rep-prog{margin-top:10px}
+    .rep-prog-label{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:4px}
+    .rep-bar{background:var(--border);border-radius:4px;height:5px;overflow:hidden}
+    .rep-fill{height:100%;background:var(--purple);border-radius:4px;transition:width .4s}
 
-  .loading { text-align: center; padding: 2rem; color: var(--gris-texto); font-size: 13px; }
-  .spinner { width: 24px; height: 24px; border: 2px solid var(--gris-borde); border-top-color: var(--amarillo); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .empty { text-align: center; padding: 2rem; color: var(--gris-texto); font-size: 13px; }
-  .refresh-btn { background: none; border: 1px solid var(--gris-borde); color: var(--gris-texto); padding: 5px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; font-family: 'DM Sans', sans-serif; }
-  .refresh-btn:hover { border-color: var(--amarillo); color: var(--amarillo); }
-  @media (max-width:900px) { .grid-top{grid-template-columns:repeat(2,1fr)} .grid-bottom{grid-template-columns:1fr} .main{padding:1rem} .semaforo-right{gap:1rem} }
-</style>
+    /* PROJECTS */
+    .projects{display:flex;flex-direction:column;gap:8px}
+    .proj-row{padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+    .proj-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+    .proj-name{font-size:14px;font-weight:500}
+    .proj-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+    .s-activo{background:#0d2b1a;color:var(--green)}
+    .s-pausado{background:#2b1a0d;color:var(--orange)}
+    .s-idea{background:#1a0d2b;color:var(--purple)}
+    .proj-action{font-size:12px;color:var(--dim);margin-bottom:7px}
+    .prog-wrap{display:flex;align-items:center;gap:8px}
+    .prog-bar{flex:1;background:var(--border);border-radius:4px;height:5px;overflow:hidden;cursor:pointer}
+    .prog-fill{height:100%;border-radius:4px;transition:width .4s}
+    .prog-pct{font-size:11px;color:var(--dim);min-width:28px;text-align:right}
+    .edit-btn{font-size:11px;padding:3px 9px;background:var(--border);color:var(--text);border:none;border-radius:6px;cursor:pointer}
+
+    /* ACHIEVEMENTS */
+    .badges-wrap{display:flex;flex-wrap:wrap;gap:7px}
+    .badge{padding:5px 11px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid;cursor:default}
+    .badge.locked{opacity:.2;filter:grayscale(1)}
+
+    /* FEED */
+    .feed-list{display:flex;flex-direction:column;gap:7px}
+    .feed-item{display:flex;gap:8px;font-size:13px}
+    .feed-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:5px;flex-shrink:0}
+    .feed-time{font-size:11px;color:var(--dim);margin-top:2px}
+
+    /* LISTS PANEL */
+    .list-tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+    .list-tab{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--dim);transition:all .2s}
+    .list-tab.active{background:var(--accent);border-color:var(--accent);color:#fff}
+    .list-panel{display:none}.list-panel.active{display:block}
+    .list-add{display:flex;gap:8px;margin-bottom:12px}
+    .list-input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 12px;font-size:13px;font-family:var(--font)}
+    .list-input:focus{outline:none;border-color:var(--accent)}
+    .add-btn{padding:9px 16px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+    .list-items{display:flex;flex-direction:column;gap:6px}
+    .list-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px}
+    .list-item.checked{opacity:.45;text-decoration:line-through}
+    .list-check{width:18px;height:18px;border-radius:4px;border:2px solid var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .2s}
+    .list-item.checked .list-check{background:var(--green);border-color:var(--green);color:#fff}
+    .list-text{flex:1;font-size:13px}
+    .list-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px;line-height:1}
+    .list-del:hover{color:var(--red,#e74c3c)}
+    .list-empty{font-size:13px;color:var(--dim);padding:12px 0}
+    .list-meta{font-size:11px;color:var(--dim);margin-left:auto}
+
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;z-index:100}
+    .modal-overlay.open{display:flex}
+    .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px;width:340px;max-width:95vw}
+    .modal h3{margin-bottom:14px;font-size:15px}
+    .modal label{font-size:11px;color:var(--dim);display:block;margin-bottom:3px}
+    .modal input,.modal select,.modal textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 11px;font-size:13px;margin-bottom:12px;font-family:var(--font)}
+    .modal-actions{display:flex;gap:8px;justify-content:flex-end}
+    .btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:opacity .2s}
+    .btn:hover{opacity:.85}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-ghost{background:var(--border);color:var(--text)}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:20px;right:20px;background:var(--accent);color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;z-index:200}
+    .toast.show{opacity:1;transform:translateY(0)}
+
+    @media(max-width:600px){body{padding:12px}.grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
 
-<header class="header">
-  <div class="logo">GO<span> OBRA</span></div>
-  <div class="header-meta">
-    <select class="proyecto-selector" id="proyectoSelect" onchange="cargarDatos()"></select>
-    <button class="refresh-btn" onclick="cargarDatos()">↻ Actualizar</button>
-    <div class="live-dot"><div class="dot"></div> En vivo</div>
+<header>
+  <div class="logo">Go<span>Guerrero</span></div>
+  <div class="level-badge" id="levelBadge">Nivel 1</div>
+  <div class="xp-wrap">
+    <div class="xp-label"><span>XP Total</span><span id="xpText">0 / 100</span></div>
+    <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
   </div>
+  <div class="streak" id="streakChip">🔥 0 días</div>
 </header>
 
-<main class="main">
+<!-- NAV TABS -->
+<div class="nav-tabs">
+  <button class="tab-btn active" onclick="switchPanel('home')">Dashboard</button>
+  <button class="tab-btn" onclick="switchPanel('social')">Social Skills</button>
+  <button class="tab-btn" onclick="switchPanel('lists')">Listas</button>
+</div>
 
-  <div class="semaforo-banner en_riesgo" id="semaforo-banner">
-    <div class="semaforo-left">
-      <div class="semaforo-icon" id="semaforo-icon">⏳</div>
-      <div>
-        <div class="semaforo-titulo" id="semaforo-titulo">Analizando presupuesto...</div>
-        <div class="semaforo-sub" id="semaforo-sub">cruzando datos de campo vs presupuesto original</div>
+<!-- PANEL: HOME -->
+<div class="panel active" id="panel-home">
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-title">Rituales de hoy</div>
+      <div class="rituals" id="ritualsList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Esta semana</div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-val" id="sCI">0</div><div class="stat-lbl">Check-ins</div></div>
+        <div class="stat-box"><div class="stat-val" id="sGym">0</div><div class="stat-lbl">Gym</div></div>
+        <div class="stat-box"><div class="stat-val" id="sXP">0</div><div class="stat-lbl">XP semana</div></div>
+        <div class="stat-box"><div class="stat-val" id="sTasks">0</div><div class="stat-lbl">Tareas</div></div>
       </div>
     </div>
-    <div class="semaforo-right">
-      <div class="semaforo-dato">
-        <div class="semaforo-dato-val amarillo" id="sem-avance">—</div>
-        <div class="semaforo-dato-label">avance real</div>
+
+    <div class="card wide">
+      <div class="card-title">
+        Proyectos activos
+        <button class="btn btn-ghost" style="font-size:11px;padding:4px 11px" onclick="openAddProj()">+ Agregar</button>
       </div>
-      <div class="semaforo-dato">
-        <div class="semaforo-dato-val" id="sem-presupuesto">—</div>
-        <div class="semaforo-dato-label">presupuesto</div>
+      <div class="projects" id="projectsList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Logros</div>
+      <div class="badges-wrap" id="achievementsList"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Actividad reciente</div>
+      <div class="feed-list" id="activityFeed"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PANEL: SOCIAL SKILLS -->
+<div class="panel" id="panel-social">
+  <div class="grid">
+
+    <div class="card">
+      <div class="card-title">Árbol de habilidades</div>
+      <div class="social-levels" id="socialLevels"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Quest activa</div>
+      <div class="quest-box">
+        <div class="quest-label">Tu desafío ahora</div>
+        <div id="questText"></div>
       </div>
-      <div class="semaforo-dato">
-        <div class="semaforo-dato-val rojo" id="sem-sobrecosto">—</div>
-        <div class="semaforo-dato-label">sobrecosto material</div>
+      <button class="rep-btn" id="repBtn" onclick="logSocialRep()">Registrar rep de hoy (+5 XP)</button>
+      <div class="rep-prog">
+        <div class="rep-prog-label">
+          <span id="repProgLabel">Reps hacia nivel 2</span>
+          <span id="repProgCount">0 / 21</span>
+        </div>
+        <div class="rep-bar"><div class="rep-fill" id="repFill" style="width:0%"></div></div>
       </div>
-      <div class="semaforo-dato">
-        <div class="semaforo-dato-val" id="sem-pct">—</div>
-        <div class="semaforo-dato-label">% desviación</div>
-      </div>
+    </div>
+
+    <div class="card wide">
+      <div class="card-title">Historial de reps</div>
+      <div class="feed-list" id="socialFeed"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PANEL: LISTAS -->
+<div class="panel" id="panel-lists">
+  <div class="card">
+    <div class="list-tabs" id="listTabs"></div>
+    <div id="listPanels"></div>
+  </div>
+</div>
+
+<!-- MODAL proyecto -->
+<div class="modal-overlay" id="projModal">
+  <div class="modal">
+    <h3>Nuevo proyecto</h3>
+    <label>Nombre</label>
+    <input id="pName" placeholder="Go Obra">
+    <label>Próxima acción</label>
+    <input id="pAction" placeholder="Integrar WhatsApp">
+    <label>Estado</label>
+    <select id="pStatus">
+      <option value="activo">Activo</option>
+      <option value="pausado">Pausado</option>
+      <option value="idea">Idea</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="addProject()">Agregar</button>
     </div>
   </div>
+</div>
 
-  <div class="grid-top">
-    <div class="stat-card">
-      <div class="stat-label">Avances hoy</div>
-      <div class="stat-value" id="stat-avances-hoy">—</div>
-      <div class="stat-sub" id="stat-avances-sub">cargando...</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Workers activos</div>
-      <div class="stat-value" id="stat-workers">—</div>
-      <div class="stat-sub">reportaron hoy</div>
-    </div>
-    <div class="stat-card alerta">
-      <div class="stat-label">Desviaciones abiertas</div>
-      <div class="stat-value" id="stat-desviaciones">—</div>
-      <div class="stat-sub" id="stat-desviaciones-sub">requieren atención</div>
-    </div>
-    <div class="stat-card ok">
-      <div class="stat-label">Confianza reportes</div>
-      <div class="stat-value" id="stat-confianza">—</div>
-      <div class="stat-sub">mensajes alta confianza</div>
-    </div>
-  </div>
-
-  <div class="grid-bottom">
-    <div class="panel">
-      <div class="section-title">Presupuesto vs Realidad</div>
-      <div class="avance-wrap">
-        <div class="avance-label">Avance obra</div>
-        <div class="avance-track"><div class="avance-fill real" id="bar-avance" style="width:0%"></div></div>
-        <div class="avance-pct amarillo" id="pct-avance">—</div>
-      </div>
-      <div class="avance-wrap">
-        <div class="avance-label">Sobrecosto mat.</div>
-        <div class="avance-track"><div class="avance-fill costo" id="bar-sobrecosto" style="width:0%"></div></div>
-        <div class="avance-pct rojo" id="pct-sobrecosto">—</div>
-      </div>
-      <div id="financiero-container"><div class="loading"><div class="spinner"></div>Calculando...</div></div>
-    </div>
-
-    <div class="panel">
-      <div class="section-title">Últimos avances de campo</div>
-      <div id="feed-container"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
-    </div>
-  </div>
-
-</main>
+<div class="toast" id="toast"></div>
 
 <script>
-const SUPABASE_URL = 'https://muyezsssnzlxavchabum.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ3ODYzNiwiZXhwIjoyMDkwMDU0NjM2fQ.pSu9RUu0TPQQfsdO58pm5F1t3b_8txeALN-hVns5sg4';
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
-let proyectoActual = null;
+// ─── Persistencia ─────────────────────────────────────────
+const S={
+  get:(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}},
+  set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))
+};
 
-const ETAPA_NOMBRES = { prel:'Preliminares', mvt:'Mov. Tierras', cim:'Cimentación', estr:'Estructura', mamp:'Mampostería', redes:'Redes', acab:'Acabados', urb:'Urbanismo', entr:'Entrega' };
+const TODAY=new Date().toISOString().slice(0,10);
+function weekKey(){const d=new Date();const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return d.toISOString().slice(0,10)}
+const WEEK=weekKey();
 
-function formatCOP(n) {
-  if (n >= 1000000000) return '$' + (n/1000000000).toFixed(2) + 'B';
-  if (n >= 1000000) return '$' + (n/1000000).toFixed(1) + 'M';
-  if (n >= 1000) return '$' + (n/1000).toFixed(0) + 'K';
-  return '$' + Math.round(n).toLocaleString('es-CO');
+// ─── Datos ────────────────────────────────────────────────
+const RITUALS=[
+  {id:'checkin', label:'Check-in matutino',     xp:10, icon:'☀️'},
+  {id:'gym',     label:'Sesión de gym',          xp:15, icon:'💪'},
+  {id:'focus',   label:'Tarea de alto impacto',  xp:20, icon:'🎯'},
+  {id:'comida',  label:'Alimentación consciente',xp:8,  icon:'🥗'},
+  {id:'idea',    label:'Capturar una idea',      xp:5,  icon:'💡'},
+  {id:'sintesis',label:'Síntesis semanal',       xp:30, icon:'🌙'},
+];
+
+const SOCIAL_LEVELS=[
+  {level:1, name:'Contacto básico',      reps:21,       quest:'Una interacción real por día con alguien que normalmente ignorarías. Cajero, vecino, guardia — contacto visual + frase real.', color:'#a78bfa'},
+  {level:2, name:'Conversación sostenida',reps:30,      quest:'Hacer una pregunta genuina a alguien nuevo y sostener la conversación 5 minutos sin forzarla.', color:'#7bb3ff'},
+  {level:3, name:'Conexión genuina',     reps:42,       quest:'Tener un segundo encuentro con alguien que conociste. Recordar su nombre y algo que te contó.', color:'#4f8ef7'},
+  {level:4, name:'Influencia real',      reps:60,       quest:'Contar una historia de 2 minutos que enganche. Sostener un desacuerdo con gracia.', color:'#f7c948'},
+  {level:5, name:'Orador magnético',     reps:Infinity, quest:'Hablar frente a un grupo pequeño de algo que te apasiona. Facilitar que otros hablen.', color:'#f39c12'},
+];
+
+const DEFAULT_PROJECTS=[
+  {id:'goobra',    name:'Go Obra',                    action:'Integrar WhatsApp / webhook', status:'activo',  progress:65, color:'#4f8ef7'},
+  {id:'gym',       name:'Gym + Alimentación',          action:'3 sesiones esta semana',      status:'activo',  progress:50, color:'#2ecc71'},
+  {id:'contenido', name:'Contenido / Marca / Voz',     action:'El asistente como ep. 1',     status:'activo',  progress:20, color:'#f7c948'},
+  {id:'casa',      name:'Casa esquinera',              action:'Planos y diseño de intervención', status:'activo', progress:30, color:'#f39c12'},
+  {id:'social',    name:'Social Skills',              action:'Quest: contacto básico diario', status:'activo',  progress:5,  color:'#a78bfa'},
+];
+
+const LISTS_DEF=[
+  {id:'ideas',      label:'💡 Ideas',       placeholder:'Una idea nueva...'},
+  {id:'compras',    label:'🛒 Compras',     placeholder:'Algo que necesitás...'},
+  {id:'peliculas',  label:'🎬 Películas',   placeholder:'Película o serie...'},
+  {id:'libros',     label:'📚 Libros',      placeholder:'Libro para leer...'},
+  {id:'referentes', label:'🧠 Referentes',  placeholder:'Persona a estudiar...'},
+  {id:'experimentos',label:'🧪 Experimentos',placeholder:'Experimento de la semana...'},
+];
+
+const ACHIEVEMENTS=[
+  {id:'first_ci',   label:'Primera mañana', icon:'☀️', color:'#f7c948', req:s=>s.totalCheckins>=1},
+  {id:'week7',      label:'7 días seguidos',icon:'🔥', color:'#e74c3c', req:s=>s.streak>=7},
+  {id:'gym10',      label:'10 en gym',      icon:'💪', color:'#2ecc71', req:s=>s.totalGym>=10},
+  {id:'social21',   label:'21 reps social', icon:'🤝', color:'#a78bfa', req:s=>s.socialReps>=21},
+  {id:'ideas20',    label:'20 ideas',       icon:'💡', color:'#60a5fa', req:s=>s.totalIdeas>=20},
+  {id:'contenido1', label:'Ep.1 publicado', icon:'📹', color:'#f7c948', req:s=>s.launches>=1},
+  {id:'xp500',      label:'500 XP',         icon:'⭐', color:'#f7c948', req:s=>s.xp>=500},
+  {id:'xp1000',     label:'1000 XP',        icon:'💎', color:'#60a5fa', req:s=>s.xp>=1000},
+  {id:'21dias',     label:'21 días racha',  icon:'📅', color:'#2ecc71', req:s=>s.streak>=21},
+  {id:'orador',     label:'Orador',         icon:'🎤', color:'#f39c12', req:s=>s.socialLevel>=5},
+];
+
+const LEVELS=[
+  {name:'Aprendiz',min:0},{name:'Constructor',min:100},{name:'Arquitecto',min:300},
+  {name:'Maestro',min:600},{name:'Visionario',min:1000},{name:'Leyenda',min:2000},
+];
+
+// ─── Estado ───────────────────────────────────────────────
+let state=S.get('gg_state',{
+  xp:0,streak:0,lastActiveDay:null,
+  totalCheckins:0,totalGym:0,totalIdeas:0,launches:0,
+  weekXP:0,weekTasks:0,weekCI:0,weekGym:0,weekKey:WEEK,
+  socialReps:0,socialLevel:1,socialTodayDone:false,socialTodayKey:'',
+});
+let projects=S.get('gg_projects',DEFAULT_PROJECTS);
+let todayDone=S.get('gg_today_'+TODAY,{});
+let activity=S.get('gg_activity',[]);
+let lists=S.get('gg_lists',{});
+
+if(state.weekKey!==WEEK){state.weekXP=0;state.weekTasks=0;state.weekCI=0;state.weekGym=0;state.weekKey=WEEK;saveState()}
+
+function saveState(){S.set('gg_state',state)}
+function saveProjects(){S.set('gg_projects',projects)}
+function saveTodayDone(){S.set('gg_today_'+TODAY,todayDone)}
+function saveActivity(){S.set('gg_activity',activity.slice(0,60))}
+function saveLists(){S.set('gg_lists',lists)}
+
+// ─── Nav panels ───────────────────────────────────────────
+function switchPanel(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  event.target.classList.add('active');
 }
 
-async function cargarProyectos() {
-  const { data } = await db.from('proyectos').select('id, nombre').eq('estado','activo').order('nombre');
-  const sel = document.getElementById('proyectoSelect');
-  if (!data?.length) { sel.innerHTML = '<option>Sin proyectos</option>'; return; }
-  sel.innerHTML = data.map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
-  const def = data.find(p => p.id === 'proy_test_001');
-  proyectoActual = def ? def.id : data[0].id;
-  sel.value = proyectoActual;
-  cargarDatos();
+// ─── Level ────────────────────────────────────────────────
+function getLevel(xp){
+  let l=LEVELS[0],idx=0;
+  for(let i=0;i<LEVELS.length;i++){if(xp>=LEVELS[i].min){l=LEVELS[i];idx=i}}
+  const next=LEVELS[idx+1];
+  const pct=next?((xp-l.min)/(next.min-l.min))*100:100;
+  return{name:l.name,num:idx+1,pct,nextXP:next?.min??xp};
 }
 
-async function cargarDatos() {
-  proyectoActual = document.getElementById('proyectoSelect').value;
-  if (!proyectoActual) return;
-  await Promise.all([cargarStats(), cargarFinanciero(), cargarFeed()]);
+// ─── Header ───────────────────────────────────────────────
+function renderHeader(){
+  const lv=getLevel(state.xp);
+  document.getElementById('levelBadge').textContent=`Nv.${lv.num} — ${lv.name}`;
+  document.getElementById('xpText').textContent=`${state.xp} / ${lv.nextXP} XP`;
+  document.getElementById('xpFill').style.width=lv.pct+'%';
+  document.getElementById('streakChip').textContent=`🔥 ${state.streak} días`;
+  document.getElementById('sCI').textContent=state.weekCI;
+  document.getElementById('sGym').textContent=state.weekGym;
+  document.getElementById('sXP').textContent=state.weekXP;
+  document.getElementById('sTasks').textContent=state.weekTasks;
 }
 
-async function cargarStats() {
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  const { data: av } = await db.from('avances').select('id,trabajador_id,desviacion_detectada,confianza').eq('proyecto_id', proyectoActual).gte('timestamp_mensaje', hoy.toISOString());
-  const { data: desv } = await db.from('desviaciones').select('id,nivel').eq('proyecto_id', proyectoActual).eq('resuelto', false);
-
-  const total = av?.length || 0;
-  const workers = new Set(av?.map(a=>a.trabajador_id)).size;
-  const totalDesv = desv?.length || 0;
-  const conf = av?.map(a=>a.confianza) || [];
-  const pctAlta = conf.length ? Math.round(conf.filter(c=>c==='alta').length/conf.length*100) : 0;
-
-  document.getElementById('stat-avances-hoy').textContent = total;
-  document.getElementById('stat-avances-sub').textContent = 'registros desde las 00:00';
-  document.getElementById('stat-workers').textContent = workers;
-  const sd = document.getElementById('stat-desviaciones');
-  sd.textContent = totalDesv;
-  sd.style.color = totalDesv > 0 ? 'var(--rojo)' : 'var(--verde)';
-  document.getElementById('stat-desviaciones-sub').textContent = (desv?.filter(d=>d.nivel==='alto').length||0) > 0 ? `${desv.filter(d=>d.nivel==='alto').length} de nivel alto` : 'requieren atención';
-  document.getElementById('stat-confianza').textContent = pctAlta + '%';
+// ─── Rituales ─────────────────────────────────────────────
+function renderRituals(){
+  const el=document.getElementById('ritualsList');el.innerHTML='';
+  RITUALS.forEach(r=>{
+    const done=!!todayDone[r.id];
+    const d=document.createElement('div');
+    d.className='ritual-item'+(done?' done':'');
+    d.innerHTML=`<div class="r-check">${done?'✓':''}</div><div class="r-text">${r.icon} ${r.label}</div><div class="r-xp">+${r.xp} XP</div>`;
+    if(!done)d.onclick=()=>completeRitual(r);
+    el.appendChild(d);
+  });
+}
+function completeRitual(r){
+  todayDone[r.id]=true;saveTodayDone();
+  addXP(r.xp);state.weekXP+=r.xp;state.weekTasks++;
+  if(r.id==='checkin'){state.totalCheckins++;state.weekCI++;updateStreak()}
+  if(r.id==='gym'){state.totalGym++;state.weekGym++}
+  if(r.id==='idea')state.totalIdeas++;
+  saveState();
+  logActivity(`${r.icon} ${r.label} completado`);
+  toast(`+${r.xp} XP — ${r.label}`);
+  renderAll();
+}
+function updateStreak(){
+  const yest=new Date();yest.setDate(yest.getDate()-1);
+  const yk=yest.toISOString().slice(0,10);
+  const last=state.lastActiveDay;
+  if(last===yk||last===TODAY){if(last!==TODAY)state.streak++}else{state.streak=1}
+  state.lastActiveDay=TODAY;
 }
 
-async function cargarFinanciero() {
-  const { data: res } = await db.from('v_financiero_resumen').select('*').eq('proyecto_id', proyectoActual).single();
-  const { data: etapas } = await db.from('v_financiero_proyecto').select('*').eq('proyecto_id', proyectoActual).order('sobrecosto_etapa', { ascending: false });
+function addXP(n){state.xp+=n;saveState()}
 
-  if (!res) { document.getElementById('financiero-container').innerHTML = '<div class="empty">Sin datos de presupuesto aún</div>'; return; }
-
-  // Semáforo
-  const banner = document.getElementById('semaforo-banner');
-  banner.className = 'semaforo-banner ' + res.semaforo_costo;
-  const cfgs = {
-    ganando:   { icon:'✅', titulo:'LA OBRA VA BIEN — DENTRO DE PRESUPUESTO' },
-    en_riesgo: { icon:'⚠️', titulo:'ATENCIÓN — MATERIALES MÁS CAROS DE LO PRESUPUESTADO' },
-    perdiendo: { icon:'🔴', titulo:'ALERTA — PÉRDIDA CONFIRMADA POR COSTOS DE MATERIALES' }
-  };
-  const cfg = cfgs[res.semaforo_costo] || cfgs.en_riesgo;
-  document.getElementById('semaforo-icon').textContent = cfg.icon;
-  document.getElementById('semaforo-titulo').textContent = cfg.titulo;
-  document.getElementById('semaforo-sub').textContent = `Cronograma: ${(res.pct_avance_real||0).toFixed(0)}% ejecutado — Los materiales subieron ${(res.pct_sobrecosto_total||0).toFixed(2)}% desde el presupuesto original (oct 2025)`;
-
-  document.getElementById('sem-avance').textContent = (res.pct_avance_real||0).toFixed(1) + '%';
-  document.getElementById('sem-presupuesto').textContent = formatCOP(res.presupuesto_total||0);
-
-  const sob = res.sobrecosto_total || 0;
-  const semSob = document.getElementById('sem-sobrecosto');
-  semSob.textContent = formatCOP(Math.abs(sob));
-  semSob.className = 'semaforo-dato-val ' + (sob > 0 ? 'rojo' : 'verde');
-
-  const pct = res.pct_sobrecosto_total || 0;
-  const semPct = document.getElementById('sem-pct');
-  semPct.textContent = (pct > 0 ? '+' : '') + pct.toFixed(2) + '%';
-  semPct.className = 'semaforo-dato-val ' + (pct > 2 ? 'rojo' : pct > 0 ? 'naranja' : 'verde');
-
-  // Barras
-  document.getElementById('bar-avance').style.width = Math.min(res.pct_avance_real||0, 100) + '%';
-  document.getElementById('pct-avance').textContent = (res.pct_avance_real||0).toFixed(0) + '%';
-  document.getElementById('bar-sobrecosto').style.width = Math.min(Math.abs(pct)*15, 100) + '%';
-  document.getElementById('pct-sobrecosto').textContent = (pct>0?'+':'') + pct.toFixed(1) + '%';
-
-  // Tabla etapas — solo las que tienen sobrecosto
-  const etapasConSob = (etapas||[]).filter(e => (e.sobrecosto_etapa||0) > 0);
-  if (!etapasConSob.length) { document.getElementById('financiero-container').innerHTML = '<div class="empty">Sin sobrecostos detectados</div>'; return; }
-
-  document.getElementById('financiero-container').innerHTML = `
-    <table class="fin-table">
-      <thead><tr>
-        <th>Etapa</th><th>Presupuesto</th><th>Real hoy</th><th>Diferencia</th>
-      </tr></thead>
-      <tbody>
-        ${etapasConSob.map(e => {
-          const s = e.sobrecosto_etapa||0;
-          return `<tr>
-            <td><span class="etapa-tag">${e.etapa_id?.toUpperCase()}</span><span style="font-size:11px;color:var(--gris-texto)">${ETAPA_NOMBRES[e.etapa_id]||e.etapa_id}</span></td>
-            <td>${formatCOP(e.presupuesto_etapa||0)}</td>
-            <td>${formatCOP(e.costo_real_etapa||0)}</td>
-            <td style="color:var(--rojo);font-weight:500">+${formatCOP(s)}</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>`;
-}
-
-async function cargarFeed() {
-  const { data } = await db.from('avances')
-    .select('etapa_id,mision_id,nivel,cantidad_primaria_valor,cantidad_primaria_unidad,desviacion_detectada,confianza,timestamp_mensaje,trabajador_id')
-    .eq('proyecto_id', proyectoActual).order('timestamp_mensaje',{ascending:false}).limit(12);
-
-  if (!data?.length) { document.getElementById('feed-container').innerHTML = '<div class="empty">Sin avances aún.<br>Envía un mensaje al bot de Telegram.</div>'; return; }
-
-  const { data: ws } = await db.from('workers').select('id,nombre').eq('proyecto_id', proyectoActual);
-  const wm = {}; ws?.forEach(w => wm[w.id]=w.nombre);
-
-  document.getElementById('feed-container').innerHTML = data.map(a => {
-    const ts = new Date(a.timestamp_mensaje);
-    const diff = Math.round((new Date()-ts)/60000);
-    const t = diff<60?`hace ${diff}m`:diff<1440?`hace ${Math.round(diff/60)}h`:ts.toLocaleDateString('es-CO',{day:'numeric',month:'short'});
-    const ml = a.mision_id?a.mision_id.replace(/_/g,' '):a.etapa_id;
-    const cant = a.cantidad_primaria_valor?`${a.cantidad_primaria_valor} ${a.cantidad_primaria_unidad||''}`:'';
-    return `<div class="avance-item">
-      <div class="avance-dot ${a.desviacion_detectada?'desviacion':''}"></div>
-      <div class="avance-body">
-        <div class="avance-top">
-          <div class="avance-mision">${ml}${a.nivel?' · '+a.nivel:''}${a.desviacion_detectada?'<span class="badge-desviacion">⚠ desviación</span>':''}</div>
-          <div class="avance-time">${t}</div>
-        </div>
-        <div class="avance-meta">${wm[a.trabajador_id]||a.trabajador_id}</div>
-        ${cant?`<div class="avance-cantidad">${cant}</div>`:''}
+// ─── Proyectos ────────────────────────────────────────────
+function renderProjects(){
+  const el=document.getElementById('projectsList');el.innerHTML='';
+  projects.forEach((p,i)=>{
+    const d=document.createElement('div');d.className='proj-row';
+    d.innerHTML=`
+      <div class="proj-head">
+        <div class="proj-name">${p.name}</div>
+        <div class="proj-badge s-${p.status}">${p.status}</div>
       </div>
-    </div>`;
-  }).join('');
+      <div class="proj-action">→ ${p.action}</div>
+      <div class="prog-wrap">
+        <div class="prog-bar"><div class="prog-fill" style="width:${p.progress}%;background:${p.color||'var(--accent)'}"></div></div>
+        <div class="prog-pct">${p.progress}%</div>
+        <button class="edit-btn" onclick="editProj(${i})">editar</button>
+      </div>`;
+    el.appendChild(d);
+  });
+}
+function editProj(i){
+  const p=projects[i];
+  const val=prompt(`Progreso de ${p.name} (0-100):`,p.progress);
+  if(val===null)return;
+  const n=Math.max(0,Math.min(100,parseInt(val)||0));
+  if(n!==p.progress){
+    projects[i].progress=n;saveProjects();
+    addXP(5);state.weekXP+=5;state.weekTasks++;saveState();
+    logActivity(`📊 ${p.name} → ${n}%`);
+    toast(`+5 XP — ${p.name} actualizado`);
+    renderAll();
+  }
+}
+function openAddProj(){document.getElementById('projModal').classList.add('open')}
+function closeModal(){document.getElementById('projModal').classList.remove('open')}
+function addProject(){
+  const name=document.getElementById('pName').value.trim();
+  const action=document.getElementById('pAction').value.trim();
+  const status=document.getElementById('pStatus').value;
+  if(!name)return;
+  projects.push({id:Date.now()+'',name,action,status,progress:0,color:'var(--accent)'});
+  saveProjects();logActivity(`🆕 "${name}" agregado`);closeModal();renderAll();
+  document.getElementById('pName').value='';document.getElementById('pAction').value='';
 }
 
-setInterval(cargarDatos, 30000);
-cargarProyectos();
+// ─── Social Skills ────────────────────────────────────────
+function getSocialProgress(){
+  const lvl=SOCIAL_LEVELS[state.socialLevel-1];
+  const prev=SOCIAL_LEVELS.slice(0,state.socialLevel-1).reduce((a,l)=>a+(l.reps===Infinity?0:l.reps),0);
+  const repsInLevel=state.socialReps-prev;
+  const needed=lvl.reps===Infinity?repsInLevel+1:lvl.reps;
+  const pct=Math.min(100,(repsInLevel/needed)*100);
+  return{lvl,repsInLevel,needed,pct,prev};
+}
+function renderSocial(){
+  const el=document.getElementById('socialLevels');el.innerHTML='';
+  SOCIAL_LEVELS.forEach(sl=>{
+    const d=document.createElement('div');
+    const cur=sl.level===state.socialLevel;
+    const done=sl.level<state.socialLevel;
+    d.className='social-lvl'+(cur?' current':done?' done':'');
+    d.innerHTML=`<div class="lvl-num">${done?'✓':sl.level}</div><div>${sl.name}</div>`;
+    el.appendChild(d);
+  });
+  const cur=SOCIAL_LEVELS[state.socialLevel-1];
+  document.getElementById('questText').textContent=cur.quest;
+  const todayDoneS=state.socialTodayKey===TODAY;
+  const btn=document.getElementById('repBtn');
+  btn.disabled=todayDoneS;
+  btn.textContent=todayDoneS?'Rep de hoy registrado ✓':'Registrar rep de hoy (+5 XP)';
+  const prog=getSocialProgress();
+  document.getElementById('repProgLabel').textContent=`Reps hacia nivel ${Math.min(state.socialLevel+1,5)}`;
+  document.getElementById('repProgCount').textContent=`${prog.repsInLevel} / ${prog.needed===Infinity?'∞':prog.needed}`;
+  document.getElementById('repFill').style.width=prog.pct+'%';
+
+  const sf=document.getElementById('socialFeed');sf.innerHTML='';
+  const log=S.get('gg_social_log',[]);
+  if(!log.length){sf.innerHTML='<div class="list-empty">Registrá tu primera rep.</div>';return}
+  log.slice(0,8).forEach(e=>{
+    sf.innerHTML+=`<div class="feed-item"><div class="feed-dot" style="background:var(--purple)"></div><div><div>Rep social — ${e.note||'contacto básico'}</div><div class="feed-time">${e.date} ${e.time}</div></div></div>`;
+  });
+}
+function logSocialRep(){
+  if(state.socialTodayKey===TODAY)return;
+  state.socialTodayKey=TODAY;
+  state.socialReps++;
+  addXP(5);state.weekXP+=5;saveState();
+  const log=S.get('gg_social_log',[]);
+  log.unshift({date:TODAY,time:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'}),note:''});
+  S.set('gg_social_log',log.slice(0,60));
+  // check level up
+  const prog=getSocialProgress();
+  const cur=SOCIAL_LEVELS[state.socialLevel-1];
+  if(prog.repsInLevel>=cur.reps&&state.socialLevel<5){
+    state.socialLevel++;saveState();
+    const newLvl=SOCIAL_LEVELS[state.socialLevel-1];
+    toast(`NIVEL UP — ${newLvl.name} 🎉 +50 XP`);
+    addXP(50);state.weekXP+=50;saveState();
+    logActivity(`🤝 Nivel ${state.socialLevel} social desbloqueado: ${newLvl.name}`);
+  }else{
+    toast('+5 XP — rep social registrada');
+    logActivity('🤝 Rep social del día registrada');
+  }
+  renderAll();renderSocial();
+}
+
+// ─── Listas ───────────────────────────────────────────────
+function renderLists(){
+  const tabsEl=document.getElementById('listTabs');
+  const panelsEl=document.getElementById('listPanels');
+  tabsEl.innerHTML='';panelsEl.innerHTML='';
+  LISTS_DEF.forEach((ld,i)=>{
+    const btn=document.createElement('button');
+    btn.className='list-tab'+(i===0?' active':'');
+    btn.textContent=ld.label;
+    btn.onclick=()=>{
+      document.querySelectorAll('.list-tab').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.list-panel').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('lp-'+ld.id).classList.add('active');
+    };
+    tabsEl.appendChild(btn);
+    const items=lists[ld.id]||[];
+    const div=document.createElement('div');
+    div.className='list-panel'+(i===0?' active':'');
+    div.id='lp-'+ld.id;
+    div.innerHTML=`
+      <div class="list-add">
+        <input class="list-input" id="li-${ld.id}" placeholder="${ld.placeholder}" onkeydown="if(event.key==='Enter')addListItem('${ld.id}')">
+        <button class="add-btn" onclick="addListItem('${ld.id}')">Agregar</button>
+      </div>
+      <div class="list-items" id="items-${ld.id}">
+        ${items.length?items.map((it,j)=>`
+          <div class="list-item${it.done?' checked':''}" id="li-row-${ld.id}-${j}">
+            <div class="list-check" onclick="toggleListItem('${ld.id}',${j})">${it.done?'✓':''}</div>
+            <div class="list-text">${it.text}</div>
+            ${it.date?`<div class="list-meta">${it.date}</div>`:''}
+            <button class="list-del" onclick="deleteListItem('${ld.id}',${j})">×</button>
+          </div>`).join(''):'<div class="list-empty">Vacío — agregá algo.</div>'}
+      </div>`;
+    panelsEl.appendChild(div);
+  });
+}
+function addListItem(listId){
+  const inp=document.getElementById('li-'+listId);
+  const text=inp.value.trim();if(!text)return;
+  if(!lists[listId])lists[listId]=[];
+  lists[listId].unshift({text,done:false,date:TODAY});
+  if(listId==='ideas')state.totalIdeas++;
+  saveLists();saveState();inp.value='';
+  toast('Guardado');
+  renderLists();
+}
+function toggleListItem(listId,j){
+  if(!lists[listId])return;
+  lists[listId][j].done=!lists[listId][j].done;
+  saveLists();renderLists();
+}
+function deleteListItem(listId,j){
+  if(!lists[listId])return;
+  lists[listId].splice(j,1);saveLists();renderLists();
+}
+
+// ─── Logros ───────────────────────────────────────────────
+function renderAchievements(){
+  const el=document.getElementById('achievementsList');el.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{
+    const unlocked=a.req(state);
+    const s=document.createElement('span');
+    s.className='badge'+(unlocked?'':' locked');
+    s.style.cssText=`color:${a.color};border-color:${a.color};background:${a.color}18`;
+    s.textContent=`${a.icon} ${a.label}`;
+    s.title=unlocked?'Desbloqueado ✓':'Bloqueado';
+    el.appendChild(s);
+  });
+}
+
+// ─── Feed ─────────────────────────────────────────────────
+function logActivity(msg){
+  activity.unshift({msg,time:new Date().toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'})});
+  saveActivity();
+}
+function renderFeed(){
+  const el=document.getElementById('activityFeed');el.innerHTML='';
+  if(!activity.length){el.innerHTML='<div class="list-empty">Completá un ritual para ver actividad.</div>';return}
+  activity.slice(0,8).forEach(e=>{
+    el.innerHTML+=`<div class="feed-item"><div class="feed-dot"></div><div><div>${e.msg}</div><div class="feed-time">${e.time}</div></div></div>`;
+  });
+}
+
+// ─── Toast ────────────────────────────────────────────────
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ─── Sync con bot de Telegram vía Flask ──────────────────
+const syncIndicator=document.createElement('div');
+syncIndicator.style.cssText='position:fixed;top:12px;right:12px;font-size:11px;color:var(--dim);background:var(--surface);border:1px solid var(--border);padding:4px 10px;border-radius:20px;z-index:300';
+syncIndicator.textContent='⟳ sincronizando...';
+document.body.appendChild(syncIndicator);
+
+async function syncWithBot(){
+  try{
+    const res=await fetch('/api/sync');
+    if(!res.ok)throw new Error('no server');
+    const data=await res.json();
+
+    let changed=false;
+
+    // Si el bot registró checkin hoy y el dashboard no lo tiene → marcar
+    if(data.checkin_done && !todayDone['checkin']){
+      todayDone['checkin']=true;
+      saveTodayDone();
+      addXP(10);state.weekXP+=10;state.weekTasks++;state.weekCI++;
+      state.totalCheckins++;updateStreak();saveState();
+      logActivity('☀️ Check-in sincronizado desde Telegram');
+      changed=true;
+    }
+
+    // Si hay pulso semanal del bot, mostrarlo como referencia en el feed
+    if(data.week_pulse && data.week_pulse.actions){
+      const key='gg_bot_pulse_shown';
+      const shown=S.get(key,'');
+      if(shown!==TODAY){
+        S.set(key,TODAY);
+        logActivity(`📅 Pulso semanal del bot: ${data.week_pulse.actions.slice(0,60)}...`);
+        changed=true;
+      }
+    }
+
+    if(changed)renderAll();
+    syncIndicator.textContent='✓ bot conectado';
+    syncIndicator.style.color='var(--green)';
+  }catch(e){
+    syncIndicator.textContent='○ sin servidor';
+    syncIndicator.style.color='var(--dim)';
+  }
+  setTimeout(()=>syncIndicator.style.opacity='0.4',3000);
+}
+
+// ─── Render all ───────────────────────────────────────────
+function renderAll(){renderHeader();renderRituals();renderProjects();renderAchievements();renderFeed()}
+
+renderAll();renderSocial();renderLists();
+syncWithBot();
+setInterval(syncWithBot, 60000); // re-sync cada 60 segundos
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 </script>
 </body>
 </html>
