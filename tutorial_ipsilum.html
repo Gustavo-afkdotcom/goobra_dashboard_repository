@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPSILUM - Guía Rápida Interactiva</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a28;
+            --text-main: #e8e8f0;
+            --text-muted: #7a7a9a;
+            --border-color: #2a2a3a;
+            
+            --accent-cyan: #00d4ff;
+            --accent-gold: #ffd700;
+            --accent-purple: #a78bfa;
+            --accent-green: #00e676;
+            --accent-red: #ff4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 212, 255, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(167, 139, 250, 0.05), transparent 25%);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .logo-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: 3px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .card {
+            background: rgba(18, 18, 26, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 25px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-color: var(--accent-cyan);
+            background: var(--bg-card-hover);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--accent-cyan);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card.gold:hover { border-color: var(--accent-gold); }
+        .card.gold::before { background: var(--accent-gold); }
+        
+        .card.purple:hover { border-color: var(--accent-purple); }
+        .card.purple::before { background: var(--accent-purple); }
+
+        .card.green:hover { border-color: var(--accent-green); }
+        .card.green::before { background: var(--accent-green); }
+
+        .icon-wrapper {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover .icon-wrapper {
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        h3 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* Staggered Animations */
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+        .card:nth-child(5) { animation-delay: 0.5s; }
+        .card:nth-child(6) { animation-delay: 0.6s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .action-button {
+            margin-top: 50px;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, var(--accent-cyan), #0077ff);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3);
+            animation: fadeInUp 0.8s ease-out forwards;
+            animation-delay: 0.7s;
+            opacity: 0;
+        }
+
+        .action-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-title">IPSILUM</div>
+        <div class="subtitle">Descubre cómo dominar el mapa en segundos</div>
+    </header>
+
+    <div class="grid-container">
+        
+        <!-- Tarjeta 1: Ratings -->
+        <div class="card">
+            <div class="icon-wrapper">💎</div>
+            <h3>Calificación por Color</h3>
+            <p>El color de cada pin indica su rentabilidad y ubicación. Identifica rápidamente las mejores oportunidades de inversión.</p>
+            <div class="tag-container">
+                <span class="tag" style="color: var(--accent-cyan); border-color: var(--accent-cyan)">💎 Diamante</span>
+                <span class="tag" style="color: var(--accent-gold); border-color: var(--accent-gold)">🥇 Oro</span>
+                <span class="tag" style="color: #c0c0c0; border-color: #c0c0c0">🥈 Plata</span>
+            </div>
+        </div>
+
+        <!-- Tarjeta 2: Novedades -->
+        <div class="card gold">
+            <div class="icon-wrapper">✨</div>
+            <h3>Ingresos Recientes</h3>
+            <p>Los inmuebles que entraron al listado <strong>HOY</strong> destacan visualmente. No te quedes atrás y sé el primero en evaluarlos.</p>
+            <div class="tag-container">
+                <span class="tag">Anillo amarillo = ¡Nuevo!</span>
+                <span class="tag">Botón: ⭐ Nuevos</span>
+            </div>
+        </div>
+
+        <!-- Tarjeta 3: Transporte -->
+        <div class="card green">
+            <div class="icon-wrapper">🚇</div>
+            <h3>Cercanía al Transporte</h3>
+            <p>Añade valor. Usa las capas rojas y verdes en el mapa para ver qué propiedades están a pasos de estaciones clave.</p>
+            <div class="tag-container">
+                <span class="tag">🚌 TM (< 600m)</span>
+                <span class="tag">🚇 Metro (< 1.2km)</span>
+            </div>
+        </div>
+
+        <!-- Tarjeta 4: Portafolio e Informes -->
+        <div class="card purple">
+            <div class="icon-wrapper">📑</div>
+            <h3>Arma tu Portafolio</h3>
+            <p>Selecciona remates haciendo clic en la lista y filtra el mapa solo con los que te interesan. Genera un reporte detallado al instante.</p>
+            <div class="tag-container">
+                <span class="tag">1. Clic en "☑ Selec."</span>
+                <span class="tag">2. Clic en "📄 Informe"</span>
+            </div>
+        </div>
+
+        <!-- Tarjeta 5: Arrastrar Pines -->
+        <div class="card">
+            <div class="icon-wrapper">📌</div>
+            <h3>Corrige Ubicaciones</h3>
+            <p>¿La IA ubicó el pin en la calle equivocada? Activa el modo de arrastre y muévelo manualmente. El navegador recordará tu corrección.</p>
+            <div class="tag-container">
+                <span class="tag">Botón: 📌 Arrastrar</span>
+            </div>
+        </div>
+
+        <!-- Tarjeta 6: Filtros Especiales -->
+        <div class="card gold">
+            <div class="icon-wrapper">💰</div>
+            <h3>Filtros Especiales</h3>
+            <p>Navega entre Inmuebles, Vehículos y propiedades Esquineras. Ajusta tu límite de inversión en la casilla de <strong>Max M</strong>.</p>
+            <div class="tag-container">
+                <span class="tag">Max M = Presupuesto</span>
+                <span class="tag">Pestañas superiores</span>
+            </div>
+        </div>
+
+    </div>
+
+    <a href="file:///D:/remates/ops/output/mapa_25_mayo.html" class="action-button">¡Ir al Mapa Ahora!</a>
+
+    <script>
+        // Micro interacciones: Efecto 3D ligero en las tarjetas según posición del mouse
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -5;
+                const rotateY = ((x - centerX) / centerX) * 5;
+                
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `translateY(0)`;
+            });
+        });
+    </script>
+</body>
+</html>
