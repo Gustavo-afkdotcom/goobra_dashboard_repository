@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GO Obra — Gemelo Digital · Edificio Santa Águeda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    :root {
+      --black: #0a0a0a;
+      --gray-900: #111;
+      --gray-850: #161616;
+      --gray-800: #1c1c1c;
+      --gray-700: #2e2e2e;
+      --gray-600: #444;
+      --gray-500: #6b6b6b;
+      --gray-300: #c4c4c4;
+      --gray-100: #f2f1ef;
+      --white: #ffffff;
+      --amber: #e8a020;
+      --amber-d: #b87810;
+      --cyan: #38d6e0;
+      --blue: #3b82f6;
+      --orange: #ea580c;
+      --green: #22c55e;
+      --red: #ef4444;
+      --r: 8px;
+      --rl: 12px;
+      --rxl: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--black);
+      color: var(--gray-100);
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, h4 { font-family: 'Syne', sans-serif; line-height: 1.15; }
+    button { cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; }
+
+    /* ===== LAYOUT ===== */
+    .app { display: flex; flex-direction: column; height: 100vh; }
+    .topbar {
+      display: flex; align-items: center; gap: 16px;
+      padding: 12px 22px;
+      background: var(--gray-900);
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      flex-shrink: 0;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-logo {
+      width: 30px; height: 30px; border-radius: 7px;
+      background: linear-gradient(135deg, var(--amber), var(--amber-d));
+      display: grid; place-items: center;
+      font-family: 'Syne'; font-weight: 800; color: #000; font-size: 16px;
+    }
+    .brand-name { font-family: 'Syne'; font-weight: 800; font-size: 16px; letter-spacing: -.3px; }
+    .brand-sub { color: var(--gray-500); font-size: 11px; }
+    .topbar-info { margin-left: auto; text-align: right; }
+    .topbar-info .ti-name { font-family: 'Syne'; font-weight: 700; font-size: 14px; }
+    .topbar-info .ti-addr { color: var(--gray-500); font-size: 11.5px; }
+
+    /* ===== TABS ===== */
+    .tabs {
+      display: flex; gap: 4px; padding: 0 14px;
+      background: var(--gray-900);
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      overflow-x: auto; flex-shrink: 0;
+    }
+    .tabs::-webkit-scrollbar { height: 0; }
+    .tab {
+      padding: 12px 15px; background: none; color: var(--gray-500);
+      font-size: 13px; font-weight: 500; white-space: nowrap;
+      border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 7px;
+      transition: color .15s;
+    }
+    .tab:hover { color: var(--gray-300); }
+    .tab.active { color: var(--white); border-bottom-color: var(--amber); }
+    .tab .ico { font-size: 15px; }
+    .tab.highlight { animation: tabpulse 1.1s ease-in-out infinite; border-radius: 6px 6px 0 0; }
+    @keyframes tabpulse {
+      0%,100% { background: rgba(232,160,32,.0); }
+      50% { background: rgba(232,160,32,.18); }
+    }
+
+    /* ===== CONTENT ===== */
+    .content { flex: 1; position: relative; overflow: hidden; }
+    .panel { position: absolute; inset: 0; overflow-y: auto; display: none; }
+    .panel.active { display: block; }
+    .panel-pad { padding: 26px 30px 120px; max-width: 1100px; margin: 0 auto; }
+
+    .panel-head { margin-bottom: 22px; }
+    .panel-head h2 { font-size: 24px; font-weight: 800; letter-spacing: -.5px; }
+    .panel-head p { color: var(--gray-500); margin-top: 5px; font-size: 13.5px; max-width: 70ch; }
+
+    /* ===== 3D PANEL ===== */
+    #panel-3d { display: none; }
+    #panel-3d.active { display: block; }
+    #c3d { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+    #c3d:active { cursor: grabbing; }
+    /* overlays sobre el canvas: no capturan eventos salvo sus controles */
+    .scene-overlay {
+      position: absolute; left: 26px; top: 22px; z-index: 5; pointer-events: none; max-width: 360px;
+    }
+    .scene-overlay h1 { font-size: 27px; font-weight: 800; letter-spacing: -.7px; }
+    .scene-overlay .so-tag {
+      display: inline-block; font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+      color: var(--cyan); margin-bottom: 7px; font-weight: 600;
+    }
+    .legend {
+      position: absolute; right: 22px; top: 20px; z-index: 5;
+      background: rgba(18,18,18,.72); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,.08); border-radius: var(--rl);
+      padding: 13px 15px; font-size: 12px; pointer-events: auto;
+    }
+    .legend-row { display: flex; align-items: center; gap: 9px; padding: 3px 0; color: var(--gray-300); }
+    .legend-swatch { width: 20px; height: 4px; border-radius: 2px; flex-shrink: 0; }
+    .legend hr { border: none; border-top: 1px solid rgba(255,255,255,.08); margin: 9px 0; }
+    #rot-toggle {
+      width: 100%; margin-top: 4px; background: var(--gray-800); color: var(--gray-300);
+      border: 1px solid rgba(255,255,255,.1); border-radius: 7px; padding: 6px; font-size: 11.5px;
+    }
+    .nav-hint {
+      position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 5;
+      background: rgba(18,18,18,.72); backdrop-filter: blur(8px); pointer-events: none;
+      border: 1px solid rgba(255,255,255,.08); border-radius: 30px; padding: 8px 16px;
+      font-size: 12px; color: var(--gray-300); transition: opacity .5s;
+    }
+
+    /* ===== CARDS / GRID ===== */
+    .grid { display: grid; gap: 14px; }
+    .g2 { grid-template-columns: repeat(2,1fr); }
+    .g3 { grid-template-columns: repeat(3,1fr); }
+    .g4 { grid-template-columns: repeat(4,1fr); }
+    .card { background: var(--gray-850); border: 1px solid rgba(255,255,255,.07); border-radius: var(--rl); padding: 18px; }
+    .card.tight { padding: 14px 16px; }
+    .stat .v { font-family: 'Syne'; font-weight: 800; font-size: 26px; letter-spacing: -.5px; }
+    .stat .l { color: var(--gray-500); font-size: 12px; margin-top: 3px; }
+    .stat .d { font-size: 12px; margin-top: 6px; }
+    .up { color: var(--green); } .down { color: var(--red); } .warn { color: var(--amber); }
+
+    .bar { height: 8px; border-radius: 4px; background: var(--gray-700); overflow: hidden; margin-top: 8px; }
+    .bar > span { display: block; height: 100%; border-radius: 4px; background: var(--amber); }
+
+    /* ===== ETAPAS / MISIONES ===== */
+    .etapa { background: var(--gray-850); border: 1px solid rgba(255,255,255,.07); border-radius: var(--rl); margin-bottom: 12px; overflow: hidden; }
+    .etapa-head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; }
+    .etapa-head .num { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-family: 'Syne'; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+    .etapa-head .et-name { font-family: 'Syne'; font-weight: 700; font-size: 15px; }
+    .etapa-head .et-meta { color: var(--gray-500); font-size: 12px; }
+    .etapa-head .et-right { margin-left: auto; text-align: right; }
+    .etapa-body { border-top: 1px solid rgba(255,255,255,.06); }
+    .mision { display: flex; align-items: center; gap: 12px; padding: 11px 18px; border-bottom: 1px solid rgba(255,255,255,.04); }
+    .mision:last-child { border-bottom: none; }
+    .mision .chk { width: 18px; height: 18px; border-radius: 5px; border: 2px solid var(--gray-600); flex-shrink: 0; display: grid; place-items: center; font-size: 11px; }
+    .mision .chk.done { background: var(--green); border-color: var(--green); color: #000; }
+    .mision .chk.prog { border-color: var(--amber); color: var(--amber); }
+    .mision .m-name { font-size: 13.5px; }
+    .mision .m-sub { color: var(--gray-500); font-size: 11.5px; margin-top: 1px; }
+    .mision .m-day { margin-left: auto; font-size: 12px; color: var(--gray-300); white-space: nowrap; }
+    .pill { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .pill.done { background: rgba(34,197,94,.15); color: var(--green); }
+    .pill.prog { background: rgba(232,160,32,.15); color: var(--amber); }
+    .pill.todo { background: rgba(255,255,255,.06); color: var(--gray-500); }
+    .tag { display:inline-flex; align-items:center; gap:5px; background: var(--gray-800); border:1px solid rgba(255,255,255,.07); padding:3px 8px; border-radius:6px; font-size:11px; color:var(--gray-300); }
+
+    /* ===== CRONOGRAMA (GANTT) ===== */
+    .gantt-months { display: grid; grid-template-columns: 150px 1fr; margin-bottom: 6px; }
+    .gantt-months .mlabels { display: grid; grid-template-columns: repeat(7,1fr); }
+    .gantt-months .mlabels span { font-size: 10.5px; color: var(--gray-500); text-align: center; text-transform: uppercase; letter-spacing: .5px; }
+    .gantt-row { display: grid; grid-template-columns: 150px 1fr; align-items: center; height: 40px; }
+    .gantt-label { font-size: 12.5px; display: flex; align-items: center; gap: 8px; }
+    .gantt-label .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .gantt-track { position: relative; height: 22px; background: rgba(255,255,255,.03); border-radius: 6px; overflow: hidden; }
+    .gantt-track .grid-col { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,.05); }
+    .gbar { position: absolute; top: 3px; height: 16px; border-radius: 5px; display: flex; align-items: center; padding-left: 8px; font-size: 10px; font-weight: 700; color: #000; white-space: nowrap; overflow: hidden; }
+    .gbar-bg { position: absolute; top: 3px; height: 16px; border-radius: 5px; opacity: 0.25; }
+    .today { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--amber); z-index: 3; }
+    .today::after { content: 'HOY'; position: absolute; top: -15px; left: -10px; font-size: 9px; color: var(--amber); font-weight: 700; }
+    .gantt-mcount { font-size: 10.5px; color: var(--gray-500); font-weight: 400; flex-shrink: 0; }
+    .gantt-row:hover .gantt-track { background: rgba(255,255,255,.05); }
+    /* próximas misiones en cronograma */
+    .crono-mision { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 8px; }
+    .crono-mision.hoy { background: rgba(232,160,32,.08); border: 1px solid rgba(232,160,32,.25); }
+    .crono-mision.done-row { opacity: 0.55; }
+    .crono-date { min-width: 44px; font-size: 11px; color: var(--gray-500); text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+
+    /* ===== TABLE ===== */
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; color: var(--gray-500); font-size: 11px; text-transform: uppercase; letter-spacing: .5px; font-weight: 600; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.08); }
+    td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+    tr:last-child td { border-bottom: none; }
+
+    /* ===== CHAT / ALERTS ===== */
+    .chat { display: flex; flex-direction: column; gap: 10px; }
+    .msg { max-width: 78%; padding: 10px 13px; border-radius: 12px; font-size: 13px; line-height: 1.4; }
+    .msg .who { font-size: 11px; opacity: .6; margin-bottom: 3px; }
+    .msg.in { align-self: flex-start; background: var(--gray-800); border-bottom-left-radius: 3px; }
+    .msg.out { align-self: flex-end; background: rgba(232,160,32,.16); border-bottom-right-radius: 3px; }
+    .msg.alert { align-self: stretch; max-width: 100%; background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.35); }
+    .alert-banner { display: flex; gap: 12px; align-items: flex-start; background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); border-radius: var(--rl); padding: 14px 16px; margin-bottom: 16px; }
+    .alert-banner .ab-ico { font-size: 20px; }
+    .alert-banner h4 { color: var(--red); font-size: 14px; margin-bottom: 3px; }
+    .alert-banner p { font-size: 12.5px; color: var(--gray-300); }
+
+    /* ===== MODO VISITA ===== */
+    .visita-intro { display: flex; gap: 14px; align-items: center; background: linear-gradient(135deg, rgba(56,214,224,.1), rgba(22,22,22,.5)); border: 1px solid rgba(56,214,224,.25); border-radius: var(--rl); padding: 16px 18px; margin-bottom: 18px; }
+    .visita-intro .vi-ico { font-size: 30px; }
+    .visita-card { display: flex; gap: 14px; align-items: center; background: var(--gray-850); border: 1px solid rgba(255,255,255,.07); border-radius: var(--rl); padding: 14px; margin-bottom: 12px; transition: border-color .2s; }
+    .visita-card .thumb { width: 62px; height: 62px; border-radius: 10px; background: var(--gray-800); display: grid; place-items: center; font-size: 24px; flex-shrink: 0; }
+    .visita-card .vc-body { flex: 1; min-width: 0; }
+    .visita-card .vc-title { font-weight: 600; font-size: 14px; }
+    .visita-card .vc-sub { color: var(--gray-500); font-size: 12px; margin-top: 2px; }
+    .visita-card .vc-status { margin-top: 6px; }
+    .visita-card .vc-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .vbtn { padding: 9px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+    .vbtn.ok { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.4); }
+    .vbtn.redo { background: rgba(232,160,32,.13); color: var(--amber); border: 1px solid rgba(232,160,32,.4); }
+    .vbtn.ok:hover { background: var(--green); color: #000; }
+    .vbtn.redo:hover { background: var(--amber); color: #000; }
+    .visita-card.accepted { border-color: rgba(34,197,94,.5); }
+    .visita-card.redo { border-color: rgba(232,160,32,.5); }
+
+    .upload { border: 2px dashed var(--gray-600); border-radius: var(--rl); padding: 26px; text-align: center; color: var(--gray-500); transition: .2s; cursor: pointer; }
+    .upload:hover { border-color: var(--amber); color: var(--amber); }
+    .upload .up-ico { font-size: 32px; }
+    .btn { background: var(--amber); color: #000; font-weight: 600; padding: 9px 16px; border-radius: var(--r); font-size: 13px; }
+
+    /* ===== TUTORIAL (esquina, no bloquea) ===== */
+    .tut-card {
+      position: fixed; left: 22px; bottom: 22px; z-index: 100;
+      width: 340px; max-width: calc(100vw - 44px);
+      background: var(--gray-850); border: 1px solid rgba(232,160,32,.45);
+      border-radius: var(--rxl); padding: 18px 20px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.6);
+    }
+    .tut-card.collapsed .tut-body { display: none; }
+    .tut-card.collapsed .tut-dots { display: none; }
+    .tut-card.collapsed { padding: 11px 16px; }
+    .tut-topline { display: flex; align-items: center; gap: 10px; }
+    .tut-step { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--amber); font-weight: 600; }
+    .tut-collapse { margin-left: auto; background: var(--gray-800); color: var(--gray-300); width: 24px; height: 24px; border-radius: 6px; font-size: 14px; line-height: 1; }
+    .tut-card h3 { font-size: 18px; font-weight: 800; margin: 7px 0 7px; letter-spacing: -.3px; }
+    .tut-card p { color: var(--gray-300); font-size: 13.5px; line-height: 1.5; }
+    .tut-tip { margin-top: 11px; background: rgba(56,214,224,.08); border-left: 3px solid var(--cyan); padding: 8px 11px; border-radius: 0 8px 8px 0; font-size: 12px; color: var(--gray-300); }
+    .tut-foot { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
+    .tut-dots { display: flex; gap: 5px; flex-wrap: wrap; max-width: 130px; }
+    .tut-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gray-600); transition: .2s; }
+    .tut-dot.on { background: var(--amber); width: 15px; border-radius: 4px; }
+    .tut-foot .spacer { flex: 1; }
+    .tut-btn { padding: 8px 14px; border-radius: var(--r); font-size: 13px; font-weight: 600; }
+    .tut-btn.prev { background: var(--gray-800); color: var(--gray-300); border: 1px solid rgba(255,255,255,.1); }
+    .tut-btn.next { background: var(--amber); color: #000; }
+    .tut-skip { position: fixed; right: 22px; bottom: 22px; z-index: 101; background: rgba(28,28,28,.85); color: var(--gray-300); border: 1px solid rgba(255,255,255,.12); padding: 8px 14px; border-radius: 20px; font-size: 12px; }
+    #restart { position: fixed; right: 22px; bottom: 22px; z-index: 60; background: var(--amber); color: #000; font-weight: 600; padding: 11px 18px; border-radius: 30px; font-size: 13px; box-shadow: 0 8px 24px rgba(232,160,32,.35); display: none; }
+
+    .mono { font-variant-numeric: tabular-nums; }
+    .muted { color: var(--gray-500); }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-logo">G</div>
+        <div>
+          <div class="brand-name">GO Obra</div>
+          <div class="brand-sub">Gemelo digital · Plan PRO (demo)</div>
+        </div>
+      </div>
+      <div class="topbar-info">
+        <div class="ti-name" id="ti-name">Nestor</div>
+        <div class="ti-addr" id="ti-addr">Edificio Santa Águeda · Cra 38a #1b</div>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="3d"><span class="ico">◳</span> Gemelo 3D</button>
+      <button class="tab" data-tab="presupuesto"><span class="ico">$</span> Presupuesto</button>
+      <button class="tab" data-tab="misiones"><span class="ico">✓</span> Misiones</button>
+      <button class="tab" data-tab="cronograma"><span class="ico">▦</span> Cronograma</button>
+      <button class="tab" data-tab="reportes-campo"><span class="ico">⚡</span> Avances</button>
+      <button class="tab" data-tab="visita"><span class="ico">⊙</span> Modo visita</button>
+      <button class="tab" data-tab="almacen"><span class="ico">▣</span> Almacén</button>
+      <button class="tab" data-tab="equipo"><span class="ico">⚒</span> Equipo</button>
+      <button class="tab" data-tab="reportes"><span class="ico">▤</span> Reportes</button>
+      <button class="tab" data-tab="analisis"><span class="ico">◬</span> Análisis</button>
+    </div>
+
+    <div class="content">
+
+      <!-- ===== 3D ===== -->
+      <div class="panel active" id="panel-3d">
+        <canvas id="c3d"></canvas>
+        <div class="scene-overlay">
+          <span class="so-tag" id="cfg-3d-tag">Gemelo digital · esquina Cra 38a #1b</span>
+          <h1 id="cfg-3d-nombre">Edificio Santa Águeda</h1>
+        </div>
+        <div class="legend" id="legend">
+          <div class="legend-row"><span class="legend-swatch" style="background:var(--cyan)"></span> Construido · piso 1</div>
+          <div class="legend-row"><span class="legend-swatch" style="background:var(--amber)"></span> En ejecución · piso 2</div>
+          <div class="legend-row"><span class="legend-swatch" style="background:#5a6270"></span> Proyección · 5 pisos</div>
+          <div class="legend-row"><span class="legend-swatch" style="background:#5b6573"></span> Vecinos · 2 pisos</div>
+          <div class="legend-row"><span class="legend-swatch" style="background:#7fe9f0"></span> Zapatas y vigas</div>
+          <hr>
+          <button id="rot-toggle">⏸ Pausar giro</button>
+        </div>
+        <div class="nav-hint" id="nav-hint">🖱 Arrastra para girar · rueda = zoom · clic derecho = mover</div>
+      </div>
+
+      <!-- ===== PRESUPUESTO ===== -->
+      <div class="panel" id="panel-presupuesto">
+        <div class="panel-pad">
+          <div class="panel-head">
+            <h2>Presupuesto</h2>
+            <p>Define cuánto tiempo, material y dinero requiere cada etapa o misión. En el plan PRO se calcula con las listas de precios de tu distribuidor de confianza.</p>
+          </div>
+          <div class="grid g3" style="margin-bottom:18px">
+            <div class="card stat"><div class="l">Presupuesto total</div><div class="v mono">$1.820 M</div><div class="d muted">5 pisos · 1.000 m²</div></div>
+            <div class="card stat"><div class="l">Ejecutado a hoy</div><div class="v mono">$690 M</div><div class="bar"><span style="width:38%"></span></div></div>
+            <div class="card stat"><div class="l">Disponible</div><div class="v mono up">$1.130 M</div><div class="d up">Dentro de lo planeado</div></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+              <span class="tag">Por etapas</span>
+              <span class="tag">Por misiones</span>
+              <span class="tag" style="border-color:var(--amber);color:var(--amber)">⚡ Lista de precios distribuidor (PRO)</span>
+            </div>
+            <table>
+              <thead><tr><th>Etapa</th><th>Material</th><th>Mano de obra</th><th>Total</th><th>Estado</th></tr></thead>
+              <tbody>
+                <tr><td>Cimentación</td><td class="mono">$182 M</td><td class="mono">$98 M</td><td class="mono">$280 M</td><td><span class="pill done">Cerrada</span></td></tr>
+                <tr><td>Estructura</td><td class="mono">$410 M</td><td class="mono">$210 M</td><td class="mono">$620 M</td><td><span class="pill prog">En curso</span></td></tr>
+                <tr><td>Mampostería</td><td class="mono">$240 M</td><td class="mono">$160 M</td><td class="mono">$400 M</td><td><span class="pill todo">Planeada</span></td></tr>
+                <tr><td>Instalaciones</td><td class="mono">$180 M</td><td class="mono">$120 M</td><td class="mono">$300 M</td><td><span class="pill todo">Planeada</span></td></tr>
+                <tr><td>Acabados</td><td class="mono">$140 M</td><td class="mono">$80 M</td><td class="mono">$220 M</td><td><span class="pill todo">Planeada</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== MISIONES ===== -->
+      <div class="panel" id="panel-misiones">
+        <div class="panel-pad">
+          <div class="panel-head">
+            <h2>Misiones</h2>
+            <p>Tu obra organizada por etapas. Cada etapa se divide en misiones diarias con su fecha programada. Esta lista es la que recibe tu encargado cada mañana.</p>
+          </div>
+          <div class="etapa">
+            <div class="etapa-head">
+              <div class="num" style="background:var(--green);color:#000">✓</div>
+              <div><div class="et-name">Etapa 1 · Cimentación</div><div class="et-meta">8 misiones · 100% completada</div></div>
+              <div class="et-right"><span class="pill done">Cerrada</span></div>
+            </div>
+          </div>
+          <div class="etapa">
+            <div class="etapa-head">
+              <div class="num" style="background:var(--amber);color:#000">2</div>
+              <div><div class="et-name">Etapa 2 · Estructura</div><div class="et-meta">12 misiones · 6 completadas · piso 2 en curso</div></div>
+              <div class="et-right"><span class="pill prog">En curso</span></div>
+            </div>
+            <div class="etapa-body">
+              <div class="mision"><div class="chk done">✓</div><div><div class="m-name">Fundir columnas piso 1 — bloque A</div><div class="m-sub">10 m³ concreto · 5 obreros · vibrador</div></div><div class="m-day">Lun 25 may</div></div>
+              <div class="mision"><div class="chk done">✓</div><div><div class="m-name">Fundir columnas piso 1 — bloque B</div><div class="m-sub">9 m³ concreto · 5 obreros</div></div><div class="m-day">Mié 27 may</div></div>
+              <div class="mision"><div class="chk done">✓</div><div><div class="m-name">Losa entrepiso piso 1 + punto fijo</div><div class="m-sub">200 m² · 14 m³ concreto · formaleta</div></div><div class="m-day">Vie 29 may</div></div>
+              <div class="mision"><div class="chk prog">●</div><div><div class="m-name">Armado de hierro columnas piso 2</div><div class="m-sub">1.8 ton hierro · 4 figuradores</div></div><div class="m-day">Hoy · 29 may</div></div>
+              <div class="mision"><div class="chk">○</div><div><div class="m-name">Fundir columnas piso 2 — bloque A</div><div class="m-sub">10 m³ concreto · 5 obreros · bomba</div></div><div class="m-day">Lun 1 jun</div></div>
+              <div class="mision"><div class="chk">○</div><div><div class="m-name">Losa entrepiso piso 2</div><div class="m-sub">200 m² · 14 m³ concreto</div></div><div class="m-day">Jue 4 jun</div></div>
+            </div>
+          </div>
+          <div class="etapa">
+            <div class="etapa-head">
+              <div class="num" style="background:var(--gray-700);color:var(--gray-300)">3</div>
+              <div><div class="et-name">Etapa 3 · Mampostería</div><div class="et-meta">18 misiones · inicia 15 jun</div></div>
+              <div class="et-right"><span class="pill todo">Planeada</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== CRONOGRAMA ===== -->
+      <div class="panel" id="panel-cronograma">
+        <div class="panel-pad">
+          <div class="panel-head">
+            <h2>Cronograma</h2>
+            <p>Lo establecido en el tiempo, de un vistazo. Tú, el maestro y tus socios ven rápido y fácil qué etapa va en qué fecha. Cada barra contiene las misiones de esa etapa.</p>
+          </div>
+          <div class="card">
+            <div class="gantt-months">
+              <div></div>
+              <div class="mlabels"><span>Mar</span><span>Abr</span><span>May</span><span>Jun</span><span>Jul</span><span>Ago</span><span>Sep</span></div>
+            </div>
+            <div id="gantt"></div>
+          </div>
+          <div class="grid g3" style="margin-top:16px">
+            <div class="card stat tight"><div class="l">Inicio de obra</div><div class="v" style="font-size:18px">3 mar 2026</div></div>
+            <div class="card stat tight"><div class="l">Entrega estimada</div><div class="v" style="font-size:18px">26 sep 2026</div></div>
+            <div class="card stat tight"><div class="l">Avance vs. cronograma</div><div class="v up" style="font-size:18px">A tiempo</div></div>
+          </div>
+
+          <!-- misiones recientes y próximas -->
+          <div class="card" style="margin-top:16px">
+            <h4 style="font-size:14px;margin-bottom:14px;font-family:'Syne'">Misiones · recientes y próximas</h4>
+            <div class="crono-mision done-row">
+              <div class="chk done" style="width:18px;height:18px;border-radius:5px;background:var(--green);border:2px solid var(--green);display:grid;place-items:center;font-size:11px;flex-shrink:0;color:#000">✓</div>
+              <div style="flex:1"><div style="font-size:13px">Fundir columnas piso 1 — bloque A</div><div style="font-size:11.5px;color:var(--gray-500)">10 m³ concreto · 5 obreros</div></div>
+              <div class="crono-date">25 may</div>
+            </div>
+            <div class="crono-mision done-row">
+              <div class="chk done" style="width:18px;height:18px;border-radius:5px;background:var(--green);border:2px solid var(--green);display:grid;place-items:center;font-size:11px;flex-shrink:0;color:#000">✓</div>
+              <div style="flex:1"><div style="font-size:13px">Fundir columnas piso 1 — bloque B</div><div style="font-size:11.5px;color:var(--gray-500)">9 m³ concreto · 5 obreros</div></div>
+              <div class="crono-date">27 may</div>
+            </div>
+            <div class="crono-mision done-row">
+              <div class="chk done" style="width:18px;height:18px;border-radius:5px;background:var(--green);border:2px solid var(--green);display:grid;place-items:center;font-size:11px;flex-shrink:0;color:#000">✓</div>
+              <div style="flex:1"><div style="font-size:13px">Losa entrepiso piso 1 + punto fijo</div><div style="font-size:11.5px;color:var(--gray-500)">200 m² · 14 m³</div></div>
+              <div class="crono-date">29 may</div>
+            </div>
+            <div class="crono-mision hoy">
+              <div style="width:18px;height:18px;border-radius:5px;border:2px solid var(--amber);display:grid;place-items:center;font-size:11px;flex-shrink:0;color:var(--amber)">●</div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:600">Armado de hierro columnas piso 2</div><div style="font-size:11.5px;color:var(--gray-500)">1.8 ton hierro · 4 figuradores</div></div>
+              <div class="crono-date" style="color:var(--amber);font-weight:700">HOY</div>
+            </div>
+            <div class="crono-mision">
+              <div style="width:18px;height:18px;border-radius:5px;border:2px solid var(--gray-600);display:grid;place-items:center;font-size:11px;flex-shrink:0;color:var(--gray-500)">○</div>
+              <div style="flex:1"><div style="font-size:13px">Fundir columnas piso 2 — bloque A</div><div style="font-size:11.5px;color:var(--gray-500)">10 m³ · bomba de concreto</div></div>
+              <div class="crono-date">1 jun</div>
+            </div>
+            <div class="crono-mision">
+              <div style="width:18px;height:18px;border-radius:5px;border:2px solid var(--gray-600);display:grid;place-items:center;font-size:11px;flex-shrink:0;color:var(--gray-500)">○</div>
+              <div style="flex:1"><div style="font-size:13px">Losa entrepiso piso 2</div><div style="font-size:11.5px;color:var(--gray-500)">200 m² · 14 m³</div></div>
+              <div class="crono-date">4 jun</div>
+            </div>
+            <div class="crono-mision" style="border-top:1px solid rgba(255,255,255,.06);margin-top:6px;padding-top:14px">
+              <div style="width:18px;height:18px;border-radius:50%;background:var(--gray-700);display:grid;place-items:center;font-size:10px;flex-shrink:0;color:var(--gray-300);font-family:'Syne';font-weight:700">3</div>
+              <div style="flex:1"><div style="font-size:13px;color:var(--gray-300)">Inicio Etapa 3 · Mampostería</div><div style="font-size:11.5px;color:var(--gray-500)">18 misiones planeadas</div></div>
+              <div class="crono-date">15 jun</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== AVANCES ===== -->
+      <div class="panel" id="panel-reportes-campo">
+        <div class="panel-pad" style="max-width:720px">
+          <div class="panel-head">
+            <h2>Avances en vivo</h2>
+            <p>Tu encargado reporta cada misión por WhatsApp o Telegram. Si aparece una amenaza al presupuesto de tiempo o material, la alerta te llega de inmediato por tu vía preferida — llamada o mensaje.</p>
+          </div>
+          <div class="alert-banner">
+            <div class="ab-ico">🔔</div>
+            <div>
+              <h4 id="cfg-alerta-h4">Alerta enviada a Nestor · hace 6 min</h4>
+              <p>Sobreconsumo de concreto en losa piso 1: +1.5 m³ sobre lo presupuestado. Se notificó por llamada según tu preferencia.</p>
+            </div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+              <span class="tag" style="border-color:var(--green);color:var(--green)">● WhatsApp conectado</span>
+              <span class="muted" style="font-size:12px" id="cfg-encargado-label">Encargado: Don Jaime Rodríguez</span>
+            </div>
+            <div class="chat">
+              <div class="msg in"><div class="who" data-enc-who="7:02 a.m.">Don Jaime · 7:02 a.m.</div>Buenos días ing. Llegó el equipo completo, arrancamos armado de hierro piso 2 ✅</div>
+              <div class="msg in"><div class="who" data-enc-who="11:40 a.m.">Don Jaime · 11:40 a.m.</div>Foto del avance de columnas 📷 vamos al 60% del armado</div>
+              <div class="msg alert"><div class="who">⚠️ Sistema GO Obra · 12:15 p.m.</div>Detectado: consumo de concreto losa piso 1 superó lo presupuestado en 1.5 m³ (≈ $620.000). ¿Autorizas el ajuste?</div>
+              <div class="msg out"><div class="who" id="cfg-dueno-who">Nestor · 12:18 p.m.</div>Sí autorizo, pero revisemos la dosificación en la próxima fundida.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== MODO VISITA ===== -->
+      <div class="panel" id="panel-visita">
+        <div class="panel-pad" style="max-width:760px">
+          <div class="panel-head">
+            <h2>Modo visita</h2>
+            <p>Pensado para cuando vas a la obra: ve siguiendo los avances en tu teléfono y acéptalos o mándalos a repetir. Tu validación queda registrada al instante.</p>
+          </div>
+          <div class="visita-intro">
+            <div class="vi-ico">📍</div>
+            <div>
+              <div style="font-weight:600" id="cfg-visita-dir">Estás en obra · Cra 38a #1b · 29 may, 3:40 p.m.</div>
+              <div class="muted" style="font-size:12.5px;margin-top:2px">3 avances reportados hoy esperan tu revisión en sitio.</div>
+            </div>
+          </div>
+          <div id="visita-list">
+            <div class="visita-card">
+              <div class="thumb">🏗</div>
+              <div class="vc-body">
+                <div class="vc-title">Armado de hierro · columnas piso 2 (bloque A)</div>
+                <div class="vc-sub" data-enc-sub="11:40 a.m. · 1.8 ton">Reportado por Don Jaime · 11:40 a.m. · 1.8 ton</div>
+                <div class="vc-status"><span class="pill todo">Por revisar</span></div>
+              </div>
+              <div class="vc-actions">
+                <button class="vbtn redo">↻ Repetir</button>
+                <button class="vbtn ok">✓ Aceptar</button>
+              </div>
+            </div>
+            <div class="visita-card">
+              <div class="thumb">🧱</div>
+              <div class="vc-body">
+                <div class="vc-title">Fundición losa entrepiso piso 1</div>
+                <div class="vc-sub" data-enc-sub="29 may · 14 m³">Reportado por Don Jaime · 29 may · 14 m³</div>
+                <div class="vc-status"><span class="pill todo">Por revisar</span></div>
+              </div>
+              <div class="vc-actions">
+                <button class="vbtn redo">↻ Repetir</button>
+                <button class="vbtn ok">✓ Aceptar</button>
+              </div>
+            </div>
+            <div class="visita-card">
+              <div class="thumb">🪜</div>
+              <div class="vc-body">
+                <div class="vc-title">Punto fijo · escalera nivel 1–2</div>
+                <div class="vc-sub" data-enc-sub="28 may">Reportado por Don Jaime · 28 may</div>
+                <div class="vc-status"><span class="pill todo">Por revisar</span></div>
+              </div>
+              <div class="vc-actions">
+                <button class="vbtn redo">↻ Repetir</button>
+                <button class="vbtn ok">✓ Aceptar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ALMACEN ===== -->
+      <div class="panel" id="panel-almacen">
+        <div class="panel-pad">
+          <div class="panel-head">
+            <h2>Almacén</h2>
+            <p>Sube la foto de la factura y el material entra automáticamente a tu bodega. Cada misión sabe qué material, equipo y personal consume, así que se descuenta con control. Si se usa más de lo estimado, te enteras al instante.</p>
+          </div>
+          <div class="grid g2" style="margin-bottom:18px">
+            <div class="upload">
+              <div class="up-ico">📷</div>
+              <div style="font-weight:600;margin-top:6px;color:var(--gray-100)">Subir foto de factura</div>
+              <div style="font-size:12px;margin-top:3px">El sistema lee cantidades y precios automáticamente</div>
+            </div>
+            <div class="card">
+              <div class="muted" style="font-size:12px;margin-bottom:8px">Última factura procesada</div>
+              <div style="font-weight:600;margin-bottom:4px">Ferretería El Cruce · 28 may</div>
+              <div style="font-size:13px;line-height:1.7" class="muted">Cemento gris 50kg × 80 bultos<br>Hierro 1/2" × 1.2 ton<br>Arena lavada × 6 m³</div>
+              <div style="margin-top:8px"><span class="pill done">✓ Ingresado a bodega</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <h4 style="font-size:15px;margin-bottom:12px">Inventario en bodega</h4>
+            <table>
+              <thead><tr><th>Material</th><th>Presupuestado</th><th>En bodega</th><th>Consumido</th><th>Control</th></tr></thead>
+              <tbody>
+                <tr><td>Cemento (bultos)</td><td class="mono">420</td><td class="mono">96</td><td class="mono">324</td><td><span class="pill done">En rango</span></td></tr>
+                <tr><td>Hierro (ton)</td><td class="mono">9.5</td><td class="mono">2.1</td><td class="mono">7.4</td><td><span class="pill done">En rango</span></td></tr>
+                <tr><td>Concreto premezclado (m³)</td><td class="mono">120</td><td class="mono">—</td><td class="mono">86.5</td><td><span class="pill prog">+1.5 sobre plan</span></td></tr>
+                <tr><td>Arena (m³)</td><td class="mono">48</td><td class="mono">11</td><td class="mono">37</td><td><span class="pill done">En rango</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== EQUIPO ===== -->
+      <div class="panel" id="panel-equipo">
+        <div class="panel-pad">
+          <div class="panel-head">
+            <h2>Equipo</h2>
+            <p>Registra quién llegó y a qué hora, y valoriza el rendimiento diario de cada trabajador. Sabes exactamente quién rinde y cuánto cuesta cada jornada.</p>
+          </div>
+          <div class="grid g4" style="margin-bottom:18px">
+            <div class="card stat tight"><div class="l">En obra hoy</div><div class="v">9</div></div>
+            <div class="card stat tight"><div class="l">Asistencia</div><div class="v up">100%</div></div>
+            <div class="card stat tight"><div class="l">Costo jornada</div><div class="v mono">$1.35 M</div></div>
+            <div class="card stat tight"><div class="l">Rendimiento</div><div class="v up">+4%</div></div>
+          </div>
+          <div class="card">
+            <table>
+              <thead><tr><th>Trabajador</th><th>Rol</th><th>Llegada</th><th>Rendimiento día</th><th>Valorización</th></tr></thead>
+              <tbody>
+                <tr><td id="cfg-enc-equipo-td">Don Jaime Rodríguez</td><td>Maestro / encargado</td><td class="mono">6:48 a.m.</td><td><span class="pill done">Alto</span></td><td class="mono">$95.000</td></tr>
+                <tr><td>Carlos Pinzón</td><td>Oficial</td><td class="mono">7:02 a.m.</td><td><span class="pill done">Alto</span></td><td class="mono">$75.000</td></tr>
+                <tr><td>Wilson Mora</td><td>Figurador hierro</td><td class="mono">7:00 a.m.</td><td><span class="pill prog">Medio</span></td><td class="mono">$70.000</td></tr>
+                <tr><td>Andrés Gómez</td><td>Ayudante</td><td class="mono">7:15 a.m.</td><td><span class="pill done">Alto</span></td><td class="mono">$55.000</td></tr>
+                <tr><td>+ 5 ayudantes</td><td>Ayudantes</td><td class="mono">~7:10 a.m.</td><td><span class="pill done">Normal</span></td><td class="mono">$275.000</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== REPORTES ===== -->
+      <div class="panel" id="panel-reportes">
+        <div class="panel-pad">
+          <div class="panel-head">
+            <h2>Reportes</h2>
+            <p>Genera reportes con todo lo ocurrido en las fechas que selecciones: avances, consumos, asistencia y gastos. Listos para imprimir o compartir.</p>
+          </div>
+          <div class="card" style="margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <span class="muted">Periodo:</span><span class="tag">25 may → 29 may</span>
+              <span class="muted">Tipo:</span><span class="tag" style="border-color:var(--amber);color:var(--amber)">Semanal de obra</span>
+              <button class="btn" style="margin-left:auto">⤓ Generar PDF</button>
+            </div>
+          </div>
+          <div class="grid g2">
+            <div class="card">
+              <h4 style="font-size:15px;margin-bottom:10px">Resumen semana</h4>
+              <div style="font-size:13px;line-height:2" class="muted">
+                Misiones completadas: <b style="color:var(--gray-100)">3 de 4</b><br>
+                Avance estructura: <b style="color:var(--gray-100)">+12%</b><br>
+                Material consumido: <b style="color:var(--gray-100)">$118 M</b><br>
+                Jornales pagados: <b style="color:var(--gray-100)">$6.7 M</b><br>
+                Alertas generadas: <b style="color:var(--amber)">1 (resuelta)</b>
+              </div>
+            </div>
+            <div class="card">
+              <h4 style="font-size:15px;margin-bottom:10px">Reportes recientes</h4>
+              <table><tbody>
+                <tr><td>Semanal · 18–22 may</td><td><span class="pill done">PDF</span></td></tr>
+                <tr><td>Cierre etapa Cimentación</td><td><span class="pill done">PDF</span></td></tr>
+                <tr><td>Mensual · Abril</td><td><span class="pill done">PDF</span></td></tr>
+              </tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== ANALISIS ===== -->
+      <div class="panel" id="panel-analisis">
+        <div class="panel-pad">
+          <div class="panel-head">
+            <h2>Análisis</h2>
+            <p>El tablero te responde en vivo una sola pregunta: <b style="color:var(--gray-100)">¿estás ganando o perdiendo dinero?</b></p>
+          </div>
+          <div class="card" style="margin-bottom:18px;background:linear-gradient(135deg, rgba(34,197,94,.12), rgba(22,22,22,.6));border-color:rgba(34,197,94,.3)">
+            <div style="display:flex;align-items:center;gap:18px">
+              <div style="font-size:46px">📈</div>
+              <div>
+                <div class="muted" style="font-size:13px">Estado financiero del proyecto</div>
+                <div style="font-family:'Syne';font-weight:800;font-size:30px;color:var(--green)">Ganando · +$42 M sobre plan</div>
+                <div class="muted" style="font-size:12.5px;margin-top:4px">Costo real por debajo del presupuestado en las etapas cerradas y en curso.</div>
+              </div>
+            </div>
+          </div>
+          <div class="grid g4" style="margin-bottom:18px">
+            <div class="card stat tight"><div class="l">Presupuesto</div><div class="v mono">$1.820 M</div></div>
+            <div class="card stat tight"><div class="l">Costo real proyectado</div><div class="v mono up">$1.778 M</div></div>
+            <div class="card stat tight"><div class="l">Desviación</div><div class="v up">−2.3%</div></div>
+            <div class="card stat tight"><div class="l">Días vs. cronograma</div><div class="v up">A tiempo</div></div>
+          </div>
+          <div class="grid g2">
+            <div class="card">
+              <h4 style="font-size:15px;margin-bottom:12px">Costo planeado vs. real por etapa</h4>
+              <div style="display:flex;flex-direction:column;gap:12px">
+                <div><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><span>Cimentación</span><span class="up mono">$280M → $268M</span></div><div class="bar"><span style="width:96%;background:var(--green)"></span></div></div>
+                <div><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><span>Estructura (en curso)</span><span class="warn mono">$620M → $625M</span></div><div class="bar"><span style="width:101%;background:var(--amber)"></span></div></div>
+                <div><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px"><span>Mampostería (est.)</span><span class="up mono">$400M → $388M</span></div><div class="bar"><span style="width:97%;background:var(--green)"></span></div></div>
+              </div>
+            </div>
+            <div class="card">
+              <h4 style="font-size:15px;margin-bottom:12px">Señales en vivo</h4>
+              <div style="font-size:13px;line-height:1.9" class="muted">
+                <div>● <b style="color:var(--green)">Ahorro</b> en cimentación por menor desperdicio</div>
+                <div>● <b style="color:var(--amber)">Vigilar</b> dosificación de concreto en estructura</div>
+                <div>● <b style="color:var(--green)">Mano de obra</b> rindiendo 4% sobre lo esperado</div>
+                <div>● <b style="color:var(--green)">Cronograma</b> sin retrasos acumulados</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TUTORIAL (esquina inferior izquierda) -->
+  <div class="tut-card" id="tut-card">
+    <div class="tut-topline">
+      <span class="tut-step" id="tut-step">Paso 1 de 10</span>
+      <button class="tut-collapse" id="tut-collapse" title="Minimizar">—</button>
+    </div>
+    <div class="tut-body">
+      <h3 id="tut-title"></h3>
+      <p id="tut-text"></p>
+      <div class="tut-tip" id="tut-tip" style="display:none"></div>
+    </div>
+    <div class="tut-foot">
+      <div class="tut-dots" id="tut-dots"></div>
+      <div class="spacer"></div>
+      <button class="tut-btn prev" id="tut-prev">Atrás</button>
+      <button class="tut-btn next" id="tut-next">Siguiente →</button>
+    </div>
+  </div>
+  <button class="tut-skip" id="tut-skip">Saltar ✕</button>
+  <button id="restart">↻ Repetir tutorial</button>
+
+  <script>
+  /* ============================================================
+     CONFIG — datos del cliente
+  ============================================================ */
+  const _p = new URLSearchParams(location.search);
+  const CONFIG = {
+    dueno:     _p.get('nombre')    || 'Nestor',
+    edificio:  _p.get('edificio')  || 'Edificio Santa Águeda',
+    direccion: _p.get('dir')       || 'Cra 38a #1b',
+    encargado: _p.get('encargado') || 'Don Jaime Rodríguez'
+  };
+
+  function aplicarConfig() {
+    const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+    document.title = `GO Obra — Gemelo Digital · ${CONFIG.edificio}`;
+    set('ti-name',            CONFIG.dueno);
+    set('ti-addr',            `${CONFIG.edificio} · ${CONFIG.direccion}`);
+    set('cfg-3d-tag',         `Gemelo digital · esquina ${CONFIG.direccion}`);
+    set('cfg-3d-nombre',      CONFIG.edificio);
+    set('cfg-alerta-h4',      `Alerta enviada a ${CONFIG.dueno} · hace 6 min`);
+    set('cfg-encargado-label',`Encargado: ${CONFIG.encargado}`);
+    set('cfg-dueno-who',      `${CONFIG.dueno} · 12:18 p.m.`);
+    set('cfg-visita-dir',     `Estás en obra · ${CONFIG.direccion} · 29 may, 3:40 p.m.`);
+    set('cfg-enc-equipo-td',  CONFIG.encargado);
+    document.querySelectorAll('[data-enc-who]').forEach(el =>
+      el.textContent = `${CONFIG.encargado} · ${el.dataset.encWho}`
+    );
+    document.querySelectorAll('[data-enc-sub]').forEach(el =>
+      el.textContent = `Reportado por ${CONFIG.encargado} · ${el.dataset.encSub}`
+    );
+  }
+
+  /* ============================================================
+     TABS
+  ============================================================ */
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  function showTab(id) {
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+    panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + id));
+    if (id === '3d' && renderer) onResize();
+  }
+  tabs.forEach(t => t.addEventListener('click', () => { showTab(t.dataset.tab); highlightTab(null); }));
+
+  /* ============================================================
+     3D — intersección esquemática tipo Tesla (navegable)
+     Coordenadas centradas en el cruce calle×carrera. 1u = 1m.
+  ============================================================ */
+  let renderer, scene, camera, controls, autoRotate = true;
+  const canvas = document.getElementById('c3d');
+
+  const SW = 3.5;             // media calle (calles de 7 m)
+  const LOTW = 10, LOTD = 20; // lote: frente 10, fondo 20
+  const FH = 3;               // altura de piso
+  const PA = 3;               // patio 3 m
+
+  function box(w, h, d, x, y, z, color, fo, ec, eo) {
+    const g = new THREE.BoxGeometry(w, h, d);
+    const grp = new THREE.Group();
+    if (fo > 0) {
+      const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({
+        color, transparent: true, opacity: fo, roughness: .6, metalness: .1, depthWrite: fo > 0.55
+      }));
+      m.position.set(x, y + h/2, z); grp.add(m);
+    }
+    if (eo > 0) {
+      const e = new THREE.LineSegments(new THREE.EdgesGeometry(g),
+        new THREE.LineBasicMaterial({ color: ec, transparent: true, opacity: eo }));
+      e.position.set(x, y + h/2, z); grp.add(e);
+    }
+    return grp;
+  }
+  const cx = r => (r.x0 + r.x1) / 2, cz = r => (r.z0 + r.z1) / 2;
+
+  // --- los 4 lotes esquineros (b1 = proyecto) ---
+  const lotB1 = { x0: SW,        x1: SW+LOTW,  z0: SW,        z1: SW+LOTD };   // proyecto
+  const lotA1 = { x0:-SW-LOTW,   x1:-SW,       z0: SW,        z1: SW+LOTD };
+  const lotB2 = { x0: SW,        x1: SW+LOTW,  z0:-SW-LOTD,   z1:-SW };
+  const lotA2 = { x0:-SW-LOTW,   x1:-SW,       z0:-SW-LOTD,   z1:-SW };
+  // vecinos pegados al proyecto (lados sin calle: derecha y fondo)
+  const nbrR  = { x0: SW+LOTW,   x1: SW+LOTW*2, z0: SW,       z1: SW+LOTD };
+  const nbrB  = { x0: SW,        x1: SW+LOTW,   z0: SW+LOTD,  z1: SW+LOTD+16 };
+
+  // patio en esquina opuesta al cruce (cruce en x0,z0 de b1)
+  const patio = { x0: SW+LOTW-PA, x1: SW+LOTW, z0: SW+LOTD-PA, z1: SW+LOTD };
+  // punto fijo (núcleo central)
+  const pf = { x0: SW+3, x1: SW+8, z0: SW+9, z1: SW+13 };
+
+  function initThree() {
+    scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x0a0a0a, 48, 95); // lineal: claro hasta 48 m, negro total a 95 m
+
+    camera = new THREE.PerspectiveCamera(45, 2, 0.1, 2000);
+    camera.position.set(30, 38, -32); // sureste elevado → b1 proyecto arriba-derecha
+
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+    const key = new THREE.DirectionalLight(0xffffff, 0.7); key.position.set(30, 50, 20); scene.add(key);
+    const rim = new THREE.DirectionalLight(0x38d6e0, 0.4); rim.position.set(-20, 18, -15); scene.add(rim);
+
+    try {
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 1, 0); // centro de la intersección calle×carrera
+      controls.enableDamping = true; controls.dampingFactor = 0.08;
+      controls.autoRotate = true; controls.autoRotateSpeed = 0.65;
+      controls.minDistance = 18; controls.maxDistance = 160;
+      controls.maxPolarAngle = 1.45;
+      controls.addEventListener('start', () => {
+        if (autoRotate) { autoRotate = false; controls.autoRotate = false; syncRotBtn(); }
+        const h = document.getElementById('nav-hint'); if (h) h.style.opacity = '0';
+      });
+    } catch(e) {
+      // OrbitControls CDN no disponible — fallback de mouse/touch manual
+      let dr=false, lx=0, ly=0, th=-0.5, ph=0.9, r=75;
+      const lk = new THREE.Vector3(5,3,8);
+      const upCam = () => {
+        camera.position.set(lk.x + r*Math.sin(ph)*Math.cos(th), lk.y + r*Math.cos(ph), lk.z + r*Math.sin(ph)*Math.sin(th));
+        camera.lookAt(lk);
+      };
+      upCam();
+      canvas.addEventListener('mousedown', e => { dr=true; lx=e.clientX; ly=e.clientY; autoRotate=false; syncRotBtn(); document.getElementById('nav-hint').style.opacity='0'; });
+      window.addEventListener('mousemove', e => { if(!dr) return; th-=(e.clientX-lx)*.007; ph=Math.max(.15,Math.min(1.45,ph-(e.clientY-ly)*.005)); lx=e.clientX; ly=e.clientY; upCam(); });
+      window.addEventListener('mouseup', () => dr=false);
+      canvas.addEventListener('wheel', e => { r=Math.max(20,Math.min(150,r+e.deltaY*.1)); upCam(); e.preventDefault(); }, {passive:false});
+      canvas.addEventListener('touchstart', e => { dr=true; lx=e.touches[0].clientX; ly=e.touches[0].clientY; autoRotate=false; syncRotBtn(); }, {passive:true});
+      canvas.addEventListener('touchmove', e => { if(!dr) return; th-=(e.touches[0].clientX-lx)*.007; ph=Math.max(.15,Math.min(1.45,ph-(e.touches[0].clientY-ly)*.005)); lx=e.touches[0].clientX; ly=e.touches[0].clientY; upCam(); e.preventDefault(); }, {passive:false});
+      canvas.addEventListener('touchend', () => dr=false);
+      setInterval(() => { if(autoRotate) { th+=.004; upCam(); } }, 16);
+    }
+
+    buildScene();
+    onResize();
+    animate();
+  }
+
+  function buildScene() {
+    const G = new THREE.Group(); scene.add(G);
+
+    // suelo / manzana
+    const grid = new THREE.GridHelper(80, 40, 0x1a212a, 0x12161b);
+    grid.position.y = -0.04; G.add(grid);
+
+    // ===== calles 7 m (recortadas a 80 m — la niebla lineal desvanece los bordes) =====
+    G.add(box(SW*2, 0.06, 80, 0, -0.05, 0, 0x0d0f12, 0.9, 0x222831, 0.3));  // carrera (vertical)
+    G.add(box(80, 0.06, SW*2, 0, -0.05, 0, 0x0d0f12, 0.9, 0x222831, 0.3));  // calle (horizontal)
+    // líneas centrales discontinuas
+    for (let z = -38; z < 38; z += 6) { if (Math.abs(z) < 5) continue; G.add(box(0.18, 0.02, 2.4, 0, 0.01, z, 0x3a4250, 0.7, 0, 0)); }
+    for (let x = -38; x < 38; x += 6) { if (Math.abs(x) < 5) continue; G.add(box(2.4, 0.02, 0.18, x, 0.01, 0, 0x3a4250, 0.7, 0, 0)); }
+
+    // ===== 3 casas esquineras (a1, b2, a2) — todas 2 pisos, mismo lote 10×20 =====
+    [lotA1, lotB2, lotA2].forEach(r => G.add(house(r)));
+
+    // ===== proyecto b1 =====
+    buildFootprint(G);
+    buildProjection(G);   // 5 pisos fantasma
+    buildBuilt(G);        // pisos 1 (cian) + 2 en curso (ámbar), con zapatas y vigas
+    buildPatio(G);
+  }
+
+  // casa de 2 pisos — aristas sólidas, cara muy translúcida (no bloquea el proyecto)
+  function house(r) {
+    const g = new THREE.Group();
+    const w = r.x1 - r.x0, d = r.z1 - r.z0;
+    g.add(box(w, 2*FH, d,  cx(r), 0,    cz(r), 0x3c4554, 0.10, 0x7b8fa8, 0.70)); // volumen
+    g.add(box(w, 0.12, d,  cx(r), FH,   cz(r), 0x6f7c8f, 0,    0x7b8fa8, 0.45)); // entrepiso
+    g.add(box(w, 0.22, d,  cx(r), 2*FH, cz(r), 0x4a5466, 0.15, 0x7b8fa8, 0.60)); // losa cubierta
+    return g;
+  }
+
+  function footColsZ() { return [SW+4, SW+8, SW+11.5, SW+15, SW+19, SW+22.8]; }
+  function footColsX() { return [SW+1, SW+5, SW+9.5]; }
+  function colPoints() {
+    const pts = [];
+    footColsX().forEach(x => footColsZ().forEach(z => {
+      if (x > patio.x0 && z > patio.z0) return; // sin columnas en el patio
+      pts.push([x, z]);
+    }));
+    return pts;
+  }
+
+  function buildFootprint(G) {
+    G.add(box(LOTW, 0.12, LOTD, cx(lotB1), -0.02, cz(lotB1), 0x14202a, 0.55, 0x38d6e0, 0.55));
+  }
+
+  // beams a lo largo de la grilla de columnas, a un nivel y
+  function beams(G, y, color, fo, ec, eo) {
+    const xs = footColsX(), zs = footColsZ();
+    // vigas en X (entre columnas consecutivas en x), por cada z
+    zs.forEach(z => {
+      for (let i = 0; i < xs.length - 1; i++) {
+        const a = xs[i], b = xs[i+1];
+        if (z > patio.z0 && a > patio.x0 - 1) continue;
+        G.add(box(b - a, 0.45, 0.3, (a+b)/2, y - 0.45, z, color, fo, ec, eo));
+      }
+    });
+    // vigas en Z (entre columnas consecutivas en z), por cada x
+    xs.forEach(x => {
+      for (let i = 0; i < zs.length - 1; i++) {
+        const a = zs[i], b = zs[i+1];
+        if (x > patio.x0 && a > patio.z0 - 1) continue;
+        G.add(box(0.3, 0.45, b - a, x, y - 0.45, (a+b)/2, color, fo, ec, eo));
+      }
+    });
+  }
+
+  function buildBuilt(G) {
+    const pts = colPoints();
+    // zapatas a 2 m bajo cota + pedestal que sube al nivel 0
+    pts.forEach(([x, z]) => {
+      G.add(box(1.5, 0.7, 1.5, x, -2.7, z, 0x46525e, 0.65, 0x7fe9f0, 0.75)); // zapata
+      G.add(box(0.4, 2.0, 0.4, x, -2.0, z, 0x3a4a56, 0.5,  0x7fe9f0, 0.60)); // pedestal
+    });
+
+    // piso 1: cian (columnas + vigas interiores + losa)
+    pts.forEach(([x, z]) => G.add(box(0.45, FH, 0.45, x, 0, z, 0x38d6e0, 0.22, 0x7fe9f0, 0.95)));
+    beams(G, FH, 0x38d6e0, 0.3, 0x7fe9f0, 0.9);
+    // vigas perimetrales de la losa piso 1 (borde de la plancha)
+    const bh = 0.55, bw = 0.32, C1 = 0x38d6e0, E1 = 0x7fe9f0;
+    G.add(box(LOTW,  bh, bw, cx(lotB1), FH-bh, lotB1.z0+bw/2, C1, 0.32, E1, 0.9)); // sur
+    G.add(box(LOTW,  bh, bw, cx(lotB1), FH-bh, lotB1.z1-bw/2, C1, 0.32, E1, 0.9)); // norte
+    G.add(box(bw, bh, LOTD, lotB1.x0+bw/2, FH-bh, cz(lotB1), C1, 0.32, E1, 0.9)); // oeste
+    G.add(box(bw, bh, LOTD, lotB1.x1-bw/2, FH-bh, cz(lotB1), C1, 0.32, E1, 0.9)); // este
+    G.add(box(lotB1.x1-lotB1.x0, 0.22, lotB1.z1-lotB1.z0, cx(lotB1), FH, cz(lotB1), 0x38d6e0, 0.18, 0x7fe9f0, 0.85));
+
+    // piso 2 EN CURSO: ámbar (columnas + vigas en montaje, sin losa todavía)
+    pts.forEach(([x, z]) => G.add(box(0.45, FH, 0.45, x, FH, z, 0xe8a020, 0.22, 0xffc04d, 0.95)));
+    beams(G, 2*FH, 0xe8a020, 0.28, 0xffc04d, 0.9);
+
+    // punto fijo construido (cian piso 1, ámbar piso 2)
+    G.add(box(pf.x1-pf.x0, FH, pf.z1-pf.z0, cx(pf), 0, cz(pf), 0x38d6e0, 0.2, 0x7fe9f0, 0.9));
+    G.add(box(pf.x1-pf.x0, FH, pf.z1-pf.z0, cx(pf), FH, cz(pf), 0xe8a020, 0.16, 0xffc04d, 0.9));
+  }
+
+  function buildProjection(G) {
+    const C = 0x5a6270, E = 0x7c8694, fo = 0, eo = 0.22; // caras 0 = solo aristas, no acumula opacidad
+    const pts = colPoints();
+    for (let f = 0; f < 5; f++) {
+      const y = f * FH;
+      pts.forEach(([x, z]) => G.add(box(0.42, FH, 0.42, x, y, z, C, fo, E, eo)));
+      G.add(box(lotB1.x1-lotB1.x0-0.2, 0.18, lotB1.z1-lotB1.z0-0.2, cx(lotB1), y+FH, cz(lotB1), C, fo, E, eo));
+      G.add(box(pf.x1-pf.x0, FH, pf.z1-pf.z0, cx(pf), y, cz(pf), C, 0.04, E, eo));
+    }
+  }
+
+  function buildPatio(G) {
+    G.add(box(PA, 0.06, PA, cx(patio), 0.02, cz(patio), 0x1f3a3d, 0.6, 0x38d6e0, 0.5));
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    if (controls) controls.update();
+    renderer.render(scene, camera);
+  }
+  function onResize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', onResize);
+
+  // toggle de rotación
+  function syncRotBtn() {
+    const b = document.getElementById('rot-toggle');
+    b.textContent = autoRotate ? '⏸ Pausar giro' : '▶ Reanudar giro';
+  }
+  document.getElementById('rot-toggle').addEventListener('click', () => {
+    autoRotate = !autoRotate;
+    if (controls) controls.autoRotate = autoRotate;
+    syncRotBtn();
+  });
+
+  if (window.THREE && THREE.OrbitControls) initThree();
+  else window.addEventListener('load', initThree);
+
+  /* ============================================================
+     CRONOGRAMA (Gantt)
+  ============================================================ */
+  const GANTT = [
+    { name: 'Cimentación',  start: 0,   end: 2,   color: 'var(--green)', done: 8,  total: 8  },
+    { name: 'Estructura',   start: 2,   end: 4,   color: 'var(--amber)', done: 6,  total: 12 },
+    { name: 'Mampostería',  start: 3.5, end: 5,   color: '#5b6573',      done: 0,  total: 18 },
+    { name: 'Instalaciones',start: 4.5, end: 6,   color: '#5b6573',      done: 0,  total: 14 },
+    { name: 'Acabados',     start: 5.5, end: 6.8, color: '#5b6573',      done: 0,  total: 10 },
+    { name: 'Entrega',      start: 6.8, end: 7,   color: '#5b6573',      done: 0,  total: 1  }
+  ];
+  const TODAY_POS = 2.62; // ~ fines de mayo (en unidades de 7 meses)
+  (function buildGantt() {
+    const host = document.getElementById('gantt');
+    GANTT.forEach(g => {
+      const row = document.createElement('div'); row.className = 'gantt-row';
+      const left  = g.start / 7 * 100;
+      const width = (g.end - g.start) / 7 * 100;
+      const pct   = g.total ? g.done / g.total : 0;
+      const doneW = width * pct;
+      const stLabel = g.done === g.total ? 'Cerrada' : g.done > 0 ? 'En curso' : '';
+      const mLabel  = g.done > 0 ? `${g.done}/${g.total} mis.` : `${g.total} mis.`;
+      let cols = '';
+      for (let i = 1; i < 7; i++) cols += `<div class="grid-col" style="left:${i/7*100}%"></div>`;
+      row.innerHTML = `
+        <div class="gantt-label">
+          <span class="dot" style="background:${g.color}"></span>
+          <span>${g.name}</span>
+          <span class="gantt-mcount">${mLabel}</span>
+        </div>
+        <div class="gantt-track">
+          ${cols}
+          <div class="today" style="left:${TODAY_POS/7*100}%"></div>
+          <div class="gbar-bg" style="left:${left}%;width:${width}%;background:${g.color}"></div>
+          ${pct > 0
+            ? `<div class="gbar" style="left:${left}%;width:${doneW}%;background:${g.color}">${stLabel}</div>`
+            : `<div style="position:absolute;top:3px;height:16px;display:flex;align-items:center;left:${left+1}%;font-size:10px;color:rgba(255,255,255,.35)">${stLabel}</div>`
+          }
+        </div>`;
+      host.appendChild(row);
+    });
+  })();
+
+  /* ============================================================
+     MODO VISITA — aceptar / repetir
+  ============================================================ */
+  document.querySelectorAll('.visita-card').forEach(card => {
+    const status = card.querySelector('.vc-status');
+    card.querySelector('.ok').addEventListener('click', () => {
+      card.classList.remove('redo'); card.classList.add('accepted');
+      status.innerHTML = '<span class="pill done">✓ Aceptado · registrado</span>';
+    });
+    card.querySelector('.redo').addEventListener('click', () => {
+      card.classList.remove('accepted'); card.classList.add('redo');
+      status.innerHTML = '<span class="pill prog">↻ A repetir · notificado al maestro</span>';
+    });
+  });
+
+  /* ============================================================
+     TUTORIAL (10 pasos, tarjeta en esquina)
+  ============================================================ */
+  const STEPS = [
+    { tab:'3d', title:'Tu gemelo digital',
+      text:`<b>${CONFIG.dueno}</b>, esto es <b>${CONFIG.edificio}</b> en la esquina de ${CONFIG.direccion}. El modelo es navegable: arrástralo para girarlo y usa la rueda para acercarte.`,
+      tip:'Brillante = construido hoy (piso 1 cian, piso 2 ámbar). Tenue = proyección de los 5 pisos. Alrededor, las casas vecinas de la intersección.' },
+    { tab:'presupuesto', title:'1 · Establece el presupuesto',
+      text:'Lo primero: define tu presupuesto. Puedes hacerlo <b>por etapas</b>, <b>por misiones</b>, o con la <b>herramienta del plan PRO</b>, que usa las listas de precios de tu distribuidor.',
+      tip:'Así dejas claro cuánto tiempo, material y dinero requiere cada parte de la obra.' },
+    { tab:'misiones', title:'2 · Tus misiones por etapas',
+      text:'La obra se divide en etapas, y cada etapa en <b>misiones diarias</b> con su fecha. Es el plan que recibe tu encargado cada mañana.',
+      tip:'Verde = completada · Ámbar = en curso hoy · Vacío = programada.' },
+    { tab:'cronograma', title:'Cronograma',
+      text:'El cronograma muestra <b>lo establecido en el tiempo</b>, de un vistazo. Todos —tú, el maestro, tus socios— ven rápido y fácil qué etapa va en qué fecha.',
+      tip:'La línea ámbar marca HOY. Cada barra contiene las misiones de esa etapa.' },
+    { tab:'reportes-campo', title:'3 · Avances y alertas en vivo',
+      text:`La lista diaria se le envía a tu encargado (${CONFIG.encargado}), que reporta por <b>WhatsApp o Telegram</b>. Si algo amenaza el presupuesto, <b>la alerta te llega al instante</b> por tu vía preferida.`,
+      tip:'Visibilidad real, sin depender del reporte del contratista.' },
+    { tab:'visita', title:'Modo visita',
+      text:'Cuando vayas a la obra, ve siguiendo los avances desde tu teléfono y <b>acéptalos o mándalos a repetir</b>. Pruébalo: toca Aceptar o Repetir en una tarjeta.',
+      tip:'Tu validación en sitio queda registrada al instante y le llega al maestro.' },
+    { tab:'almacen', title:'4 · Almacén con control',
+      text:'Sube la <b>foto de la factura</b> y el material entra a la bodega. Como cada misión sabe qué consume, se <b>descuenta con control</b>. Si se usa de más, te enteras al instante.',
+      tip:'En la demo el concreto marca +1.5 m³ sobre el plan — esa es la alerta del paso anterior.' },
+    { tab:'equipo', title:'5 · Equipo y rendimientos',
+      text:'Ves y registras <b>quién llegó y a qué hora</b>, además de las <b>valorizaciones del rendimiento</b> diario por trabajador.',
+      tip:'Sabes quién rinde y cuánto cuesta realmente cada jornada.' },
+    { tab:'reportes', title:'6 · Reportes',
+      text:'Genera reportes con todo lo ocurrido en las <b>fechas que selecciones</b>: avances, consumos, asistencia y gastos. Listos para PDF.',
+      tip:'Ideal para tu archivo o para mostrar cuentas claras a socios.' },
+    { tab:'analisis', title:'7 · Análisis en vivo',
+      text:'El tablero responde la pregunta que importa: <b>¿estás ganando o perdiendo dinero?</b> Compara costo planeado contra real, etapa por etapa.',
+      tip:'Hoy: ganando +$42 M sobre el plan. Eso es control total de tu obra.' }
+  ];
+
+  let cur = 0;
+  const elStep=document.getElementById('tut-step'), elTitle=document.getElementById('tut-title'),
+        elText=document.getElementById('tut-text'), elTip=document.getElementById('tut-tip'),
+        elDots=document.getElementById('tut-dots'), elPrev=document.getElementById('tut-prev'),
+        elNext=document.getElementById('tut-next'), card=document.getElementById('tut-card');
+
+  STEPS.forEach(() => { const d=document.createElement('div'); d.className='tut-dot'; elDots.appendChild(d); });
+  function highlightTab(id){ tabs.forEach(t => t.classList.toggle('highlight', t.dataset.tab===id)); }
+
+  function renderStep() {
+    const s = STEPS[cur];
+    showTab(s.tab); highlightTab(s.tab);
+    elStep.textContent = `Paso ${cur+1} de ${STEPS.length}`;
+    elTitle.textContent = s.title; elText.innerHTML = s.text;
+    if (s.tip) { elTip.style.display='block'; elTip.innerHTML = '💡 ' + s.tip; } else elTip.style.display='none';
+    elPrev.style.visibility = cur===0 ? 'hidden' : 'visible';
+    elNext.textContent = cur===STEPS.length-1 ? 'Terminar ✓' : 'Siguiente →';
+    [...elDots.children].forEach((d,i)=>d.classList.toggle('on', i===cur));
+    const is3D = STEPS[cur].tab === '3d';
+    card.classList.toggle('collapsed', is3D);
+    document.getElementById('tut-collapse').textContent = is3D ? '+' : '—';
+  }
+  function endTutorial(){
+    card.style.display='none';
+    document.getElementById('tut-skip').style.display='none';
+    document.getElementById('restart').style.display='block';
+    highlightTab(null);
+  }
+  function startTutorial(){
+    cur=0; card.style.display='block';
+    document.getElementById('tut-skip').style.display='block';
+    document.getElementById('restart').style.display='none';
+    renderStep();
+  }
+  elNext.addEventListener('click', () => { if (cur===STEPS.length-1) endTutorial(); else { cur++; renderStep(); } });
+  elPrev.addEventListener('click', () => { if (cur>0){ cur--; renderStep(); } });
+  document.getElementById('tut-skip').addEventListener('click', endTutorial);
+  document.getElementById('restart').addEventListener('click', startTutorial);
+  document.getElementById('tut-collapse').addEventListener('click', () => {
+    card.classList.toggle('collapsed');
+    document.getElementById('tut-collapse').textContent = card.classList.contains('collapsed') ? '+' : '—';
+  });
+
+  aplicarConfig();
+  renderStep();
+  </script>
+</body>
+</html>
