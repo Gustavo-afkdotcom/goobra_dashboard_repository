@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carcassonne — Evaluador de Jugadas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07080f;--surface:#0d0f1a;--surface2:#131525;--border:#1e2035;
+  --text:#d8d4c8;--muted:#4a4d6a;--gold:#c8a045;--green:#4caf82;
+  --red:#e05555;--orange:#e09040;--blue:#4a80d4;--purple:#9060d0;
+  --city:#c8703a;--road:#8a7a60;--field:#4a7a4a;--mono:#2a5040;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+/* HEADER */
+#hdr{padding:10px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#hdr-title{font-size:14px;font-weight:700;letter-spacing:3px;color:var(--gold);text-transform:uppercase}
+#hdr-title span{display:block;font-size:8px;color:var(--muted);letter-spacing:5px;font-weight:400;margin-bottom:2px}
+#hdr-scores{display:flex;gap:20px}
+.score-chip{text-align:center}
+.score-chip label{font-size:8px;letter-spacing:3px;color:var(--muted);display:block;text-transform:uppercase}
+.score-chip .val{font-size:22px;font-weight:700;color:var(--text)}
+.score-chip.p1 .val{color:var(--blue)}
+.score-chip.p2 .val{color:var(--red)}
+#hdr-tiles{font-size:10px;color:var(--muted);font-family:monospace;text-align:right}
+/* MAIN LAYOUT */
+#main{flex:1;display:grid;grid-template-columns:1fr 320px;overflow:hidden}
+/* BOARD */
+#board-wrap{position:relative;overflow:hidden;background:var(--bg);cursor:grab}
+#board-wrap.grabbing{cursor:grabbing}
+#board-canvas{position:absolute;top:0;left:0}
+/* SIDEBAR */
+#sidebar{border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+/* CURRENT TILE */
+#tile-panel{padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.panel-title{font-size:8px;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+#tile-display{display:flex;gap:14px;align-items:center}
+#tile-preview{width:72px;height:72px;flex-shrink:0;position:relative;border-radius:4px;overflow:hidden;border:1px solid var(--border)}
+#tile-info{flex:1}
+#tile-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+#tile-desc{font-size:10px;color:var(--muted);line-height:1.5;margin-bottom:8px}
+#tile-controls{display:flex;gap:6px}
+.ctrl-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:4px 10px;font-size:10px;border-radius:3px;cursor:pointer;transition:background .15s}
+.ctrl-btn:hover{background:var(--border)}
+.ctrl-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+/* MEEPLE */
+#meeple-panel{padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.meeple-options{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.meeple-btn{background:var(--surface2);border:1px solid var(--border);color:var(--muted);padding:4px 9px;font-size:9px;border-radius:3px;cursor:pointer;transition:all .15s;letter-spacing:1px}
+.meeple-btn:hover{border-color:var(--text);color:var(--text)}
+.meeple-btn.selected{background:var(--blue);border-color:var(--blue);color:#fff}
+.meeple-btn.none{border-style:dashed}
+/* EVALUATION */
+#eval-panel{padding:14px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+#quality-bar-wrap{margin:10px 0 6px}
+#quality-label{font-size:18px;font-weight:700;margin-bottom:4px}
+#quality-bar{height:6px;border-radius:3px;background:var(--border);overflow:hidden;margin-bottom:6px}
+#quality-fill{height:100%;border-radius:3px;transition:width .4s,background .4s}
+#quality-detail{font-size:10px;color:var(--muted);line-height:1.6}
+.eval-row{display:flex;justify-content:space-between;padding:2px 0}
+.eval-row .ev-key{color:var(--muted)}
+.eval-row .ev-val{font-family:monospace;font-size:11px}
+.ev-pos{color:var(--green)}
+.ev-neg{color:var(--red)}
+.ev-neu{color:var(--text)}
+/* TIPS */
+#tip-panel{padding:12px 16px;flex:1;overflow-y:auto}
+#tip-text{font-size:10px;color:var(--muted);line-height:1.7;font-style:italic}
+#tip-text strong{color:var(--text);font-style:normal}
+/* HISTORY */
+#history-panel{padding:10px 16px;border-top:1px solid var(--border);flex-shrink:0;max-height:160px;overflow-y:auto}
+.hist-item{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:0.5px solid var(--border);font-size:10px}
+.hist-item:last-child{border:none}
+.hist-badge{padding:1px 7px;border-radius:2px;font-size:9px;font-weight:700;flex-shrink:0;letter-spacing:1px}
+.hist-badge.EX{background:#1a3a2a;color:var(--green)}
+.hist-badge.GO{background:#1a2a3a;color:var(--blue)}
+.hist-badge.OK{background:#2a2a1a;color:var(--gold)}
+.hist-badge.BA{background:#2a1a1a;color:var(--orange)}
+.hist-badge.ER{background:#3a1010;color:var(--red)}
+.hist-desc{color:var(--muted);flex:1}
+.hist-pts{font-family:monospace;color:var(--text)}
+/* TOOLBAR */
+#toolbar{padding:8px 16px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+.tool-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 14px;font-size:10px;letter-spacing:1px;border-radius:3px;cursor:pointer;transition:background .15s;text-transform:uppercase}
+.tool-btn:hover{background:var(--border)}
+.tool-btn.primary{background:var(--gold);border-color:var(--gold);color:#000;font-weight:700}
+.tool-btn.primary:hover{background:#d4ac50}
+/* MODAL */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:100}
+#modal-overlay.open{display:flex}
+#modal{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:24px;max-width:400px;width:90%;text-align:center}
+#modal h2{color:var(--gold);font-size:18px;margin-bottom:10px}
+#modal p{color:var(--muted);font-size:12px;line-height:1.7;margin-bottom:16px}
+#modal-btns{display:flex;gap:8px;justify-content:center}
+/* TOOLTIP */
+#tooltip{position:fixed;background:var(--surface);border:1px solid var(--border);padding:6px 10px;font-size:10px;color:var(--text);border-radius:4px;pointer-events:none;display:none;z-index:50;max-width:200px;line-height:1.5}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div id="hdr-title"><span>Evaluador de Jugadas</span>Carcassonne</div>
+  <div id="hdr-scores">
+    <div class="score-chip p1"><label>Jugador 1</label><span class="val" id="score-p1">0</span></div>
+    <div class="score-chip p2"><label>Jugador 2</label><span class="val" id="score-p2">0</span></div>
+  </div>
+  <div id="hdr-tiles">
+    <div id="tiles-left">71 fichas restantes</div>
+    <div id="turn-indicator" style="color:var(--blue);margin-top:2px">Turno: Jugador 1</div>
+  </div>
+</div>
+
+<div id="main">
+  <div id="board-wrap">
+    <canvas id="board-canvas"></canvas>
+  </div>
+
+  <div id="sidebar">
+    <!-- Current tile -->
+    <div id="tile-panel">
+      <div class="panel-title">Ficha actual</div>
+      <div id="tile-display">
+        <canvas id="tile-preview" width="72" height="72"></canvas>
+        <div id="tile-info">
+          <div id="tile-name">—</div>
+          <div id="tile-desc">Dibuja una ficha para comenzar</div>
+          <div id="tile-controls">
+            <button class="ctrl-btn" onclick="rotateTile(-1)">↺ -90°</button>
+            <button class="ctrl-btn" onclick="rotateTile(1)">↻ +90°</button>
+            <button class="ctrl-btn" onclick="drawTile()">Sacar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meeple placement -->
+    <div id="meeple-panel">
+      <div class="panel-title">Colocar meeple</div>
+      <div class="meeple-options" id="meeple-options">
+        <button class="meeple-btn none selected" data-feature="none">Sin meeple</button>
+      </div>
+    </div>
+
+    <!-- Evaluation -->
+    <div id="eval-panel">
+      <div class="panel-title">Evaluación de jugada</div>
+      <div id="quality-bar-wrap">
+        <div id="quality-label" style="color:var(--muted)">—</div>
+        <div id="quality-bar"><div id="quality-fill" style="width:0%;background:var(--muted)"></div></div>
+      </div>
+      <div id="quality-detail">
+        <div class="eval-row"><span class="ev-key">Puntos inmediatos</span><span class="ev-val ev-neu" id="ev-immediate">—</span></div>
+        <div class="eval-row"><span class="ev-key">Puntos latentes</span><span class="ev-val ev-pos" id="ev-latent">—</span></div>
+        <div class="eval-row"><span class="ev-key">Bloqueo al rival</span><span class="ev-val ev-pos" id="ev-block">—</span></div>
+        <div class="eval-row"><span class="ev-key">Tu jugada</span><span class="ev-val ev-neu" id="ev-your">—</span></div>
+        <div class="eval-row"><span class="ev-key">Jugada óptima</span><span class="ev-val ev-pos" id="ev-best">—</span></div>
+        <div class="eval-row"><span class="ev-key">Ratio calidad</span><span class="ev-val ev-neu" id="ev-ratio">—</span></div>
+      </div>
+    </div>
+
+    <!-- Tips -->
+    <div id="tip-panel">
+      <div class="panel-title">Análisis</div>
+      <div id="tip-text">Haz clic en el tablero para ver dónde puedes colocar la ficha actual. Luego haz clic en una posición para evaluarla.</div>
+    </div>
+
+    <!-- History -->
+    <div id="history-panel">
+      <div class="panel-title" style="margin-bottom:6px">Historial</div>
+      <div id="history-list"></div>
+    </div>
+
+    <!-- Toolbar -->
+    <div id="toolbar">
+      <button class="tool-btn primary" onclick="confirmMove()">Confirmar jugada</button>
+      <button class="tool-btn" onclick="resetGame()">Nueva partida</button>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<div id="modal-overlay">
+  <div id="modal">
+    <h2 id="modal-title">Título</h2>
+    <p id="modal-body">Cuerpo</p>
+    <div id="modal-btns"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// TILE DEFINITIONS
+// edges: [N, E, S, W] — 'C'=city 'R'=road 'F'=field
+// cityGroups: arrays of edges sharing a city feature
+// roadEnds: edges where road ends (field on other sides)
+// hasPennant, hasMonastery
+// ═══════════════════════════════════════════════════════
+const TILE_DEFS = [
+  // Monasteries
+  {id:'MA', name:'Monasterio', count:2, edges:['F','F','F','F'], cityGroups:[], hasPennant:false, hasMonastery:true,
+   desc:'Monasterio rodeado de campo'},
+  {id:'MB', name:'Monasterio con camino', count:3, edges:['F','F','R','F'], cityGroups:[], hasPennant:false, hasMonastery:true,
+   desc:'Monasterio con camino al sur'},
+
+  // Full city (all 4 sides city, connected)
+  {id:'CC', name:'Ciudad completa', count:1, edges:['C','C','C','C'], cityGroups:[['N','E','S','W']], hasPennant:true, hasMonastery:false,
+   desc:'Ciudad que ocupa toda la ficha (con escudo)'},
+
+  // City caps (one side city)
+  {id:'CA', name:'Ciudad sur', count:5, edges:['F','F','C','F'], cityGroups:[['S']], hasPennant:false, hasMonastery:false,
+   desc:'Ciudad pequeña al sur'},
+  {id:'CB', name:'Ciudad norte', count:4, edges:['C','F','F','F'], cityGroups:[['N']], hasPennant:false, hasMonastery:false,
+   desc:'Ciudad pequeña al norte'},
+
+  // City 2 adjacent sides
+  {id:'CD', name:'Ciudad NE', count:3, edges:['C','C','F','F'], cityGroups:[['N','E']], hasPennant:false, hasMonastery:false,
+   desc:'Ciudad en esquina norte-este'},
+  {id:'CE', name:'Ciudad NE escudo', count:2, edges:['C','C','F','F'], cityGroups:[['N','E']], hasPennant:true, hasMonastery:false,
+   desc:'Ciudad esquina norte-este con escudo'},
+  {id:'CF', name:'Ciudad NS', count:3, edges:['C','F','C','F'], cityGroups:[['N'],['S']], hasPennant:false, hasMonastery:false,
+   desc:'Dos ciudades enfrentadas (no conectadas)'},
+
+  // City 3 sides
+  {id:'CG', name:'Ciudad NEO', count:3, edges:['C','C','F','C'], cityGroups:[['N','E','W']], hasPennant:false, hasMonastery:false,
+   desc:'Ciudad en tres lados'},
+  {id:'CH', name:'Ciudad NEO escudo', count:1, edges:['C','C','F','C'], cityGroups:[['N','E','W']], hasPennant:true, hasMonastery:false,
+   desc:'Ciudad en tres lados con escudo'},
+
+  // Roads (3-way intersection)
+  {id:'RT', name:'T cruce', count:4, edges:['F','R','R','R'], cityGroups:[], hasPennant:false, hasMonastery:false,
+   desc:'Cruce en T (tres caminos)'},
+
+  // Roads (4-way intersection)
+  {id:'RX', name:'Cruce X', count:1, edges:['R','R','R','R'], cityGroups:[], hasPennant:false, hasMonastery:false,
+   desc:'Cruce en X (cuatro caminos)'},
+
+  // Road straight
+  {id:'RS', name:'Camino recto', count:8, edges:['F','R','F','R'], cityGroups:[], hasPennant:false, hasMonastery:false,
+   desc:'Camino recto este-oeste'},
+
+  // Road curve
+  {id:'RC', name:'Camino curva', count:9, edges:['F','F','R','R'], cityGroups:[], hasPennant:false, hasMonastery:false,
+   desc:'Camino curva sur-este'},
+
+  // City with road
+  {id:'CR', name:'Ciudad norte + camino', count:4, edges:['C','R','R','F'], cityGroups:[['N']], hasPennant:false, hasMonastery:false,
+   desc:'Ciudad al norte, camino este-sur'},
+  {id:'CS', name:'Ciudad 3 lados + camino', count:2, edges:['C','C','R','C'], cityGroups:[['N','E','W']], hasPennant:false, hasMonastery:false,
+   desc:'Ciudad tres lados, camino al sur'},
+  {id:'CT', name:'Ciudad 3 lados + camino escudo', count:1, edges:['C','C','R','C'], cityGroups:[['N','E','W']], hasPennant:true, hasMonastery:false,
+   desc:'Ciudad tres lados + camino + escudo'},
+];
+
+// Build lookup and expand count
+const TILE_LOOKUP = {};
+TILE_DEFS.forEach(t => { TILE_LOOKUP[t.id] = t; });
+
+function buildDeck() {
+  const deck = [];
+  TILE_DEFS.forEach(t => {
+    for (let i = 0; i < t.count; i++) deck.push(t.id);
+  });
+  // Shuffle
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════════════════
+const CELL = 60; // px per tile
+const DIRS = [{dx:0,dy:-1,edge:'N',opp:'S'},{dx:1,dy:0,edge:'E',opp:'W'},{dx:0,dy:1,edge:'S',opp:'N'},{dx:-1,dy:0,edge:'W',opp:'E'}];
+const EDGE_IDX = {N:0,E:1,S:2,W:3};
+
+let state = null;
+
+function newGame() {
+  state = {
+    board: {},       // "x,y" -> { tileId, rot, meeple: {player,feature} | null }
+    deck: buildDeck(),
+    deckPos: 0,
+    scores: [0, 0],
+    meeples: [7, 7], // remaining per player
+    currentPlayer: 0,
+    currentTile: null,
+    currentRot: 0,
+    selectedPos: null,
+    selectedMeeple: 'none',
+    history: [],
+    moveCount: 0,
+  };
+  // Place starting tile (always CD - city NE) at center
+  placeOnBoard(0, 0, 'CR', 0, null);
+  drawTile();
+}
+
+function getKey(x, y) { return `${x},${y}`; }
+
+function getEdge(tileId, rot, dir) {
+  const def = TILE_LOOKUP[tileId];
+  const idx = (EDGE_IDX[dir] - rot + 400) % 4;
+  return def.edges[idx];
+}
+
+function rotateEdges(edges, rot) {
+  const out = [...edges];
+  for (let i = 0; i < rot; i++) {
+    const tmp = out.pop();
+    out.unshift(tmp);
+  }
+  return out;
+}
+
+function placeOnBoard(x, y, tileId, rot, meeple) {
+  state.board[getKey(x, y)] = { tileId, rot, meeple };
+}
+
+// ═══════════════════════════════════════════════════════
+// LEGAL MOVES
+// ═══════════════════════════════════════════════════════
+function isLegal(x, y, tileId, rot) {
+  if (state.board[getKey(x, y)]) return false;
+  let hasNeighbor = false;
+  for (const d of DIRS) {
+    const nx = x + d.dx, ny = y + d.dy;
+    const neighbor = state.board[getKey(nx, ny)];
+    if (!neighbor) continue;
+    hasNeighbor = true;
+    const myEdge = getEdge(tileId, rot, d.edge);
+    const theirEdge = getEdge(neighbor.tileId, neighbor.rot, d.opp);
+    if (myEdge !== theirEdge) return false;
+  }
+  return hasNeighbor;
+}
+
+function findLegalPositions(tileId) {
+  const positions = [];
+  const checked = new Set();
+  // Search around existing tiles
+  for (const key of Object.keys(state.board)) {
+    const [bx, by] = key.split(',').map(Number);
+    for (const d of DIRS) {
+      const nx = bx + d.dx, ny = by + d.dy;
+      const pk = getKey(nx, ny);
+      if (checked.has(pk) || state.board[pk]) continue;
+      checked.add(pk);
+      for (let r = 0; r < 4; r++) {
+        if (isLegal(nx, ny, tileId, r)) {
+          positions.push({ x: nx, y: ny, rot: r });
+        }
+      }
+    }
+  }
+  return positions;
+}
+
+// ═══════════════════════════════════════════════════════
+// FEATURE DETECTION & SCORING
+// ═══════════════════════════════════════════════════════
+
+// Get all edges of a placed tile that belong to the same city group
+function getCityGroupEdges(tileId, rot, edge) {
+  const def = TILE_LOOKUP[tileId];
+  const unrotated = (EDGE_IDX[edge] - rot + 400) % 4;
+  const edgeNames = ['N','E','S','W'];
+  const unrotName = edgeNames[unrotated];
+  for (const grp of def.cityGroups) {
+    if (grp.includes(unrotName)) {
+      // Rotate all edges in group back
+      return grp.map(e => edgeNames[(EDGE_IDX[e] + rot) % 4]);
+    }
+  }
+  return [edge]; // lone edge
+}
+
+// BFS to find all tiles in a city/road feature starting from (x,y,edge)
+function traceFeature(x, y, edge) {
+  const terrain = getEdge(state.board[getKey(x,y)]?.tileId, state.board[getKey(x,y)]?.rot, edge);
+  if (!terrain || terrain === 'F') return null;
+
+  const visited = new Set(); // "x,y,edge"
+  const tiles = new Set();   // "x,y"
+  const meeples = [];
+  const queue = [[x, y, edge]];
+
+  while (queue.length) {
+    const [cx, cy, ce] = queue.shift();
+    const vk = `${cx},${cy},${ce}`;
+    if (visited.has(vk)) continue;
+    visited.add(vk);
+
+    const placed = state.board[getKey(cx, cy)];
+    if (!placed) { return { complete: false, tiles, meeples, terrain, open: true }; }
+
+    tiles.add(getKey(cx, cy));
+    if (placed.meeple && placed.meeple.feature === ce) meeples.push(placed.meeple.player);
+
+    // Find connected edges on this tile
+    let connected;
+    if (terrain === 'C') {
+      connected = getCityGroupEdges(placed.tileId, placed.rot, ce);
+    } else {
+      // Road: connects through if straight or curve
+      connected = getRoadConnected(placed.tileId, placed.rot, ce);
+    }
+
+    for (const connEdge of connected) {
+      if (visited.has(`${cx},${cy},${connEdge}`)) continue;
+      visited.add(`${cx},${cy},${connEdge}`);
+      // Cross to neighbor
+      for (const d of DIRS) {
+        if (d.edge !== connEdge) continue;
+        const nx = cx + d.dx, ny = cy + d.dy;
+        const neighbor = state.board[getKey(nx, ny)];
+        if (!neighbor) {
+          return { complete: false, tiles, meeples, terrain, open: true };
+        }
+        queue.push([nx, ny, d.opp]);
+      }
+    }
+  }
+  return { complete: true, tiles, meeples, terrain };
+}
+
+function getRoadConnected(tileId, rot, inEdge) {
+  const def = TILE_LOOKUP[tileId];
+  const edgeNames = ['N','E','S','W'];
+  const rotEdges = rotateEdges(def.edges, rot);
+  const roadEdges = rotEdges.map((e, i) => e === 'R' ? edgeNames[i] : null).filter(Boolean);
+
+  // T or X intersections: road ends here (no through connection)
+  const roadCount = roadEdges.length;
+  if (roadCount >= 3) return []; // intersection — terminates
+  if (roadCount === 2) {
+    // straight or curve — connect the other road edge
+    return roadEdges.filter(e => e !== inEdge);
+  }
+  return [];
+}
+
+function scoreFeature(feature) {
+  if (!feature) return 0;
+  if (feature.terrain === 'C') {
+    const pts = feature.tiles.size * 2;
+    let pennants = 0;
+    for (const key of feature.tiles) {
+      const [x, y] = key.split(',').map(Number);
+      const placed = state.board[key];
+      if (placed && TILE_LOOKUP[placed.tileId].hasPennant) pennants++;
+    }
+    return feature.complete ? pts + pennants * 2 : pts + pennants;
+  }
+  if (feature.terrain === 'R') {
+    return feature.tiles.size;
+  }
+  return 0;
+}
+
+function scoreMonastery(x, y) {
+  let neighbors = 0;
+  for (let dy = -1; dy <= 1; dy++)
+    for (let dx = -1; dx <= 1; dx++)
+      if (state.board[getKey(x+dx, y+dy)]) neighbors++;
+  return neighbors; // 9 when complete
+}
+
+// ═══════════════════════════════════════════════════════
+// MOVE EVALUATOR
+// ═══════════════════════════════════════════════════════
+function evaluateMove(x, y, tileId, rot, meepleFeature) {
+  // Temporarily place tile
+  const key = getKey(x, y);
+  state.board[key] = { tileId, rot, meeple: meepleFeature && meepleFeature !== 'none'
+    ? { player: state.currentPlayer, feature: meepleFeature } : null };
+
+  let immediate = 0, latent = 0, blocking = 0;
+  const edgeNames = ['N','E','S','W'];
+  const rotEdges = rotateEdges(TILE_LOOKUP[tileId].edges, rot);
+  const tracedFeatures = new Set();
+
+  // Score features touching this tile
+  for (let i = 0; i < 4; i++) {
+    if (rotEdges[i] === 'F') continue;
+    const traceKey = `${edgeNames[i]}`;
+    if (tracedFeatures.has(traceKey)) continue;
+    const f = traceFeature(x, y, edgeNames[i]);
+    if (!f) continue;
+
+    // Mark all edges of this feature as traced
+    for (const fKey of f.tiles) {
+      edgeNames.forEach(e => tracedFeatures.add(`${fKey},${e}`));
+    }
+
+    const pts = scoreFeature(f);
+    if (f.complete) {
+      immediate += pts;
+    } else {
+      // latent: points we'd get if feature closes
+      if (f.meeples.includes(state.currentPlayer)) {
+        latent += pts * 0.4; // discount for incomplete
+      }
+      // blocking: opponent has meeple and we're sharing/closing
+      const opponent = 1 - state.currentPlayer;
+      if (f.meeples.includes(opponent) && !f.meeples.includes(state.currentPlayer)) {
+        blocking += pts * 0.3;
+      }
+    }
+  }
+
+  // Monastery scoring
+  const def = TILE_LOOKUP[tileId];
+  if (def.hasMonastery) {
+    const ms = scoreMonastery(x, y);
+    latent += ms * (ms / 9) * 0.5;
+  }
+  // Neighboring monasteries
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      const nb = state.board[getKey(x+dx, y+dy)];
+      if (nb && TILE_LOOKUP[nb.tileId].hasMonastery) {
+        const ms = scoreMonastery(x+dx, y+dy);
+        if (nb.meeple) {
+          if (nb.meeple.player === state.currentPlayer) latent += 0.5;
+          else blocking += 0.3;
+        }
+      }
+    }
+  }
+
+  // Remove temporary placement
+  delete state.board[key];
+
+  const total = immediate + latent + blocking;
+  return { immediate, latent: Math.round(latent * 10) / 10, blocking: Math.round(blocking * 10) / 10, total: Math.round(total * 10) / 10 };
+}
+
+function findBestMove(tileId) {
+  const positions = findLegalPositions(tileId);
+  let best = null, bestScore = -Infinity;
+  for (const pos of positions) {
+    // Evaluate without meeple and with each valid meeple placement
+    const scores = [evaluateMove(pos.x, pos.y, tileId, pos.rot, 'none')];
+    const best1 = scores[0];
+    if (best1.total > bestScore) {
+      bestScore = best1.total;
+      best = { ...pos, eval: best1 };
+    }
+  }
+  return { best, bestScore, legalCount: positions.length };
+}
+
+function getMoveQuality(yourScore, bestScore) {
+  if (bestScore <= 0) return { label: 'NEUTRAL', code: 'OK', color: '#c8a045', pct: 50 };
+  const ratio = yourScore / Math.max(bestScore, 0.1);
+  if (ratio >= 0.90) return { label: 'EXCELENTE', code: 'EX', color: '#4caf82', pct: Math.min(100, ratio * 100) };
+  if (ratio >= 0.70) return { label: 'BUENA', code: 'GO', color: '#4a80d4', pct: ratio * 100 };
+  if (ratio >= 0.50) return { label: 'REGULAR', code: 'OK', color: '#c8a045', pct: ratio * 100 };
+  if (ratio >= 0.30) return { label: 'MALA', code: 'BA', color: '#e09040', pct: ratio * 100 };
+  return { label: 'ERROR GRAVE', code: 'ER', color: '#e05555', pct: Math.max(5, ratio * 100) };
+}
+
+function getTip(quality, evalResult, bestScore) {
+  const tips = {
+    EX: [
+      'Excelente instinto. Esta posición maximiza tu control del tablero.',
+      'Jugada óptima: capturaste el máximo valor disponible en este turno.',
+      `Sacaste todo el jugo a esta ficha. ${evalResult.immediate > 0 ? `+${evalResult.immediate} pts inmediatos` : 'Posición estratégica sólida'}.`,
+    ],
+    GO: [
+      `Buena jugada. Capturaste el ${Math.round(evalResult.total/Math.max(bestScore,0.1)*100)}% del valor disponible.`,
+      'Posición sólida. Hay una opción levemente mejor, pero esta es correcta.',
+      evalResult.blocking > 0 ? 'Buen uso del bloqueo al rival.' : 'Considera si puedes incorporar más bloqueo al rival.',
+    ],
+    OK: [
+      `Jugada aceptable, pero dejaste ${Math.round(bestScore - evalResult.total * 10)/10} puntos sobre la mesa.`,
+      'Mira si hay posiciones que completen ciudades o cierren caminos propios.',
+      'En Carcassonne mundial, cada décima de punto importa. Busca la posición óptima.',
+    ],
+    BA: [
+      'Jugada débil. Hay alternativas que generan mucho más valor.',
+      evalResult.immediate === 0 ? 'No obtuviste puntos inmediatos. Busca cerrar features.' : 'El valor estratégico es bajo para las opciones disponibles.',
+      `La jugada óptima vale ~${bestScore.toFixed(1)} pts. La tuya vale ~${evalResult.total.toFixed(1)}.`,
+    ],
+    ER: [
+      'Error de posicionamiento. Esta es una de las peores posiciones disponibles.',
+      'Revisa si alguna posición completa una ciudad o camino propio.',
+      'Considera también el bloqueo: a veces vale más negar puntos al rival que ganar los propios.',
+    ],
+  };
+  const arr = tips[quality.code] || tips.OK;
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+// ═══════════════════════════════════════════════════════
+// UI STATE
+// ═══════════════════════════════════════════════════════
+let uiState = {
+  panX: 0, panY: 0,
+  legalPositions: [],
+  hoveredPos: null,
+  selectedPos: null,
+  pendingEval: null,
+  bestMoveCache: null,
+  isDragging: false, dragStartX: 0, dragStartY: 0, panStartX: 0, panStartY: 0,
+};
+
+// ═══════════════════════════════════════════════════════
+// DRAWING
+// ═══════════════════════════════════════════════════════
+const canvas = document.getElementById('board-canvas');
+const ctx = canvas.getContext('2d');
+const prevCanvas = document.getElementById('tile-preview');
+const pCtx = prevCanvas.getContext('2d');
+
+function resize() {
+  const wrap = document.getElementById('board-wrap');
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  if (!uiState.panX && !uiState.panY) {
+    uiState.panX = canvas.width / 2;
+    uiState.panY = canvas.height / 2;
+  }
+  draw();
+}
+
+const TERRAIN_COLORS = { C: '#b8622a', R: '#7a6a50', F: '#3a6830', M: '#2a4838' };
+
+function drawTileOnCtx(ctx, tileId, rot, x, y, size, alpha=1) {
+  const def = TILE_LOOKUP[tileId];
+  const edges = rotateEdges(def.edges, rot);
+  const s = size, hs = s/2;
+  ctx.globalAlpha = alpha;
+
+  // Background (field)
+  ctx.fillStyle = '#3a6830';
+  ctx.fillRect(x, y, s, s);
+
+  // Draw terrain wedges
+  const edgeW = s * 0.35;
+  const edgeDefs = [
+    { dir:'N', path: [[0,0],[s,0],[s-edgeW,edgeW],[edgeW,edgeW]] },
+    { dir:'E', path: [[s,0],[s,s],[s-edgeW,s-edgeW],[s-edgeW,edgeW]] },
+    { dir:'S', path: [[0,s],[s,s],[s-edgeW,s-edgeW],[edgeW,s-edgeW]] },
+    { dir:'W', path: [[0,0],[0,s],[edgeW,s-edgeW],[edgeW,edgeW]] },
+  ];
+  edges.forEach((terrain, i) => {
+    if (terrain === 'F') return;
+    ctx.fillStyle = terrain === 'C' ? '#c8703a' : '#8a7a60';
+    ctx.beginPath();
+    edgeDefs[i].path.forEach(([px,py], j) => j===0 ? ctx.moveTo(x+px,y+py) : ctx.lineTo(x+px,y+py));
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // City connections across groups
+  if (def.cityGroups) {
+    for (const grp of def.cityGroups) {
+      const rotGrp = grp.map(e => ['N','E','S','W'][(EDGE_IDX[e]+rot)%4]);
+      if (rotGrp.length >= 2) {
+        ctx.fillStyle = '#c8703a';
+        ctx.fillRect(x+edgeW, y+edgeW, s-2*edgeW, s-2*edgeW);
+      }
+    }
+  }
+
+  // Monastery icon
+  if (def.hasMonastery) {
+    ctx.fillStyle = '#2a4838';
+    ctx.fillRect(x+hs-10, y+hs-10, 20, 20);
+    ctx.strokeStyle = '#4a8868';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x+hs-10, y+hs-10, 20, 20);
+    ctx.fillStyle = '#4a8868';
+    ctx.font = `${Math.max(10, s*0.22)}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⛪', x+hs, y+hs);
+  }
+
+  // Pennant
+  if (def.hasPennant) {
+    ctx.fillStyle = '#c8a045';
+    ctx.beginPath();
+    ctx.moveTo(x+s-8, y+4);
+    ctx.lineTo(x+s-4, y+8);
+    ctx.lineTo(x+s-8, y+12);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.globalAlpha = 1;
+}
+
+function draw() {
+  if (!state) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const { panX, panY } = uiState;
+
+  // Grid hint
+  ctx.strokeStyle = '#1a1c2a';
+  ctx.lineWidth = 0.5;
+  const gStart = -20, gEnd = 20;
+  for (let gx = gStart; gx <= gEnd; gx++) {
+    const px = panX + gx * CELL;
+    ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, canvas.height); ctx.stroke();
+  }
+  for (let gy = gStart; gy <= gEnd; gy++) {
+    const py = panY + gy * CELL;
+    ctx.beginPath(); ctx.moveTo(0, py); ctx.lineTo(canvas.width, py); ctx.stroke();
+  }
+
+  // Placed tiles
+  for (const [key, placed] of Object.entries(state.board)) {
+    const [bx, by] = key.split(',').map(Number);
+    const px = panX + bx * CELL, py = panY + by * CELL;
+    drawTileOnCtx(ctx, placed.tileId, placed.rot, px, py, CELL);
+
+    // Border
+    ctx.strokeStyle = '#2a2c3a';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(px, py, CELL, CELL);
+
+    // Meeple
+    if (placed.meeple) {
+      const colors = ['#4a80d4', '#e05555'];
+      ctx.fillStyle = colors[placed.meeple.player];
+      ctx.beginPath();
+      ctx.arc(px + CELL/2, py + CELL/2, 7, 0, Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(placed.meeple.player + 1, px+CELL/2, py+CELL/2);
+    }
+  }
+
+  // Legal positions
+  if (state.currentTile) {
+    for (const pos of uiState.legalPositions) {
+      const px = panX + pos.x * CELL, py = panY + pos.y * CELL;
+      const isHover = uiState.hoveredPos && uiState.hoveredPos.x === pos.x && uiState.hoveredPos.y === pos.y;
+      const isSelected = uiState.selectedPos && uiState.selectedPos.x === pos.x && uiState.selectedPos.y === pos.y;
+
+      if (isSelected) {
+        drawTileOnCtx(ctx, state.currentTile, state.currentRot, px, py, CELL, 0.9);
+        ctx.strokeStyle = '#c8a045';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(px, py, CELL, CELL);
+      } else if (isHover) {
+        drawTileOnCtx(ctx, state.currentTile, state.currentRot, px, py, CELL, 0.6);
+        ctx.strokeStyle = '#4a80d4';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(px+1, py+1, CELL-2, CELL-2);
+      } else {
+        ctx.fillStyle = 'rgba(74,128,212,0.12)';
+        ctx.fillRect(px+2, py+2, CELL-4, CELL-4);
+        ctx.strokeStyle = 'rgba(74,128,212,0.35)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px+2, py+2, CELL-4, CELL-4);
+      }
+    }
+  }
+}
+
+function drawPreview() {
+  pCtx.clearRect(0, 0, 72, 72);
+  if (!state || !state.currentTile) {
+    pCtx.fillStyle = '#1e2035';
+    pCtx.fillRect(0,0,72,72);
+    return;
+  }
+  drawTileOnCtx(pCtx, state.currentTile, state.currentRot, 0, 0, 72);
+}
+
+// ═══════════════════════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════════════════════
+function drawTile() {
+  if (!state || state.deckPos >= state.deck.length) {
+    showModal('Fin del mazo', 'Se acabaron las fichas. La partida termina.', []);
+    return;
+  }
+  state.currentTile = state.deck[state.deckPos++];
+  state.currentRot = 0;
+  uiState.selectedPos = null;
+  uiState.pendingEval = null;
+  uiState.bestMoveCache = null;
+  updateLegalPositions();
+  updateTilePanel();
+  drawPreview();
+  draw();
+  document.getElementById('tiles-left').textContent = `${state.deck.length - state.deckPos} fichas restantes`;
+}
+
+function rotateTile(dir) {
+  if (!state.currentTile) return;
+  state.currentRot = (state.currentRot + dir + 4) % 4;
+  uiState.selectedPos = null;
+  uiState.pendingEval = null;
+  uiState.bestMoveCache = null;
+  updateLegalPositions();
+  updateTilePanel();
+  drawPreview();
+  draw();
+}
+
+function updateLegalPositions() {
+  if (!state.currentTile) { uiState.legalPositions = []; return; }
+  uiState.legalPositions = findLegalPositions(state.currentTile).filter(p => p.rot === state.currentRot);
+}
+
+function updateTilePanel() {
+  if (!state.currentTile) return;
+  const def = TILE_LOOKUP[state.currentTile];
+  document.getElementById('tile-name').textContent = def.name;
+  document.getElementById('tile-desc').textContent = def.desc;
+
+  // Meeple options based on tile features
+  const opts = ['none'];
+  const edges = rotateEdges(def.edges, state.currentRot);
+  const edgeNames = ['N','E','S','W'];
+  const hasCities = edges.some(e => e === 'C');
+  const hasRoads = edges.some(e => e === 'R');
+  if (hasCities) opts.push('ciudad');
+  if (hasRoads) opts.push('camino');
+  if (def.hasMonastery) opts.push('monasterio');
+
+  const mDiv = document.getElementById('meeple-options');
+  mDiv.innerHTML = '';
+  opts.forEach(opt => {
+    const b = document.createElement('button');
+    b.className = 'meeple-btn' + (opt === 'none' ? ' none' : '') + (opt === state.selectedMeeple ? ' selected' : '');
+    b.dataset.feature = opt;
+    b.textContent = opt === 'none' ? 'Sin meeple' : opt.charAt(0).toUpperCase() + opt.slice(1);
+    b.onclick = () => selectMeeple(opt);
+    mDiv.appendChild(b);
+  });
+  state.selectedMeeple = 'none';
+}
+
+function selectMeeple(feature) {
+  state.selectedMeeple = feature;
+  document.querySelectorAll('.meeple-btn').forEach(b => b.classList.toggle('selected', b.dataset.feature === feature));
+  if (uiState.selectedPos) evaluateSelectedMove();
+}
+
+function selectPosition(x, y) {
+  uiState.selectedPos = { x, y };
+  state.selectedMeeple = 'none';
+  document.querySelectorAll('.meeple-btn').forEach(b => b.classList.toggle('selected', b.dataset.feature === 'none'));
+  evaluateSelectedMove();
+  draw();
+}
+
+function evaluateSelectedMove() {
+  if (!uiState.selectedPos || !state.currentTile) return;
+  const { x, y } = uiState.selectedPos;
+
+  // Get best move (cached)
+  if (!uiState.bestMoveCache) {
+    uiState.bestMoveCache = findBestMove(state.currentTile);
+  }
+  const { bestScore } = uiState.bestMoveCache;
+
+  const evalResult = evaluateMove(x, y, state.currentTile, state.currentRot, state.selectedMeeple);
+  uiState.pendingEval = evalResult;
+
+  const quality = getMoveQuality(evalResult.total, bestScore);
+  const tip = getTip(quality, evalResult, bestScore);
+
+  // Update UI
+  document.getElementById('quality-label').textContent = quality.label;
+  document.getElementById('quality-label').style.color = quality.color;
+  document.getElementById('quality-fill').style.width = quality.pct + '%';
+  document.getElementById('quality-fill').style.background = quality.color;
+
+  const fmt = v => v === 0 ? '—' : (v > 0 ? '+' + v.toFixed(1) : v.toFixed(1));
+  document.getElementById('ev-immediate').textContent = evalResult.immediate > 0 ? `+${evalResult.immediate}` : '0';
+  document.getElementById('ev-immediate').className = 'ev-val ' + (evalResult.immediate > 0 ? 'ev-pos' : 'ev-neu');
+  document.getElementById('ev-latent').textContent = fmt(evalResult.latent);
+  document.getElementById('ev-block').textContent = fmt(evalResult.blocking);
+  document.getElementById('ev-your').textContent = evalResult.total.toFixed(1);
+  document.getElementById('ev-best').textContent = bestScore.toFixed(1);
+  const ratio = bestScore > 0 ? Math.round(evalResult.total / bestScore * 100) : 100;
+  document.getElementById('ev-ratio').textContent = ratio + '%';
+  document.getElementById('ev-ratio').className = 'ev-val ' + (ratio >= 90 ? 'ev-pos' : ratio >= 70 ? 'ev-neu' : 'ev-neg');
+
+  document.getElementById('tip-text').innerHTML = tip;
+  document.getElementById('tip-text').innerHTML +=
+    `<br><br><strong>Posición:</strong> (${x}, ${y}) · Rotación: ${state.currentRot * 90}°` +
+    (state.selectedMeeple !== 'none' ? ` · Meeple en ${state.selectedMeeple}` : '');
+}
+
+function confirmMove() {
+  if (!uiState.selectedPos || !state.currentTile) {
+    showModal('Selecciona posición', 'Haz clic en una posición resaltada en el tablero antes de confirmar.', [
+      { label:'OK', action:() => closeModal() }
+    ]);
+    return;
+  }
+  const { x, y } = uiState.selectedPos;
+  const evalResult = uiState.pendingEval || evaluateMove(x, y, state.currentTile, state.currentRot, state.selectedMeeple);
+  const { bestScore } = uiState.bestMoveCache || findBestMove(state.currentTile);
+  const quality = getMoveQuality(evalResult.total, bestScore);
+
+  const meeple = state.selectedMeeple !== 'none' && state.meeples[state.currentPlayer] > 0
+    ? { player: state.currentPlayer, feature: state.selectedMeeple }
+    : null;
+
+  placeOnBoard(x, y, state.currentTile, state.currentRot, meeple);
+  if (meeple) state.meeples[state.currentPlayer]--;
+
+  // Score immediate points
+  state.scores[state.currentPlayer] += evalResult.immediate;
+  document.getElementById('score-p1').textContent = state.scores[0];
+  document.getElementById('score-p2').textContent = state.scores[1];
+
+  // Add to history
+  state.history.unshift({
+    player: state.currentPlayer,
+    tile: state.currentTile,
+    x, y, rot: state.currentRot,
+    meeple: state.selectedMeeple,
+    eval: evalResult,
+    quality,
+  });
+  updateHistory();
+
+  // Next turn
+  state.currentPlayer = 1 - state.currentPlayer;
+  document.getElementById('turn-indicator').textContent = `Turno: Jugador ${state.currentPlayer + 1}`;
+  document.getElementById('turn-indicator').style.color = state.currentPlayer === 0 ? 'var(--blue)' : 'var(--red)';
+
+  state.currentTile = null;
+  uiState.selectedPos = null;
+  uiState.legalPositions = [];
+  uiState.pendingEval = null;
+  uiState.bestMoveCache = null;
+
+  // Reset eval panel
+  document.getElementById('quality-label').textContent = '—';
+  document.getElementById('quality-label').style.color = 'var(--muted)';
+  document.getElementById('quality-fill').style.width = '0%';
+  ['ev-immediate','ev-latent','ev-block','ev-your','ev-best','ev-ratio'].forEach(id => {
+    document.getElementById(id).textContent = '—';
+  });
+  document.getElementById('tip-text').textContent = 'Jugada confirmada. Saca la siguiente ficha.';
+
+  draw();
+  drawPreview();
+  drawTile();
+}
+
+function updateHistory() {
+  const list = document.getElementById('history-list');
+  list.innerHTML = state.history.slice(0, 8).map(h => {
+    const pColors = ['var(--blue)','var(--red)'];
+    const tileDef = TILE_LOOKUP[h.tile];
+    return `<div class="hist-item">
+      <span class="hist-badge ${h.quality.code}">${h.quality.code}</span>
+      <span class="hist-desc" style="color:${pColors[h.player]}">J${h.player+1}</span>
+      <span class="hist-desc">${tileDef.name} (${h.x},${h.y})</span>
+      <span class="hist-pts">${h.eval.immediate > 0 ? '+' + h.eval.immediate : '—'}</span>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// CANVAS INTERACTION
+// ═══════════════════════════════════════════════════════
+function canvasToBoard(cx, cy) {
+  const x = Math.floor((cx - uiState.panX) / CELL);
+  const y = Math.floor((cy - uiState.panY) / CELL);
+  return { x, y };
+}
+
+canvas.addEventListener('mousedown', e => {
+  uiState.isDragging = false;
+  uiState.dragStartX = e.clientX;
+  uiState.dragStartY = e.clientY;
+  uiState.panStartX = uiState.panX;
+  uiState.panStartY = uiState.panY;
+  document.getElementById('board-wrap').classList.add('grabbing');
+});
+
+canvas.addEventListener('mousemove', e => {
+  const dx = e.clientX - uiState.dragStartX;
+  const dy = e.clientY - uiState.dragStartY;
+  if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+    uiState.isDragging = true;
+    uiState.panX = uiState.panStartX + dx;
+    uiState.panY = uiState.panStartY + dy;
+    draw();
+  }
+
+  // Hover highlight
+  const rect = canvas.getBoundingClientRect();
+  const { x, y } = canvasToBoard(e.clientX - rect.left, e.clientY - rect.top);
+  const isLegalPos = uiState.legalPositions.some(p => p.x === x && p.y === y);
+  const wasHovered = uiState.hoveredPos;
+  uiState.hoveredPos = isLegalPos ? { x, y } : null;
+  if (JSON.stringify(wasHovered) !== JSON.stringify(uiState.hoveredPos)) draw();
+});
+
+canvas.addEventListener('mouseup', e => {
+  document.getElementById('board-wrap').classList.remove('grabbing');
+  if (!uiState.isDragging) {
+    const rect = canvas.getBoundingClientRect();
+    const { x, y } = canvasToBoard(e.clientX - rect.left, e.clientY - rect.top);
+    const isLegalPos = uiState.legalPositions.some(p => p.x === x && p.y === y);
+    if (isLegalPos) selectPosition(x, y);
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  uiState.hoveredPos = null;
+  draw();
+});
+
+// Touch / pinch zoom
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+}, { passive: false });
+
+// ═══════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════
+function showModal(title, body, btns) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  const bDiv = document.getElementById('modal-btns');
+  bDiv.innerHTML = '';
+  btns.forEach(b => {
+    const el = document.createElement('button');
+    el.className = 'tool-btn' + (b.primary ? ' primary' : '');
+    el.textContent = b.label;
+    el.onclick = b.action;
+    bDiv.appendChild(el);
+  });
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function resetGame() {
+  showModal('Nueva partida', '¿Reiniciar la partida? Se perderá el progreso actual.', [
+    { label:'Reiniciar', primary:true, action:() => { closeModal(); newGame(); } },
+    { label:'Cancelar', action:closeModal },
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('resize', resize);
+newGame();
+resize();
+</script>
+</body>
+</html>
