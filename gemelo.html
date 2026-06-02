@@ -270,7 +270,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   <div class="tab" onclick="sw('cronograma',this)">📅 Cronograma</div>
   <div class="tab" onclick="sw('presupuesto',this)">💰 Presupuesto</div>
   <div class="tab" onclick="sw('misiones',this)">✅ Misiones</div>
-  <div class="tab" onclick="sw('alertas',this)">🔔 Alertas</div>
+  <div class="tab" onclick="sw('avances',this)">📋 Avances</div>
   <div class="tab" onclick="sw('materiales',this)">📦 Materiales</div>
   <div class="tab" onclick="sw('equipo',this)">👷 Equipo</div>
   <div class="tab" onclick="sw('visita',this)">👁 Visita</div>
@@ -313,9 +313,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM San
   </div>
 </div>
 
-<!-- ALERTAS -->
-<div class="tp" id="tp-alertas">
-  <div class="card"><div class="ch">Alertas activas <span id="al-cnt" style="color:var(--amber)"></span></div><div class="cb" id="alertas-l"><div class="empty"><div class="spin"></div></div></div></div>
+<!-- AVANCES -->
+<div class="tp" id="tp-avances">
+  <div class="card"><div class="ch">Lo que pasó en obra <span id="av-cnt" style="color:var(--text3);font-weight:400;font-size:12px"></span></div><div class="cb" id="avances-l"><div class="empty"><div class="spin"></div></div></div></div>
+  <div id="alertas-l" style="display:none"></div>
 </div>
 
 <!-- MISIONES -->
@@ -891,6 +892,7 @@ function sw(name,btn){
   if(name==='cronograma') renderGantt();
   if(name==='materiales') renderMateriales();
   if(name==='equipo') renderEquipo();
+  if(name==='avances') loadAvances();
   if(name==='modelo') renderModelo();
   if(name==='visita') loadVisitaHistorial();
   if(name==='equipo') renderEquipo();
@@ -944,7 +946,7 @@ async function loadAll(){
   // Load workers and misiones first — other functions depend on MDATA and WMAPS
   await Promise.all([loadWorkers(),loadMisiones(),loadConfigData()]);
   renderConfigProgress();
-  await Promise.all([loadDash(),loadAlertas(),loadObra()]);
+  await Promise.all([loadDash(),loadAlertas(),loadObra(),loadAvances()]);
   if(curTab==='cronograma') renderGantt();
   if(curTab==='materiales') renderMateriales();
   if(curTab==='equipo') renderEquipo();
@@ -1031,7 +1033,7 @@ function togglePlanEtapa(id){
   if(ch) ch.textContent=open?'▴':'▾';
 }
 
-function renderMisPlan(){
+async function renderMisPlan(){
   const el=document.getElementById('mis-plan-wrap');
   if(!el) return;
   if(!MDATA.length){
@@ -1039,7 +1041,13 @@ function renderMisPlan(){
     return;
   }
 
-  // Agrupar MDATA por etapa, ordenadas por fecha_inicio_plan
+  el.innerHTML='<div class="empty"><div class="spin"></div></div>';
+  await ensureRendimientos();
+
+  const f=getCalFactors();
+  const fmtD=d=>d?new Date(d).toLocaleDateString('es-CO',{day:'numeric',month:'short'}):'—';
+
+  // Agrupar por etapa, ordenadas por fecha_inicio_plan
   const byEtapa={};
   MDATA.forEach(m=>{
     if(!byEtapa[m.etapa_id]) byEtapa[m.etapa_id]=[];
@@ -1047,75 +1055,75 @@ function renderMisPlan(){
   });
   Object.values(byEtapa).forEach(ms=>ms.sort((a,b)=>(a.fecha_inicio_plan||'9999')>(b.fecha_inicio_plan||'9999')?1:-1));
 
-  // Items presupuestados por etapa
-  const itemsByEtapa={};
-  const costoEtapa={};
-  PMDATA.forEach(p=>{
-    if(!itemsByEtapa[p.etapa_id]) itemsByEtapa[p.etapa_id]=[];
-    itemsByEtapa[p.etapa_id].push(p);
-    costoEtapa[p.etapa_id]=(costoEtapa[p.etapa_id]||0)+parseFloat(p.costo_estimado||0);
-  });
-
-  const fmtD=d=>d?new Date(d).toLocaleDateString('es-CO',{day:'numeric',month:'short'}):'—';
+  // IA budget items por etapa (si existen)
+  const iaCostoEtapa={};
+  PMDATA.forEach(p=>{ iaCostoEtapa[p.etapa_id]=(iaCostoEtapa[p.etapa_id]||0)+parseFloat(p.costo_estimado||0); });
 
   let html='';
   EO.filter(e=>byEtapa[e]).forEach(e=>{
     const ms=byEtapa[e];
-    const costo=costoEtapa[e]||0;
-    const items=itemsByEtapa[e]||[];
-    const eid='pe-'+e;
+    const iaTotal=iaCostoEtapa[e]||0;
 
-    // Misiones: lista compacta como contexto de fechas
-    const misionesCompact=ms.map(m=>{
+    const misionCards=ms.map(m=>{
+      const insumos=filtrarInsumos(m.mision_id, f);
+      const meta=parseFloat(m.cantidad_meta||0);
+      const mid='pm-'+m.id.replace(/[^a-z0-9]/gi,'_');
       const ico=m.estado==='completada'?`<span style="color:var(--green)">✓</span>`:m.estado==='en_curso'?`<span style="color:var(--amber)">↗</span>`:`<span style="color:var(--text3)">○</span>`;
-      return`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border)">
-        <div style="font-size:10px">${ico} ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?` <span style="color:var(--text3)">${m.nivel}</span>`:''}</div>
-        <div style="font-size:10px;color:var(--text3);white-space:nowrap;flex-shrink:0;margin-left:8px">${fmtD(m.fecha_inicio_plan)} → ${fmtD(m.fecha_fin_plan)}</div>
-      </div>`;
-    }).join('');
+      const finStr=fmtD(m.fecha_fin_plan);
 
-    // Items de recursos (contenido principal)
-    const itemRows=items.length
-      ?items.map(p=>`
-        <tr style="border-bottom:1px solid var(--border)">
-          <td style="padding:7px 8px;font-weight:500">${p.nota||'—'}</td>
-          <td style="padding:7px 8px;color:var(--text2);text-align:right;white-space:nowrap">${p.cantidad_presupuestada||'—'} ${p.unidad||''}</td>
-          <td style="padding:7px 8px;color:var(--text3);text-align:right;white-space:nowrap">${p.precio_unitario_est?fmt(p.precio_unitario_est):''}</td>
-          <td style="padding:7px 8px;text-align:right;font-family:'Syne',sans-serif;font-weight:700;color:var(--amber)">${fmt(p.costo_estimado||0)}</td>
-        </tr>`).join('')
-      :`<tr><td colspan="4" style="padding:10px 8px;color:var(--text3);font-size:11px">Sin presupuesto IA — genera el presupuesto para ver recursos detallados.</td></tr>`;
+      let costoMision=0;
+      const insumoRows=insumos.map(r=>{
+        const cant=meta>0?calcCantidad(r,meta,f):0;
+        const precio=r.materiales_catalogo?.precio_referencia||0;
+        const costo=Math.round(cant*precio);
+        costoMision+=costo;
+        const nombre=r.materiales_catalogo?.nombre||r.material_codigo;
+        const unidad=r.materiales_catalogo?.unidad||r.unidad_mision||'';
+        return`<tr style="background:var(--bg3);border-bottom:1px solid var(--border)">
+          <td style="padding:5px 8px 5px 22px;font-size:10px;color:var(--text2)">${nombre}</td>
+          <td style="padding:5px 8px;font-size:10px;text-align:right;white-space:nowrap">${cant} ${unidad}</td>
+          <td style="padding:5px 8px;font-size:10px;text-align:right;color:var(--text3)">${precio?fmt(precio):''}</td>
+          <td style="padding:5px 8px;font-size:10px;text-align:right;color:var(--amber)">${costo?fmt(costo):''}</td>
+        </tr>`;
+      }).join('');
+
+      const hasInsumos=insumos.length>0&&meta>0;
+      return`
+        <tr style="border-bottom:1px solid var(--border);cursor:${hasInsumos?'pointer':'default'}" ${hasInsumos?`onclick="toggleMatRow('${mid}')"`:''}>
+          <td style="padding:7px 8px">${ico} <span style="font-weight:500">${(m.mision_id||'').replace(/_/g,' ')}</span>${m.nivel?` <span style="font-size:9px;color:var(--text3)">${m.nivel}</span>`:''} ${hasInsumos?`<span style="font-size:9px;color:var(--amber)">▶ ${insumos.length} insumos</span>`:''}</td>
+          <td style="padding:7px 8px;color:var(--text2);text-align:right;white-space:nowrap">${meta||'—'} ${m.unidad_primaria||''}</td>
+          <td style="padding:7px 8px;color:var(--text3);text-align:right;white-space:nowrap">${finStr}</td>
+          <td style="padding:7px 8px;text-align:right;font-weight:600;color:var(--amber)">${costoMision?fmt(costoMision):''}</td>
+        </tr>
+        ${hasInsumos?`<tr id="${mid}" style="display:none"><td colspan="4" style="padding:0">
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:var(--bg4)">
+              <th style="text-align:left;padding:4px 8px 4px 22px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Material / recurso</th>
+              <th style="text-align:right;padding:4px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Necesario</th>
+              <th style="text-align:right;padding:4px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">P. unit.</th>
+              <th style="text-align:right;padding:4px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Costo est.</th>
+            </tr></thead>
+            <tbody>${insumoRows}</tbody>
+          </table>
+        </td></tr>`:''}`;
+    }).join('');
 
     html+=`
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;margin-bottom:10px;overflow:hidden">
-        <!-- Header etapa -->
         <div style="padding:.75rem 1rem;display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <span style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700">${EN[e]||e}</span>
-            <span style="font-size:10px;color:var(--text3);margin-left:8px">${ms.length} misiones</span>
-          </div>
-          ${costo?`<span style="font-family:'Syne',sans-serif;font-size:14px;font-weight:800;color:var(--amber)">${fmt(costo)}</span>`:''}
+          <span style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700">${EN[e]||e}</span>
+          ${iaTotal?`<span style="font-family:'Syne',sans-serif;font-size:12px;font-weight:700;color:var(--amber)">${fmt(iaTotal)} <span style="font-size:9px;font-weight:400;color:var(--text3)">IA</span></span>`:''}
         </div>
-
-        <!-- Recursos (principal) -->
         <div style="border-top:1px solid var(--border)">
           <table style="width:100%;border-collapse:collapse;font-size:11px">
             <thead><tr style="background:var(--bg3)">
-              <th style="text-align:left;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Recurso</th>
-              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Cantidad</th>
-              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">P. unitario</th>
-              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Costo</th>
+              <th style="text-align:left;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Misión</th>
+              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Meta</th>
+              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Fecha fin</th>
+              <th style="text-align:right;padding:5px 8px;font-size:9px;color:var(--text3);font-weight:700;letter-spacing:1px">Costo est.</th>
             </tr></thead>
-            <tbody>${itemRows}</tbody>
+            <tbody>${misionCards}</tbody>
           </table>
-        </div>
-
-        <!-- Misiones: contexto de fechas (colapsable) -->
-        <div style="border-top:1px solid var(--border)">
-          <div style="padding:5px 1rem;display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="togglePlanEtapa('${eid}')">
-            <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3)">Misiones del cronograma</span>
-            <span id="${eid}-ch" style="font-size:11px;color:var(--text3)">▾</span>
-          </div>
-          <div id="${eid}" style="display:none;padding:0 1rem .75rem">${misionesCompact}</div>
         </div>
       </div>`;
   });
@@ -1265,6 +1273,62 @@ async function loadDash(){
   }).join('');
 }
 
+// ── AVANCES ──
+async function loadAvances(){
+  const el=document.getElementById('avances-l');
+  const cnt=document.getElementById('av-cnt');
+  if(!el||!PID) return;
+  const {data}=await db.from('avances')
+    .select('etapa_id,mision_id,nivel,notas,cantidad_primaria_valor,cantidad_primaria_unidad,desviacion_detectada,desviacion_motivo,tiene_foto,timestamp_mensaje,trabajador_id')
+    .eq('proyecto_id',PID)
+    .order('timestamp_mensaje',{ascending:false})
+    .limit(40);
+  if(!data?.length){
+    el.innerHTML='<div class="empty">Aún no hay reportes.<br>El residente reporta por Telegram al grupo de obra.</div>';
+    if(cnt) cnt.textContent='';
+    return;
+  }
+  if(cnt) cnt.textContent=`· ${data.length} reportes`;
+  const dias={};
+  data.forEach(a=>{
+    const key=new Date(a.timestamp_mensaje).toISOString().split('T')[0];
+    if(!dias[key]) dias[key]=[];
+    dias[key].push(a);
+  });
+  const hoy=new Date();hoy.setHours(0,0,0,0);
+  const ayer=new Date(hoy);ayer.setDate(ayer.getDate()-1);
+  el.innerHTML=Object.keys(dias).sort((a,b)=>b.localeCompare(a)).map(key=>{
+    const d=new Date(key+'T12:00:00');
+    const isHoy=d>=hoy;
+    const isAyer=d>=ayer&&d<hoy;
+    const label=isHoy?'Hoy':isAyer?'Ayer':d.toLocaleDateString('es-CO',{weekday:'long',day:'numeric',month:'long'});
+    const items=dias[key].map(a=>{
+      const nom=WMAPS[a.trabajador_id]?.nombre||'Residente';
+      const ts=new Date(a.timestamp_mensaje);
+      const diff=Math.round((Date.now()-ts)/60000);
+      const t=diff<60?`hace ${diff}m`:diff<1440?`hace ${Math.round(diff/60)}h`:ts.toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+      const mis=(a.mision_id||a.etapa_id||'').replace(/_/g,' ');
+      const nota=a.notas||(mis?`Avance en ${mis}`:'Reporte registrado');
+      const cant=a.cantidad_primaria_valor?`<span style="display:inline-block;margin-top:4px;font-size:11px;background:var(--bg3);border-radius:4px;padding:2px 7px;color:var(--text2)">${a.cantidad_primaria_valor} ${a.cantidad_primaria_unidad||''}</span>`:'';
+      const foto=a.tiene_foto?'<span style="font-size:11px;color:var(--text3);margin-left:6px">📷</span>':'';
+      const desv=a.desviacion_detectada?`<div style="margin-top:5px;font-size:11px;color:var(--amber)">⚠️ ${a.desviacion_motivo||'Desviación detectada'}</div>`:'';
+      return`<div style="padding:.65rem 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+          <span style="font-size:12px;font-weight:600;color:var(--text1)">👷 ${nom}</span>
+          <span style="font-size:11px;color:var(--text3)">${t}</span>
+        </div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.5">${nota}</div>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-top:3px">${cant}${foto}</div>
+        ${desv}
+      </div>`;
+    }).join('');
+    return`<div style="margin-bottom:1rem">
+      <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:7px 0;border-bottom:1px solid var(--border);margin-bottom:2px">${label}</div>
+      ${items}
+    </div>`;
+  }).join('');
+}
+
 // ── ALERTAS MEJORADAS ──
 async function loadAlertas(){
   const als=[];
@@ -1367,7 +1431,7 @@ async function loadAlertas(){
   document.getElementById('alertas-l').innerHTML=catOrder.filter(cat=>cats[cat]).map(cat=>`
     <div style="margin-bottom:.75rem">
       <div style="font-family:'Syne',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text3);padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:6px">${catIco[cat]||''} ${cat}</div>
-      ${cats[cat].map(a=>`<div class="al ${a.t==='r'?'r':'a'}" ${a.accion?`style="cursor:pointer" onclick="sw('${a.accion}',document.querySelectorAll('.tab')[${['obra','cronograma','presupuesto','misiones','alertas','materiales','equipo','visita','dashboard','modelo'].indexOf(a.accion)}])"`:''}><span class="al-ico">${a.i}</span><div><div class="al-t">${a.ti}</div><div class="al-d">${a.d}</div></div></div>`).join('')}
+      ${cats[cat].map(a=>`<div class="al ${a.t==='r'?'r':'a'}" ${a.accion?`style="cursor:pointer" onclick="sw('${a.accion}',document.querySelectorAll('.tab')[${['obra','cronograma','presupuesto','misiones','avances','materiales','equipo','visita','dashboard','modelo'].indexOf(a.accion)}])"`:''}><span class="al-ico">${a.i}</span><div><div class="al-t">${a.ti}</div><div class="al-d">${a.d}</div></div></div>`).join('')}
     </div>`).join('');
 }
 
@@ -1673,6 +1737,45 @@ function renderGantt(){
 
 // ── MATERIALES (proyección CAMACOL) ──
 let RENDIMIENTOS_DB=[], BODEGA_MAP={};
+
+// Helpers de calibración compartidos entre materiales y plan de obra
+function getCalFactors(){
+  const colA=parseFloat(PROJ.col_ancho_cm)||30, colH=parseFloat(PROJ.col_alto_cm)||30;
+  const altPiso=parseFloat(PROJ.altura_piso)||2.8;
+  const vigA=parseFloat(PROJ.viga_ancho_cm)||30, vigH=parseFloat(PROJ.viga_alto_cm)||50;
+  const placaE=parseFloat(PROJ.placa_espesor_cm)||12;
+  const usaPremez=PROJ.tipo_concreto!=='manual';
+  const concretoCode=PROJ.resistencia_concreto==='35mpa'?'CON-03':PROJ.resistencia_concreto==='21mpa'?'CON-01':'CON-02';
+  return {
+    factorCol:((colA/100)*(colH/100)*altPiso*1.07)/((0.30*0.30)*altPiso*1.07),
+    factorViga:((vigA/100)*(vigH/100)*1.20)/((0.30*0.50)*1.20),
+    factorPlaca:(placaE/100)/0.12,
+    concretoCode, usaPremez
+  };
+}
+function calcCantidad(r, meta, f){
+  let base=r.cantidad_por_unidad;
+  const conCodes=['CON-01','CON-02','CON-03',f.concretoCode,'CEM-01','AGR-01','AGR-02'];
+  if(r.mision_id==='columnas_vaciado'&&conCodes.includes(r.material_codigo)) base*=f.factorCol;
+  else if(r.mision_id==='vigas'&&conCodes.includes(r.material_codigo)) base*=f.factorViga;
+  else if(r.mision_id==='placa_entrepiso'&&['CON-02',f.concretoCode,'ACE-04','ACE-02'].includes(r.material_codigo)) base*=f.factorPlaca;
+  return Math.round(base*meta*1.05*10)/10;
+}
+function filtrarInsumos(misionId, f){
+  return RENDIMIENTOS_DB.filter(r=>{
+    if(r.mision_id!==misionId||r.es_opcional) return false;
+    if(f.usaPremez&&r.alternativa_grupo&&['CEM-01','AGR-01','AGR-02'].includes(r.material_codigo)&&
+      ['columnas_vaciado','vigas','placa_entrepiso','vaciado_zapatas'].includes(r.mision_id)) return false;
+    if(!f.usaPremez&&['CON-01','CON-02','CON-03'].includes(r.material_codigo)) return false;
+    return true;
+  });
+}
+async function ensureRendimientos(){
+  if(!RENDIMIENTOS_DB.length){
+    const {data}=await db.from('rendimientos_actividad').select('*,materiales_catalogo(nombre,unidad,precio_referencia)');
+    RENDIMIENTOS_DB=data||[];
+  }
+}
 
 async function renderMateriales(){
   const hoy=new Date();hoy.setHours(0,0,0,0);
