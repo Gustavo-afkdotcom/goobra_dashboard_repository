@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carcassonne MCTS Evaluator v2</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --bg2: #1a1a1a;
+    --bg3: #242424;
+    --border: #2e2e2e;
+    --text: #e8e4d9;
+    --muted: #7a7670;
+    --accent: #c8a96e;
+    --accent2: #7c6fcd;
+    --red: #c0392b;
+    --orange: #c07830;
+    --yellow: #8a7a20;
+    --green: #2e7d32;
+    --blue: #1a6699;
+    --purple: #5b3ea6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; font-size: 13px; min-height: 100vh; }
+
+  /* Header */
+  header { border-bottom: 1px solid var(--border); padding: 16px 24px; display: flex; align-items: center; gap: 16px; }
+  .logo { font-size: 11px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
+  .logo span { color: var(--accent); }
+  .badge-mcts { background: var(--accent2); color: #c8c0f8; font-size: 9px; letter-spacing: 0.15em; padding: 2px 7px; border-radius: 3px; text-transform: uppercase; }
+
+  /* Main layout */
+  .layout { display: grid; grid-template-columns: 1fr 340px; gap: 0; height: calc(100vh - 53px); }
+
+  /* Board area */
+  .board-area { padding: 20px; overflow: auto; display: flex; flex-direction: column; gap: 16px; }
+  .board-wrap { position: relative; }
+  canvas#board { display: block; cursor: crosshair; border: 1px solid var(--border); background: #111; }
+
+  /* Controls bar */
+  .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  button { background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 6px 14px; cursor: pointer; font-family: inherit; font-size: 12px; border-radius: 3px; transition: all 0.15s; }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button.primary { background: var(--accent); color: #111; border-color: var(--accent); font-weight: bold; }
+  button.primary:hover { background: #dbbf7e; }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .tile-preview { display: flex; align-items: center; gap: 12px; }
+  canvas#tilePreview { border: 1px solid var(--accent); border-radius: 2px; }
+  .tile-info { font-size: 11px; color: var(--muted); line-height: 1.6; }
+  .tile-info strong { color: var(--accent); display: block; margin-bottom: 2px; }
+
+  /* Sidebar */
+  .sidebar { border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .sidebar-section { border-bottom: 1px solid var(--border); padding: 16px; }
+  .sidebar-section h3 { font-size: 10px; letter-spacing: 0.18em; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
+
+  /* MCTS progress */
+  .mcts-bar-wrap { margin-bottom: 10px; }
+  .mcts-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+  .mcts-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .mcts-fill { height: 100%; background: var(--accent2); width: 0%; transition: width 0.1s; }
+  #mctsStatus { font-size: 11px; color: var(--muted); margin-top: 6px; min-height: 16px; }
+
+  /* Quality meter */
+  .quality-display { text-align: center; padding: 8px 0; }
+  .quality-score { font-size: 42px; font-weight: bold; letter-spacing: -0.02em; line-height: 1; margin-bottom: 6px; }
+  .quality-label { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 12px; }
+  .quality-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
+  .quality-bar-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease, background 0.6s ease; }
+  .breakdown { font-size: 11px; color: var(--muted); }
+  .breakdown-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid var(--border); }
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-row span:last-child { color: var(--text); }
+
+  /* Best move suggestion */
+  .suggestion { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; padding: 10px; font-size: 11px; line-height: 1.7; }
+  .suggestion strong { color: var(--accent); }
+
+  /* History */
+  .history { flex: 1; overflow-y: auto; padding: 16px; }
+  .history h3 { font-size: 10px; letter-spacing: 0.18em; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
+  .history-item { padding: 8px; border: 1px solid var(--border); border-radius: 3px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+  .history-item:hover { border-color: var(--accent); }
+  .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .history-turn { font-size: 10px; color: var(--muted); }
+  .history-badge { font-size: 9px; letter-spacing: 0.1em; padding: 1px 6px; border-radius: 2px; text-transform: uppercase; }
+  .history-tip { font-size: 10px; color: var(--muted); line-height: 1.5; }
+
+  /* Score display */
+  .scores { display: flex; gap: 0; }
+  .score-box { flex: 1; text-align: center; padding: 10px; border-right: 1px solid var(--border); }
+  .score-box:last-child { border-right: none; }
+  .score-num { font-size: 26px; font-weight: bold; }
+  .score-lbl { font-size: 9px; letter-spacing: 0.15em; color: var(--muted); text-transform: uppercase; margin-top: 2px; }
+
+  /* Meeple selector */
+  .meeple-opts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .meeple-opt { background: var(--bg3); border: 1px solid var(--border); padding: 5px 10px; cursor: pointer; border-radius: 3px; font-size: 11px; transition: all 0.15s; }
+  .meeple-opt.active { border-color: var(--accent); color: var(--accent); background: rgba(200,169,110,0.08); }
+  .meeple-opt:hover { border-color: var(--muted); }
+  .meeple-count { font-size: 10px; color: var(--muted); margin-top: 6px; }
+
+  /* Speed control */
+  .speed-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .speed-row label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  input[type=range] { flex: 1; accent-color: var(--accent2); }
+  .speed-val { font-size: 11px; color: var(--accent2); min-width: 50px; text-align: right; }
+
+  /* Status bar */
+  #statusBar { font-size: 11px; color: var(--muted); padding: 4px 0; }
+  #statusBar span { color: var(--text); }
+
+  /* Tooltip */
+  #tooltip { position: fixed; background: var(--bg3); border: 1px solid var(--border); padding: 6px 10px; font-size: 11px; pointer-events: none; display: none; z-index: 100; border-radius: 3px; max-width: 220px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><span>CARCASSONNE</span> · evaluador de jugadas</div>
+  <div class="badge-mcts">MCTS v2</div>
+</header>
+
+<div class="layout">
+  <!-- Board + controls -->
+  <div class="board-area">
+    <div class="controls">
+      <div class="tile-preview">
+        <canvas id="tilePreview" width="60" height="60"></canvas>
+        <div class="tile-info">
+          <strong id="tileTypeName">—</strong>
+          <span id="tileDesc">Siguiente ficha</span>
+        </div>
+      </div>
+      <button onclick="rotateTile()">⟳ Rotar</button>
+      <button id="btnEval" class="primary" onclick="runMCTSEvaluation()" disabled>▶ Evaluar jugada</button>
+      <button onclick="undoMove()">↩ Deshacer</button>
+      <button onclick="newGame()">⊕ Nueva partida</button>
+    </div>
+
+    <div id="statusBar">Coloca la primera ficha · <span id="tilesLeft">72</span> fichas restantes</div>
+
+    <canvas id="board" width="700" height="480"></canvas>
+
+    <div class="mcts-bar-wrap">
+      <div class="mcts-label">
+        <span>Simulaciones MCTS</span>
+        <span id="simCount">0 / 0</span>
+      </div>
+      <div class="mcts-bar"><div class="mcts-fill" id="mctsFill"></div></div>
+      <div id="mctsStatus"></div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <!-- Scores -->
+    <div class="sidebar-section" style="padding:0">
+      <div class="scores">
+        <div class="score-box">
+          <div class="score-num" id="scoreYou" style="color:var(--accent)">0</div>
+          <div class="score-lbl">Tú</div>
+        </div>
+        <div class="score-box">
+          <div class="score-num" id="scoreOpp" style="color:var(--accent2)">0</div>
+          <div class="score-lbl">Rival</div>
+        </div>
+        <div class="score-box">
+          <div class="score-num" id="tilesLeftSide" style="color:var(--muted)">72</div>
+          <div class="score-lbl">Fichas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Meeple placement -->
+    <div class="sidebar-section">
+      <h3>Meeple a colocar</h3>
+      <div class="meeple-opts">
+        <div class="meeple-opt active" onclick="setMeeple('none',this)">Sin meeple</div>
+        <div class="meeple-opt" onclick="setMeeple('city',this)">Ciudad</div>
+        <div class="meeple-opt" onclick="setMeeple('road',this)">Camino</div>
+        <div class="meeple-opt" onclick="setMeeple('monastery',this)">Monasterio</div>
+        <div class="meeple-opt" onclick="setMeeple('farm',this)">Granja</div>
+      </div>
+      <div class="meeple-count">Meeples disponibles: <span id="meeplesLeft" style="color:var(--accent)">7</span> / 7</div>
+    </div>
+
+    <!-- MCTS settings -->
+    <div class="sidebar-section">
+      <h3>Configuración MCTS</h3>
+      <div class="speed-row">
+        <label>Simulaciones</label>
+        <input type="range" id="simSlider" min="100" max="2000" step="100" value="600" oninput="updateSimLabel()">
+        <span class="speed-val" id="simLabel">600</span>
+      </div>
+      <div class="speed-row">
+        <label>Exploración UCB1 (C)</label>
+        <input type="range" id="ucbSlider" min="1" max="20" step="1" value="7" oninput="updateUcbLabel()">
+        <span class="speed-val" id="ucbLabel">√7 ≈ 2.6</span>
+      </div>
+    </div>
+
+    <!-- Quality output -->
+    <div class="sidebar-section">
+      <h3>Calidad de jugada</h3>
+      <div class="quality-display">
+        <div class="quality-score" id="qualityScore" style="color:var(--muted)">—</div>
+        <div class="quality-label" id="qualityLabel" style="color:var(--muted)">pendiente</div>
+        <div class="quality-bar"><div class="quality-bar-fill" id="qualityFill" style="width:0%;background:var(--muted)"></div></div>
+        <div class="breakdown" id="breakdown"></div>
+      </div>
+    </div>
+
+    <!-- Suggestion -->
+    <div class="sidebar-section">
+      <h3>Jugada óptima (MCTS)</h3>
+      <div class="suggestion" id="suggestion">Ejecuta la evaluación para ver la jugada recomendada.</div>
+    </div>
+
+    <!-- History -->
+    <div class="history">
+      <h3>Historial</h3>
+      <div id="historyList"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// TILE DEFINITIONS (17 types, base set)
+// Each tile: N/E/S/W edges (C=city, R=road, F=field, G=gate)
+// special: shield, monastery, crossroad
+// ─────────────────────────────────────────────
+const TILE_TYPES = [
+  { id:'monastery_field',  name:'Monasterio', desc:'Solo campos',           edges:['F','F','F','F'], monastery:true,  count:4  },
+  { id:'monastery_road',   name:'Monast.+Camino', desc:'Monasterio con camino S', edges:['F','F','R','F'], monastery:true,  count:2  },
+  { id:'city_full',        name:'Ciudad llena', desc:'Ciudad completa',     edges:['C','C','C','C'], city:true,       count:1  },
+  { id:'city_3sides',      name:'Ciudad 3 lados', desc:'Ciudad N/E/W',     edges:['C','C','F','C'], city:true,       count:3  },
+  { id:'city_3sides_road', name:'Ciudad+Camino', desc:'Ciudad N/E/W + camino S', edges:['C','C','R','C'], city:true, count:1  },
+  { id:'city_top',         name:'Ciudad N',    desc:'Ciudad al norte',      edges:['C','F','F','F'], city:true,       count:5  },
+  { id:'city_top_road_lr', name:'Ciudad N + cruze', desc:'Ciudad N + camino E/W', edges:['C','R','F','R'], city:true, count:3 },
+  { id:'city_top_road_r',  name:'Ciudad N + camino E', desc:'Ciudad N + camino E/S', edges:['C','R','R','F'], city:true, count:3 },
+  { id:'road_straight',    name:'Camino recto', desc:'Camino E/W',          edges:['F','R','F','R'], road:true,       count:8  },
+  { id:'road_corner',      name:'Camino curva', desc:'Camino N/E (curva)',   edges:['R','R','F','F'], road:true,       count:9  },
+  { id:'road_t',           name:'Camino T',    desc:'Cruce en T (E/S/W)',   edges:['F','R','R','R'], crossroad:true,  count:4  },
+  { id:'road_cross',       name:'Cruce',       desc:'Cruce E/N/S/W',        edges:['R','R','R','R'], crossroad:true,  count:1  },
+  { id:'city_two_opp',     name:'Ciudades opuestas', desc:'Ciudad N y S',   edges:['C','F','C','F'], city:true,       count:3  },
+  { id:'city_two_adj',     name:'Ciudades adyacentes', desc:'Ciudad N y E', edges:['C','C','F','F'], city:true,       count:2  },
+  { id:'city_tunnel',      name:'Túnel ciudad', desc:'Ciudad N/S con caminos', edges:['C','R','C','R'], city:true, road:true, count:2 },
+  { id:'city_shield',      name:'Ciudad escudo', desc:'Ciudad N con escudo', edges:['C','F','F','F'], city:true, shield:true, count:2 },
+  { id:'city_3_shield',    name:'Ciudad 3 + escudo', desc:'Ciudad N/E/W con escudo', edges:['C','C','F','C'], city:true, shield:true, count:2 },
+];
+
+// Build deck
+function buildDeck() {
+  const deck = [];
+  for (const t of TILE_TYPES) {
+    for (let i = 0; i < (t.count || 1); i++) deck.push({...t});
+  }
+  // Shuffle
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+// ─────────────────────────────────────────────
+// GAME STATE
+// ─────────────────────────────────────────────
+const DIRS = ['N','E','S','W'];
+const OPP  = {N:'S', E:'W', S:'N', W:'E'};
+const DROW = {N:-1, E:0, S:1, W:0};
+const DCOL = {N:0,  E:1, S:0, W:-1};
+
+let state = null;
+
+function edgeAt(tile, dir, rot) {
+  const dirs = ['N','E','S','W'];
+  const idx = (dirs.indexOf(dir) + 4 - rot) % 4;
+  return tile.edges[idx];
+}
+
+function initState() {
+  const deck = buildDeck();
+  // Start tile: city_top in center
+  const startIdx = deck.findIndex(t => t.id === 'city_top');
+  const startTile = deck.splice(startIdx, 1)[0];
+  return {
+    board: { '0,0': { tile: startTile, rot: 0, meeple: null, player: null } },
+    deck,
+    scores: [0, 0],
+    meeples: [7, 7],
+    currentPlayer: 0,
+    history: [],
+    turn: 1,
+    gameOver: false,
+  };
+}
+
+// ─────────────────────────────────────────────
+// LEGAL MOVES
+// ─────────────────────────────────────────────
+function getLegalMoves(st, tile) {
+  const moves = [];
+  const occupied = new Set(Object.keys(st.board));
+  const candidates = new Set();
+
+  for (const key of occupied) {
+    const [r, c] = key.split(',').map(Number);
+    for (const dir of DIRS) {
+      const nr = r + DROW[dir], nc = c + DCOL[dir];
+      const nk = `${nr},${nc}`;
+      if (!occupied.has(nk)) candidates.add(nk);
+    }
+  }
+
+  for (const pos of candidates) {
+    const [r, c] = pos.split(',').map(Number);
+    for (let rot = 0; rot < 4; rot++) {
+      if (canPlace(st, tile, r, c, rot)) {
+        // Base move: no meeple
+        moves.push({ row: r, col: c, rot, meeple: null, pos });
+        // Moves with meeple (only if player has meeples)
+        if (st.meeples[st.currentPlayer] > 0) {
+          const features = getFeaturesOnTile(tile, rot);
+          for (const feat of features) {
+            moves.push({ row: r, col: c, rot, meeple: feat, pos });
+          }
+        }
+      }
+    }
+  }
+  return moves;
+}
+
+function canPlace(st, tile, r, c, rot) {
+  for (const dir of DIRS) {
+    const nr = r + DROW[dir], nc = c + DCOL[dir];
+    const nk = `${nr},${nc}`;
+    if (st.board[nk]) {
+      const neighborTile = st.board[nk].tile;
+      const neighborRot  = st.board[nk].rot;
+      const myEdge  = edgeAt(tile, dir, rot);
+      const oppEdge = edgeAt(neighborTile, OPP[dir], neighborRot);
+      if (myEdge !== oppEdge) return false;
+    }
+  }
+  return true;
+}
+
+function getFeaturesOnTile(tile, rot) {
+  const features = [];
+  const edges = ['N','E','S','W'].map(d => edgeAt(tile, d, rot));
+  if (edges.some(e => e === 'C')) features.push('city');
+  if (edges.some(e => e === 'R')) features.push('road');
+  if (tile.monastery) features.push('monastery');
+  if (!tile.monastery && edges.every(e => e === 'F')) features.push('farm');
+  return [...new Set(features)];
+}
+
+// ─────────────────────────────────────────────
+// SCORING HEURISTIC (fast, used inside MCTS)
+// ─────────────────────────────────────────────
+function heuristicScore(st, playerIdx) {
+  let score = st.scores[playerIdx];
+
+  // Bonus for latent features (incomplete but with meeple) - simplified
+  for (const [key, cell] of Object.entries(st.board)) {
+    if (cell.meeple && cell.player === playerIdx) {
+      if (cell.meeple === 'city')  score += 3;
+      if (cell.meeple === 'road')  score += 1.5;
+      if (cell.meeple === 'monastery') score += 4;
+      if (cell.meeple === 'farm') score += 2;
+    }
+  }
+
+  // Penalise stranded meeples (few tiles left)
+  const tilesLeft = st.deck.length;
+  if (tilesLeft < 10) {
+    score -= (7 - st.meeples[playerIdx]) * 0.5;
+  }
+
+  return score;
+}
+
+// ─────────────────────────────────────────────
+// APPLY MOVE (returns new state, immutable)
+// ─────────────────────────────────────────────
+function applyMove(st, move, tile) {
+  const newBoard = { ...st.board };
+  newBoard[move.pos] = { tile, rot: move.rot, meeple: move.meeple, player: st.currentPlayer };
+
+  const newMeeples = [...st.meeples];
+  if (move.meeple) newMeeples[st.currentPlayer]--;
+
+  const newScores = [...st.scores];
+  // Immediate points: check if any adjacent feature closes (simplified)
+  const pts = immediatePoints(newBoard, move, tile);
+  newScores[st.currentPlayer] += pts.points;
+  // Return meeples for closed features
+  for (const freed of pts.freedMeeples) {
+    newMeeples[freed]++;
+  }
+
+  const newDeck = [...st.deck];
+  const nextPlayer = 1 - st.currentPlayer;
+
+  return {
+    board: newBoard,
+    deck: newDeck,
+    scores: newScores,
+    meeples: newMeeples,
+    currentPlayer: nextPlayer,
+    history: st.history,
+    turn: st.turn + 1,
+    gameOver: newDeck.length === 0,
+  };
+}
+
+function immediatePoints(board, move, tile) {
+  // Simplified: detect if placing this tile closes a road/city
+  let points = 0;
+  const freed = [];
+
+  // Check if this tile closes any adjacent city (all neighbors match C edges)
+  const [r, c] = [move.row, move.col];
+  let cityClosed = true;
+  let citySize = 1;
+  const cityEdges = ['N','E','S','W'].filter(d => edgeAt(tile, d, move.rot) === 'C');
+  for (const dir of cityEdges) {
+    const nr = r + DROW[dir], nc = c + DCOL[dir];
+    const nk = `${nr},${nc}`;
+    if (!board[nk] || edgeAt(board[nk].tile, OPP[dir], board[nk].rot) !== 'C') {
+      cityClosed = false;
+    } else {
+      citySize++;
+    }
+  }
+  if (cityClosed && cityEdges.length > 0) {
+    points += citySize * 2;
+    if (tile.shield) points += 2;
+    freed.push(0); // simplified: return current player meeple
+  }
+
+  // Road closure simplified
+  const roadEdges = ['N','E','S','W'].filter(d => edgeAt(tile, d, move.rot) === 'R');
+  if (roadEdges.length >= 2) {
+    let roadClosed = true;
+    for (const dir of roadEdges) {
+      const nr = r + DROW[dir], nc = c + DCOL[dir];
+      const nk = `${nr},${nc}`;
+      if (!board[nk]) { roadClosed = false; break; }
+    }
+    if (roadClosed) {
+      points += roadEdges.length + 1;
+    }
+  }
+
+  return { points, freedMeeples: freed };
+}
+
+// ─────────────────────────────────────────────
+// MCTS IMPLEMENTATION
+// ─────────────────────────────────────────────
+class MCTSNode {
+  constructor(state, move, parent, tile) {
+    this.state  = state;
+    this.move   = move;    // move that led here
+    this.parent = parent;
+    this.tile   = tile;
+    this.children = [];
+    this.wins   = 0;
+    this.visits = 0;
+    this.untriedMoves = null;
+  }
+
+  ucb1(C) {
+    if (this.visits === 0) return Infinity;
+    return (this.wins / this.visits) + C * Math.sqrt(Math.log(this.parent.visits) / this.visits);
+  }
+
+  bestChild(C) {
+    return this.children.reduce((best, child) =>
+      child.ucb1(C) > best.ucb1(C) ? child : best, this.children[0]);
+  }
+
+  isFullyExpanded() {
+    return this.untriedMoves !== null && this.untriedMoves.length === 0;
+  }
+}
+
+async function runMCTS(rootState, rootTile, iterations, ucbC, progressCb) {
+  const root = new MCTSNode(rootState, null, null, rootTile);
+  root.untriedMoves = getLegalMoves(rootState, rootTile);
+
+  if (root.untriedMoves.length === 0) return null;
+
+  const batchSize = 50;
+  for (let i = 0; i < iterations; i++) {
+    if (i % batchSize === 0) {
+      progressCb(i, iterations);
+      await new Promise(r => setTimeout(r, 0)); // yield to UI
+    }
+
+    // 1. Selection
+    let node = root;
+    while (!node.state.gameOver && node.isFullyExpanded() && node.children.length > 0) {
+      node = node.bestChild(ucbC);
+    }
+
+    // 2. Expansion
+    if (!node.state.gameOver) {
+      if (node.untriedMoves === null) {
+        const t = node.state.deck.length > 0 ? node.state.deck[0] : rootTile;
+        node.untriedMoves = getLegalMoves(node.state, t);
+      }
+      if (node.untriedMoves.length > 0) {
+        const moveIdx = Math.floor(Math.random() * node.untriedMoves.length);
+        const move = node.untriedMoves.splice(moveIdx, 1)[0];
+        const t = node.state.deck.length > 0 ? node.state.deck[0] : rootTile;
+        const newState = applyMove(node.state, move, t);
+        const child = new MCTSNode(newState, move, node, t);
+        child.untriedMoves = newState.gameOver ? [] : getLegalMoves(newState, newState.deck[0] || t);
+        node.children.push(child);
+        node = child;
+      }
+    }
+
+    // 3. Simulation (playout)
+    const result = simulate(node.state, node.tile);
+
+    // 4. Backpropagation
+    let n = node;
+    while (n !== null) {
+      n.visits++;
+      // Win from root player's perspective
+      if (result[rootState.currentPlayer] > result[1 - rootState.currentPlayer]) {
+        n.wins++;
+      }
+      n = n.parent;
+    }
+  }
+
+  progressCb(iterations, iterations);
+
+  // Return ranked moves with win rates
+  const moveResults = root.children.map(child => ({
+    move: child.move,
+    winRate: child.visits > 0 ? child.wins / child.visits : 0,
+    visits: child.visits,
+  }));
+  moveResults.sort((a, b) => b.winRate - a.winRate);
+
+  return { root, moveResults };
+}
+
+function simulate(st, tile) {
+  // Random playout from this state
+  let simState = { ...st, deck: [...st.deck], scores: [...st.scores], meeples: [...st.meeples] };
+  let simTile = tile;
+  let depth = 0;
+
+  while (!simState.gameOver && depth < 20) {
+    const moves = getLegalMoves(simState, simTile);
+    if (moves.length === 0) break;
+    const move = moves[Math.floor(Math.random() * moves.length)];
+    simState = applyMove(simState, move, simTile);
+    if (simState.deck.length > 0) {
+      simTile = simState.deck[Math.floor(Math.random() * simState.deck.length)];
+    }
+    depth++;
+  }
+
+  // Return heuristic scores for both players
+  return [
+    heuristicScore(simState, 0),
+    heuristicScore(simState, 1),
+  ];
+}
+
+// ─────────────────────────────────────────────
+// UI STATE
+// ─────────────────────────────────────────────
+const CELL = 60;
+let offsetR = 3, offsetC = 3;
+let selectedMeeple = 'none';
+let lastEvalResult = null;
+let pendingMove = null;
+let isEvaluating = false;
+
+// Draw a single tile on a canvas context
+const EDGE_COLOR = { C: '#8b6914', R: '#aaa', F: '#2d5a1b', G: '#555' };
+const EDGE_BG    = { C: '#c9a230', R: '#ddd', F: '#4a8c2a', G: '#777' };
+
+function drawTile(ctx, tile, rot, x, y, size, alpha=1, highlight=false) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Base fill
+  const hasCity = tile.edges.some(e => e === 'C');
+  const hasRoad = tile.edges.some(e => e === 'R');
+  ctx.fillStyle = tile.monastery ? '#3a2810' : (hasCity ? '#1a1208' : '#111b0e');
+  ctx.fillRect(x, y, size, size);
+
+  if (highlight) {
+    ctx.strokeStyle = '#c8a96e';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x+1, y+1, size-2, size-2);
+  }
+
+  const cx = x + size/2, cy = y + size/2;
+  const dirs = ['N','E','S','W'];
+
+  for (let i = 0; i < 4; i++) {
+    const dir = dirs[(i + rot) % 4];
+    const orig = tile.edges[i];
+    const color = EDGE_BG[orig] || '#666';
+
+    ctx.fillStyle = color;
+    const ep = size * 0.12;
+    const ew = size * 0.28;
+    if (dir === 'N') ctx.fillRect(cx - ew/2, y, ew, ep);
+    if (dir === 'S') ctx.fillRect(cx - ew/2, y+size-ep, ew, ep);
+    if (dir === 'W') ctx.fillRect(x, cy - ew/2, ep, ew);
+    if (dir === 'E') ctx.fillRect(x+size-ep, cy - ew/2, ep, ew);
+  }
+
+  // Monastery symbol
+  if (tile.monastery) {
+    ctx.fillStyle = '#8b6914';
+    ctx.font = `${size*0.35}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('✝', cx, cy);
+  }
+
+  // Shield
+  if (tile.shield) {
+    ctx.fillStyle = '#c9a230';
+    ctx.font = `${size*0.22}px serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⚔', cx - size*0.12, cy - size*0.18);
+  }
+
+  ctx.restore();
+}
+
+function drawMeeple(ctx, x, y, size, color) {
+  ctx.save();
+  ctx.fillStyle = color || '#c8a96e';
+  ctx.beginPath();
+  ctx.arc(x, y - size*0.08, size*0.10, 0, Math.PI*2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x - size*0.09, y + size*0.22);
+  ctx.lineTo(x + size*0.09, y + size*0.22);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+const canvas  = document.getElementById('board');
+const ctx     = canvas.getContext('2d');
+const tpCanvas = document.getElementById('tilePreview');
+const tpCtx    = tpCanvas.getContext('2d');
+
+let currentRot = 0;
+
+function drawBoard() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#0d0d0d';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Grid dots
+  ctx.fillStyle = '#1e1e1e';
+  for (let r = 0; r < Math.ceil(canvas.height/CELL)+1; r++) {
+    for (let c = 0; c < Math.ceil(canvas.width/CELL)+1; c++) {
+      ctx.fillRect(c*CELL - 1, r*CELL - 1, 2, 2);
+    }
+  }
+
+  // Valid placement hints
+  if (state && !state.gameOver) {
+    const tile = state.deck[0];
+    if (tile) {
+      const legal = getLegalMoves(state, tile);
+      const legalPositions = new Set(legal.map(m => m.pos));
+      ctx.fillStyle = 'rgba(200,169,110,0.06)';
+      for (const pos of legalPositions) {
+        const [r, c] = pos.split(',').map(Number);
+        const px = (c + offsetC) * CELL, py = (r + offsetR) * CELL;
+        ctx.fillRect(px, py, CELL, CELL);
+        ctx.strokeStyle = 'rgba(200,169,110,0.15)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(px, py, CELL, CELL);
+      }
+    }
+  }
+
+  if (!state) return;
+
+  // Placed tiles
+  for (const [key, cell] of Object.entries(state.board)) {
+    const [r, c] = key.split(',').map(Number);
+    const px = (c + offsetC) * CELL, py = (r + offsetR) * CELL;
+
+    const isLastMove = pendingMove && pendingMove.pos === key;
+    drawTile(ctx, cell.tile, cell.rot, px, py, CELL, 1, isLastMove);
+
+    if (cell.meeple) {
+      const mcolor = cell.player === 0 ? '#c8a96e' : '#7c6fcd';
+      drawMeeple(ctx, px + CELL/2, py + CELL/2, CELL, mcolor);
+    }
+  }
+
+  // Best move highlight from MCTS
+  if (lastEvalResult && lastEvalResult.bestMove) {
+    const bm = lastEvalResult.bestMove;
+    const px = (bm.col + offsetC) * CELL, py = (bm.row + offsetR) * CELL;
+    ctx.save();
+    ctx.strokeStyle = '#7c6fcd';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(px+1, py+1, CELL-2, CELL-2);
+    ctx.restore();
+  }
+}
+
+function drawTilePreview() {
+  tpCtx.clearRect(0, 0, 60, 60);
+  if (!state || !state.deck[0]) return;
+  drawTile(tpCtx, state.deck[0], currentRot, 0, 0, 60);
+}
+
+function updateTileInfo() {
+  if (!state || !state.deck[0]) return;
+  const t = state.deck[0];
+  document.getElementById('tileTypeName').textContent = t.name;
+  document.getElementById('tileDesc').textContent = t.desc;
+}
+
+// ─────────────────────────────────────────────
+// INTERACTION
+// ─────────────────────────────────────────────
+canvas.addEventListener('click', (e) => {
+  if (!state || state.gameOver || isEvaluating) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const c = Math.floor(mx / CELL) - offsetC;
+  const r = Math.floor(my / CELL) - offsetR;
+  const pos = `${r},${c}`;
+
+  const tile = state.deck[0];
+  if (!tile) return;
+
+  if (!canPlace(state, tile, r, c, currentRot)) {
+    setStatus('Colocación inválida — los bordes no coinciden.', true);
+    return;
+  }
+
+  const meeple = selectedMeeple !== 'none' ? selectedMeeple : null;
+  if (meeple && state.meeples[state.currentPlayer] <= 0) {
+    setStatus('No tienes meeples disponibles.', true);
+    return;
+  }
+
+  const move = { row: r, col: c, rot: currentRot, meeple, pos };
+  pendingMove = { pos };
+
+  // Store move for evaluation
+  const tileForMove = state.deck.shift();
+  const newState = applyMove(state, move, tileForMove);
+
+  // Record in history placeholder
+  state.history.push({ move, tile: tileForMove, scoreBefore: [...state.scores] });
+  Object.assign(state, newState);
+  state.history = newState.history.length > 0 ? newState.history : state.history;
+
+  updateUI();
+  document.getElementById('btnEval').disabled = false;
+  setStatus(`Turno ${state.turn} · ficha colocada en (${r}, ${c}) · ${state.deck.length} restantes`);
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  if (!state || isEvaluating) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const c = Math.floor(mx / CELL) - offsetC;
+  const r = Math.floor(my / CELL) - offsetR;
+  const pos = `${r},${c}`;
+
+  const tt = document.getElementById('tooltip');
+  if (state.board[pos]) {
+    const cell = state.board[pos];
+    tt.style.display = 'block';
+    tt.style.left = (e.clientX + 14) + 'px';
+    tt.style.top  = (e.clientY - 20) + 'px';
+    tt.innerHTML = `<strong>${cell.tile.name}</strong><br>${cell.tile.desc}${cell.meeple ? `<br>Meeple: ${cell.meeple}` : ''}`;
+  } else {
+    tt.style.display = 'none';
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  document.getElementById('tooltip').style.display = 'none';
+});
+
+function rotateTile() {
+  currentRot = (currentRot + 1) % 4;
+  drawTilePreview();
+}
+
+function setMeeple(type, el) {
+  selectedMeeple = type;
+  document.querySelectorAll('.meeple-opt').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function updateSimLabel() {
+  document.getElementById('simLabel').textContent = document.getElementById('simSlider').value;
+}
+
+function updateUcbLabel() {
+  const v = parseInt(document.getElementById('ucbSlider').value);
+  document.getElementById('ucbLabel').textContent = `√${v} ≈ ${Math.sqrt(v).toFixed(1)}`;
+}
+
+// ─────────────────────────────────────────────
+// MCTS EVALUATION
+// ─────────────────────────────────────────────
+async function runMCTSEvaluation() {
+  if (isEvaluating || !state || state.deck.length === 0) return;
+  isEvaluating = true;
+  document.getElementById('btnEval').disabled = true;
+
+  const iterations = parseInt(document.getElementById('simSlider').value);
+  const ucbC = Math.sqrt(parseInt(document.getElementById('ucbSlider').value));
+
+  // Reconstruct the state BEFORE the last move for evaluation
+  const lastEntry = state.history[state.history.length - 1];
+  if (!lastEntry) { isEvaluating = false; return; }
+
+  // Build pre-move state
+  const preMoveState = {
+    board: {},
+    deck: [lastEntry.tile, ...state.deck],
+    scores: [...lastEntry.scoreBefore],
+    meeples: [7, 7], // simplified
+    currentPlayer: 0,
+    history: [],
+    turn: state.turn - 1,
+    gameOver: false,
+  };
+  // Reconstruct board without last move
+  for (const [k, v] of Object.entries(state.board)) {
+    if (k !== lastEntry.move.pos) preMoveState.board[k] = v;
+  }
+
+  document.getElementById('mctsStatus').textContent = 'Iniciando simulaciones…';
+  document.getElementById('mctsFill').style.width = '0%';
+  document.getElementById('simCount').textContent = `0 / ${iterations}`;
+
+  const result = await runMCTS(
+    preMoveState,
+    lastEntry.tile,
+    iterations,
+    ucbC,
+    (done, total) => {
+      const pct = Math.round(done / total * 100);
+      document.getElementById('mctsFill').style.width = pct + '%';
+      document.getElementById('simCount').textContent = `${done} / ${total}`;
+      document.getElementById('mctsStatus').textContent = `Explorando árbol de jugadas… ${pct}%`;
+    }
+  );
+
+  if (!result) {
+    document.getElementById('mctsStatus').textContent = 'Sin jugadas legales disponibles.';
+    isEvaluating = false;
+    return;
+  }
+
+  // Find your move in results
+  const yourMove = lastEntry.move;
+  const yourResult = result.moveResults.find(r =>
+    r.move.row === yourMove.row &&
+    r.move.col === yourMove.col &&
+    r.move.rot === yourMove.rot
+  );
+
+  const bestMoveResult = result.moveResults[0];
+  const yourWinRate = yourResult ? yourResult.winRate : 0;
+  const bestWinRate = bestMoveResult ? bestMoveResult.winRate : 0;
+
+  const ratio = bestWinRate > 0 ? yourWinRate / bestWinRate : 0;
+  const pct = Math.round(ratio * 100);
+
+  // Quality classification
+  let qLabel, qColor;
+  if (pct >= 90)       { qLabel = 'Excelente';    qColor = '#7c6fcd'; }
+  else if (pct >= 70)  { qLabel = 'Buena';        qColor = '#1a6699'; }
+  else if (pct >= 50)  { qLabel = 'Regular';      qColor = '#8a7a20'; }
+  else if (pct >= 30)  { qLabel = 'Mala';         qColor = '#c07830'; }
+  else                 { qLabel = 'Error grave';  qColor = '#c0392b'; }
+
+  // Update quality display
+  document.getElementById('qualityScore').textContent = pct + '%';
+  document.getElementById('qualityScore').style.color = qColor;
+  document.getElementById('qualityLabel').textContent = qLabel;
+  document.getElementById('qualityLabel').style.color = qColor;
+  document.getElementById('qualityFill').style.width  = pct + '%';
+  document.getElementById('qualityFill').style.background = qColor;
+
+  // Breakdown
+  const yourVisits = yourResult ? yourResult.visits : 0;
+  document.getElementById('breakdown').innerHTML = `
+    <div class="breakdown-row"><span>Tu tasa de victoria</span><span>${(yourWinRate*100).toFixed(1)}%</span></div>
+    <div class="breakdown-row"><span>Jugada óptima</span><span>${(bestWinRate*100).toFixed(1)}%</span></div>
+    <div class="breakdown-row"><span>Simulaciones jugada</span><span>${yourVisits}</span></div>
+    <div class="breakdown-row"><span>Alternativas exploradas</span><span>${result.moveResults.length}</span></div>
+  `;
+
+  // Suggestion
+  const bm = bestMoveResult ? bestMoveResult.move : null;
+  lastEvalResult = { bestMove: bm };
+  if (bm) {
+    const meepleStr = bm.meeple ? ` + meeple en ${bm.meeple}` : ' (sin meeple)';
+    const rotName   = ['↑','→','↓','←'][bm.rot];
+    document.getElementById('suggestion').innerHTML = bm.row === yourMove.row && bm.col === yourMove.col
+      ? `<strong>¡Jugaste la mejor posición!</strong> Considera la colocación de meeple.`
+      : `<strong>Jugada sugerida:</strong> posición (${bm.row}, ${bm.col}) orientación ${rotName}${meepleStr}.<br><br>Tasa de victoria esperada: <strong>${(bestWinRate*100).toFixed(1)}%</strong> vs tu ${(yourWinRate*100).toFixed(1)}%.`;
+  }
+
+  // Add to history
+  addHistoryItem(state.turn - 1, lastEntry.tile, qLabel, qColor, pct, yourMove);
+
+  document.getElementById('mctsStatus').textContent = `✓ Evaluación completa · ${result.moveResults.length} jugadas analizadas`;
+  drawBoard(); // highlight best move
+
+  isEvaluating = false;
+}
+
+function addHistoryItem(turn, tile, label, color, pct, move) {
+  const list = document.getElementById('historyList');
+  const div = document.createElement('div');
+  div.className = 'history-item';
+  div.innerHTML = `
+    <div class="history-header">
+      <span class="history-turn">Turno ${turn} · ${tile.name}</span>
+      <span class="history-badge" style="background:${color}22;color:${color};border:1px solid ${color}44">${label}</span>
+    </div>
+    <div class="history-tip">(${move.row},${move.col}) · ${['N','E','S','W'][move.rot]} · ${move.meeple || 'sin meeple'} · ${pct}% del óptimo</div>
+  `;
+  list.insertBefore(div, list.firstChild);
+}
+
+// ─────────────────────────────────────────────
+// GAME MANAGEMENT
+// ─────────────────────────────────────────────
+function newGame() {
+  state = initState();
+  currentRot = 0;
+  pendingMove = null;
+  lastEvalResult = null;
+  isEvaluating = false;
+  selectedMeeple = 'none';
+  document.querySelectorAll('.meeple-opt').forEach((e,i) => e.classList.toggle('active', i===0));
+  document.getElementById('historyList').innerHTML = '';
+  document.getElementById('qualityScore').textContent = '—';
+  document.getElementById('qualityScore').style.color = 'var(--muted)';
+  document.getElementById('qualityLabel').textContent = 'pendiente';
+  document.getElementById('qualityLabel').style.color = 'var(--muted)';
+  document.getElementById('qualityFill').style.width = '0%';
+  document.getElementById('breakdown').innerHTML = '';
+  document.getElementById('suggestion').textContent = 'Ejecuta la evaluación para ver la jugada recomendada.';
+  document.getElementById('mctsFill').style.width = '0%';
+  document.getElementById('simCount').textContent = '0 / 0';
+  document.getElementById('mctsStatus').textContent = '';
+  document.getElementById('btnEval').disabled = true;
+  updateUI();
+}
+
+function undoMove() {
+  if (!state || state.history.length === 0) return;
+  const last = state.history.pop();
+  // Remove tile from board
+  delete state.board[last.move.pos];
+  state.deck.unshift(last.tile);
+  state.scores = [...last.scoreBefore];
+  state.currentPlayer = 0;
+  state.turn--;
+  if (last.move.meeple) state.meeples[0]++;
+  pendingMove = null;
+  lastEvalResult = null;
+  document.getElementById('btnEval').disabled = true;
+  updateUI();
+}
+
+function updateUI() {
+  drawBoard();
+  drawTilePreview();
+  updateTileInfo();
+
+  const tilesLeft = state ? state.deck.length : 72;
+  document.getElementById('tilesLeft').textContent = tilesLeft;
+  document.getElementById('tilesLeftSide').textContent = tilesLeft;
+  document.getElementById('scoreYou').textContent = state ? state.scores[0] : 0;
+  document.getElementById('scoreOpp').textContent = state ? state.scores[1] : 0;
+  document.getElementById('meeplesLeft').textContent = state ? state.meeples[0] : 7;
+}
+
+function setStatus(msg, warn=false) {
+  const bar = document.getElementById('statusBar');
+  bar.innerHTML = msg;
+  bar.style.color = warn ? 'var(--orange)' : 'var(--muted)';
+}
+
+// ─────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────
+newGame();
+</script>
+</body>
+</html>
