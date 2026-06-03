@@ -328,41 +328,49 @@ function makeTheremin(padEl,fmin,baseOct,octaves,color){
     const osc=new Tone.Oscillator({type:'sawtooth',frequency:fmin}).connect(og);osc.start();
     const sub=new Tone.Oscillator({type:'sine',frequency:fmin/2}).connect(sg);sub.start();
     const cur=document.createElement('div');cur.className='tcursor';padEl.appendChild(cur);
-    voices.push({osc,sub,filt,env,cur,pid:null,t:0});
+    voices.push({osc,sub,filt,env,cur,pid:null,t:0,tx:0,ty:0,dirty:false});
   }
-  const byPid=new Map();let order=0,moves=0;
+  const byPid=new Map();let order=0,moves=0,rafId=0;
 
-  function setVoice(v,xf,yf,attack){
-    const freq=fmin*Math.pow(2,(xf*tot)/12);
-    const cut=180*Math.pow(22,1-yf);
-    const gl=attack?0.008:0.05;
-    v.osc.frequency.rampTo(freq,gl);v.sub.frequency.rampTo(freq/2,gl);
-    v.filt.frequency.rampTo(cut,0.03);
-    v.cur.style.left=(xf*100)+'%';v.cur.style.top=(yf*100)+'%';
+  /* cache pad geometry; recompute only on resize/touch-start (avoids per-move layout reads) */
+  let rect=padEl.getBoundingClientRect();
+  function refreshRect(){rect=padEl.getBoundingClientRect();}
+  addEventListener('resize',refreshRect,{passive:true});
+
+  function applyVoice(v){
+    const freq=fmin*Math.pow(2,(v.tx*tot)/12);
+    const cut=180*Math.pow(22,1-v.ty);
+    v.osc.frequency.rampTo(freq,0.05);v.sub.frequency.rampTo(freq/2,0.05);
+    v.filt.frequency.rampTo(cut,0.04);
+    v.cur.style.left=(v.tx*100)+'%';v.cur.style.top=(v.ty*100)+'%';
     read.textContent=noteName(freq);
   }
-  function pos(e){const r=padEl.getBoundingClientRect();
-    let xf=(e.clientX-r.left)/r.width;xf=Math.max(0,Math.min(1,xf));
-    let yf=(e.clientY-r.top)/r.height;yf=Math.max(0,Math.min(1,yf));return{xf,yf};}
-  function alloc(pid){
-    let v=voices.find(v=>v.pid===null);
-    if(!v){v=voices.reduce((a,b)=>a.t<b.t?a:b);byPid.delete(v.pid);}  /* steal oldest */
-    v.pid=pid;v.t=++order;byPid.set(pid,v);return v;
+  /* one batched update per animation frame, for all fingers at once */
+  function flush(){
+    rafId=0;let any=false;
+    for(const v of voices){if(v.pid!==null){any=true;if(v.dirty){applyVoice(v);v.dirty=false;}}}
+    if(any)rafId=requestAnimationFrame(flush);
   }
+  function pump(){if(!rafId)rafId=requestAnimationFrame(flush);}
+  const cx=e=>Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+  const cy=e=>Math.max(0,Math.min(1,(e.clientY-rect.top)/rect.height));
+  function alloc(pid){let v=voices.find(v=>v.pid===null);if(!v){v=voices.reduce((a,b)=>a.t<b.t?a:b);byPid.delete(v.pid);}v.pid=pid;v.t=++order;byPid.set(pid,v);return v;}
+
   padEl.addEventListener('pointerdown',async e=>{
-    e.preventDefault();await unlockAudio();
+    e.preventDefault();await unlockAudio();refreshRect();
     padEl.setPointerCapture(e.pointerId);
-    const v=alloc(e.pointerId),p=pos(e);
-    setVoice(v,p.xf,p.yf,true);v.env.triggerAttack();v.cur.classList.add('on');pop(color,0.7);
+    const v=alloc(e.pointerId);v.tx=cx(e);v.ty=cy(e);
+    const freq=fmin*Math.pow(2,(v.tx*tot)/12),cut=180*Math.pow(22,1-v.ty);
+    v.osc.frequency.rampTo(freq,0.008);v.sub.frequency.rampTo(freq/2,0.008);v.filt.frequency.rampTo(cut,0.02);
+    v.cur.style.left=(v.tx*100)+'%';v.cur.style.top=(v.ty*100)+'%';read.textContent=noteName(freq);
+    v.env.triggerAttack();v.cur.classList.add('on');pop(color,0.7);v.dirty=false;pump();
   });
   padEl.addEventListener('pointermove',e=>{
-    const v=byPid.get(e.pointerId);if(!v)return;const p=pos(e);setVoice(v,p.xf,p.yf,false);
-    if((moves++&7)===0)pop(color,0.22);
-  });
-  function endP(e){
     const v=byPid.get(e.pointerId);if(!v)return;
-    v.env.triggerRelease();v.cur.classList.remove('on');v.pid=null;byPid.delete(e.pointerId);
-  }
+    v.tx=cx(e);v.ty=cy(e);v.dirty=true;pump();
+    if((moves++&15)===0)pop(color,0.2);
+  });
+  function endP(e){const v=byPid.get(e.pointerId);if(!v)return;v.env.triggerRelease();v.cur.classList.remove('on');v.pid=null;v.dirty=false;byPid.delete(e.pointerId);}
   padEl.addEventListener('pointerup',endP);
   padEl.addEventListener('pointercancel',endP);
 }
