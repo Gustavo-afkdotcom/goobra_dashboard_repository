@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Configuración · Agente Inmobiliario WhatsApp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#f4efe4;
+    --card:#fdfbf6;
+    --ink:#1c1a16;
+    --ink-soft:#56514a;
+    --ink-faint:#8a847a;
+    --brick:#b34a2f;
+    --brick-deep:#8f3a23;
+    --line:#ddd5c4;
+    --line-soft:#e9e3d6;
+    --ok:#4f6f47;
+    --ok-bg:#f0f3eb;
+    --shadow:0 1px 2px rgba(28,26,22,.04),0 8px 24px rgba(28,26,22,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Hanken Grotesk',sans-serif;
+    background:
+      radial-gradient(1200px 600px at 100% -10%, #efe7d6 0%, transparent 60%),
+      var(--paper);
+    color:var(--ink);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+    padding:32px 18px 90px;
+  }
+  .wrap{max-width:760px;margin:0 auto}
+
+  /* Header */
+  header{margin-bottom:34px}
+  .eyebrow{
+    font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--brick);margin-bottom:10px;display:flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"";width:26px;height:1.5px;background:var(--brick)}
+  h1{
+    font-family:'Fraunces',serif;font-weight:600;font-size:clamp(30px,6vw,44px);
+    line-height:1.05;letter-spacing:-.01em;margin-bottom:14px;
+  }
+  h1 em{font-style:italic;color:var(--brick-deep)}
+  .lede{font-size:15.5px;color:var(--ink-soft);max-width:62ch}
+  .lede strong{color:var(--ink);font-weight:600}
+  .badge-op{
+    display:inline-flex;align-items:center;gap:7px;margin-top:18px;
+    background:var(--ink);color:var(--paper);font-size:12.5px;font-weight:600;
+    letter-spacing:.04em;padding:7px 14px;border-radius:100px;
+  }
+  .badge-op .dot{width:7px;height:7px;border-radius:50%;background:#7fbf6a}
+
+  /* Sections */
+  section{
+    background:var(--card);border:1px solid var(--line);border-radius:16px;
+    padding:26px 24px;margin-top:18px;box-shadow:var(--shadow);
+  }
+  .sec-head{display:flex;align-items:baseline;gap:13px;margin-bottom:6px}
+  .sec-num{
+    font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:var(--brick);
+    border:1.5px solid var(--brick);border-radius:8px;
+    width:30px;height:30px;display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;transform:translateY(-2px);
+  }
+  .sec-head h2{font-family:'Fraunces',serif;font-weight:600;font-size:21px;letter-spacing:-.01em}
+  .sec-sub{font-size:13.5px;color:var(--ink-faint);margin:0 0 20px 43px}
+
+  /* Grid + fields */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 18px}
+  .grid .full{grid-column:1/-1}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+  .field{display:flex;flex-direction:column;gap:6px}
+  label{font-size:13px;font-weight:600;color:var(--ink-soft);display:flex;align-items:center;gap:6px}
+  label .hint{font-weight:400;color:var(--ink-faint);font-size:11.5px}
+  .req{color:var(--brick);font-size:11px;font-weight:700}
+  input,select,textarea{
+    font-family:inherit;font-size:14.5px;color:var(--ink);
+    background:#fff;border:1px solid var(--line);border-radius:9px;
+    padding:10px 12px;transition:border-color .15s,box-shadow .15s;width:100%;
+  }
+  textarea{resize:vertical;min-height:64px;line-height:1.45}
+  input:focus,select:focus,textarea:focus{
+    outline:none;border-color:var(--brick);box-shadow:0 0 0 3px rgba(179,74,47,.12);
+  }
+  input::placeholder,textarea::placeholder{color:#b9b2a6}
+  .note{
+    font-size:12.5px;color:var(--ink-soft);background:#f7f2e6;
+    border-left:3px solid var(--brick);border-radius:0 8px 8px 0;
+    padding:9px 13px;margin-top:4px;
+  }
+
+  /* Checkbox groups */
+  .checks{display:flex;flex-wrap:wrap;gap:9px;margin-top:2px}
+  .chk{
+    display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none;
+    border:1px solid var(--line);background:#fff;border-radius:100px;
+    padding:8px 14px;font-size:13.5px;color:var(--ink-soft);transition:all .15s;
+  }
+  .chk:hover{border-color:#c9bfac}
+  .chk input{width:auto;margin:0;accent-color:var(--brick)}
+  .chk:has(input:checked){background:#fbeee9;border-color:var(--brick);color:var(--brick-deep);font-weight:600}
+
+  /* Conditional */
+  .cond{display:none}
+  .cond.show{display:flex}
+
+  /* Generate */
+  .actions{margin-top:30px;text-align:center}
+  .btn{
+    font-family:'Hanken Grotesk',sans-serif;font-size:15.5px;font-weight:600;
+    cursor:pointer;border:none;border-radius:11px;padding:15px 34px;
+    transition:transform .12s,box-shadow .2s,background .2s;
+  }
+  .btn-primary{
+    background:var(--brick);color:#fff;letter-spacing:.01em;
+    box-shadow:0 6px 18px rgba(179,74,47,.28);
+  }
+  .btn-primary:hover{background:var(--brick-deep);transform:translateY(-1px);box-shadow:0 10px 26px rgba(179,74,47,.34)}
+  .btn-primary:active{transform:translateY(0)}
+
+  /* Output */
+  #output{display:none;margin-top:26px;animation:rise .4s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  .out-card{background:#14130f;border-radius:16px;overflow:hidden;box-shadow:0 14px 40px rgba(20,19,15,.3)}
+  .out-top{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 18px;background:#1d1b16;border-bottom:1px solid #2c2920;
+  }
+  .out-title{color:#f4efe4;font-size:13.5px;font-weight:600;display:flex;align-items:center;gap:9px}
+  .out-title .dotrow{display:flex;gap:6px}
+  .out-title .dotrow i{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .copy-btn{
+    background:#2c2920;color:#e8e2d4;border:1px solid #3a362b;border-radius:8px;
+    font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;
+    padding:7px 14px;transition:all .15s;
+  }
+  .copy-btn:hover{background:#3a362b;color:#fff}
+  .copy-btn.done{background:var(--ok);border-color:var(--ok);color:#fff}
+  pre{
+    margin:0;padding:18px 20px;overflow-x:auto;max-height:440px;
+    font-family:'SFMono-Regular',ui-monospace,'Menlo',monospace;
+    font-size:12.5px;line-height:1.65;color:#d7d2c4;
+  }
+  .json-key{color:#e89b7a}.json-str{color:#a8c98f}.json-num{color:#e0c068}.json-bool{color:#7fb4d4}.json-null{color:#888}
+  .out-foot{font-size:13.5px;color:var(--ink-soft);text-align:center;margin-top:14px}
+  .out-foot strong{color:var(--ink)}
+
+  /* Missing warning */
+  .warn{
+    display:none;margin-top:16px;font-size:13.5px;color:var(--brick-deep);
+    background:#fbeee9;border:1px solid #ecc8bb;border-radius:10px;padding:12px 16px;
+  }
+  .warn.show{display:block}
+  .warn b{font-weight:700}
+  .invalid{border-color:var(--brick)!important;box-shadow:0 0 0 3px rgba(179,74,47,.12)!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Agente Inmobiliario · WhatsApp</div>
+    <h1>Ficha del <em>inmueble</em> para configurar tu agente</h1>
+    <p class="lede">Llena lo que sepas de este apartamento. Al final, el formulario genera un <strong>JSON limpio</strong> que pegas de vuelta en el chat — de ahí salen la base de datos y el cerebro del agente sin transcribir nada. Lo que dejes vacío, el agente sabrá que no debe inventarlo.</p>
+    <span class="badge-op"><span class="dot"></span>Operación: ARRIENDO</span>
+  </header>
+
+  <!-- A. IDENTIFICACIÓN -->
+  <section>
+    <div class="sec-head"><span class="sec-num">A</span><h2>Identificación del inmueble</h2></div>
+    <p class="sec-sub">Cómo lo reconoce el sistema y dónde queda.</p>
+    <div class="grid">
+      <div class="field">
+        <label>Código interno <span class="req">obligatorio</span></label>
+        <input id="codigo" placeholder="APT-001">
+      </div>
+      <div class="field">
+        <label>Barrio <span class="req">obligatorio</span></label>
+        <input id="barrio" placeholder="Ciudad Montes">
+      </div>
+      <div class="field">
+        <label>Localidad</label>
+        <input id="localidad" placeholder="Puente Aranda">
+      </div>
+      <div class="field">
+        <label>Dirección exacta <span class="hint">(privada)</span></label>
+        <input id="direccion" placeholder="Calle 00 # 00-00, Apto 000">
+      </div>
+      <div class="field full">
+        <label>Link del recorrido virtual 3D <span class="req">obligatorio</span></label>
+        <input id="recorrido_3d" placeholder="https://my.matterport.com/show/?m=...">
+      </div>
+      <div class="field full">
+        <label>Link de ubicación aproximada <span class="hint">(Google Maps — zona, no dirección exacta)</span></label>
+        <input id="ubicacion" placeholder="https://maps.app.goo.gl/...">
+      </div>
+      <div class="full">
+        <p class="note">El agente <b>no comparte la dirección exacta</b> hasta que el lead califique. Antes de eso solo da barrio/zona y el recorrido 3D.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- B. CARACTERÍSTICAS -->
+  <section>
+    <div class="sec-head"><span class="sec-num">B</span><h2>Características físicas</h2></div>
+    <p class="sec-sub">Lo primero que todo el mundo pregunta.</p>
+    <div class="grid">
+      <div class="field"><label>Área (m²) <span class="req">obligatorio</span></label><input id="area" type="number" placeholder="62"></div>
+      <div class="field"><label>Alcobas <span class="req">obligatorio</span></label><input id="alcobas" type="number" placeholder="3"></div>
+      <div class="field"><label>Baños <span class="req">obligatorio</span></label><input id="banos" type="number" placeholder="2"></div>
+      <div class="field">
+        <label>Parqueadero</label>
+        <select id="parqueadero">
+          <option value="No">Sin parqueadero</option>
+          <option value="1">1 parqueadero</option>
+          <option value="2">2 parqueaderos</option>
+          <option value="3+">3 o más</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Depósito / bodega</label>
+        <select id="deposito"><option value="No">No</option><option value="Sí">Sí</option></select>
+      </div>
+      <div class="field">
+        <label>Amoblado</label>
+        <select id="amoblado"><option value="No">No</option><option value="Parcial">Parcial</option><option value="Sí">Sí</option></select>
+      </div>
+      <div class="field"><label>Piso en que está</label><input id="piso" type="number" placeholder="4"></div>
+      <div class="field"><label>Total de pisos del edificio</label><input id="total_pisos" type="number" placeholder="8"></div>
+      <div class="field">
+        <label>Estado</label>
+        <select id="estado"><option value="Usado">Usado</option><option value="Remodelado">Remodelado</option><option value="Nuevo">Nuevo</option></select>
+      </div>
+      <div class="field"><label>Año aprox. <span class="hint">(opcional)</span></label><input id="anio" type="number" placeholder="2015"></div>
+      <div class="field full"><label>Acabados destacados <span class="hint">(qué resaltarías)</span></label><textarea id="acabados" placeholder="Pisos en porcelanato, cocina integral, closets en madera, ventanal con luz natural..."></textarea></div>
+    </div>
+  </section>
+
+  <!-- C. COSTOS -->
+  <section>
+    <div class="sec-head"><span class="sec-num">C</span><h2>Costos y estrato</h2></div>
+    <p class="sec-sub">Lo que define la decisión. El estrato manda en Colombia.</p>
+    <div class="grid">
+      <div class="field"><label>Canon de arriendo / mes (COP) <span class="req">obligatorio</span></label><input id="canon" type="number" placeholder="2200000"></div>
+      <div class="field"><label>Administración / mes (COP)</label><input id="administracion" type="number" placeholder="350000"></div>
+      <div class="field">
+        <label>Estrato <span class="req">obligatorio</span></label>
+        <select id="estrato">
+          <option value="">—</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>¿Canon negociable?</label>
+        <select id="negociable" onchange="toggleNeg()"><option value="No">No</option><option value="Sí">Sí</option></select>
+      </div>
+      <div class="field cond" id="negWrap">
+        <label>Canon mínimo que autorizas (COP) <span class="hint">(el agente NUNCA baja de aquí)</span></label>
+        <input id="canon_min" type="number" placeholder="2000000">
+      </div>
+      <div class="field full"><label>¿Qué incluye la administración?</label><input id="admin_incluye" placeholder="Vigilancia, aseo de zonas comunes, agua..."></div>
+    </div>
+  </section>
+
+  <!-- D. CONDICIONES DE ARRIENDO -->
+  <section>
+    <div class="sec-head"><span class="sec-num">D</span><h2>Condiciones del arriendo</h2></div>
+    <p class="sec-sub">Lo que filtra a quién le sirve y a quién no.</p>
+    <div class="grid">
+      <div class="field full">
+        <label>Garantía exigida <span class="hint">(marca las que apliquen)</span></label>
+        <div class="checks" id="garantia">
+          <label class="chk"><input type="checkbox" value="Seguro de arrendamiento">Seguro de arrendamiento</label>
+          <label class="chk"><input type="checkbox" value="Codeudor con finca raíz">Codeudor con finca raíz</label>
+          <label class="chk"><input type="checkbox" value="Póliza / fianza">Póliza o fianza</label>
+          <label class="chk"><input type="checkbox" value="Depósito">Depósito</label>
+        </div>
+      </div>
+      <div class="field">
+        <label>¿Mascotas?</label>
+        <select id="mascotas"><option value="No">No se permiten</option><option value="Sí">Sí</option><option value="Con condiciones">Con condiciones</option></select>
+      </div>
+      <div class="field"><label>Duración mínima del contrato</label><input id="duracion" placeholder="12 meses"></div>
+      <div class="field"><label>Incremento anual</label><input id="incremento" value="IPC" placeholder="IPC"></div>
+      <div class="field"><label>Disponible desde</label><input id="disponible" placeholder="Inmediato / 1 de julio"></div>
+    </div>
+  </section>
+
+  <!-- E. EDIFICIO Y ENTORNO -->
+  <section>
+    <div class="sec-head"><span class="sec-num">E</span><h2>Edificio y entorno</h2></div>
+    <p class="sec-sub">Lo que vende el estilo de vida, no solo el apto.</p>
+    <div class="grid">
+      <div class="field full">
+        <label>Amenidades del edificio</label>
+        <div class="checks" id="amenidades">
+          <label class="chk"><input type="checkbox" value="Ascensor">Ascensor</label>
+          <label class="chk"><input type="checkbox" value="Vigilancia 24h">Vigilancia 24h</label>
+          <label class="chk"><input type="checkbox" value="Portería">Portería</label>
+          <label class="chk"><input type="checkbox" value="Gimnasio">Gimnasio</label>
+          <label class="chk"><input type="checkbox" value="Salón comunal">Salón comunal</label>
+          <label class="chk"><input type="checkbox" value="Zona BBQ">Zona BBQ</label>
+          <label class="chk"><input type="checkbox" value="Parqueadero visitantes">Parqueo visitantes</label>
+          <label class="chk"><input type="checkbox" value="Zona infantil">Zona infantil</label>
+          <label class="chk"><input type="checkbox" value="Terraza / rooftop">Terraza/rooftop</label>
+          <label class="chk"><input type="checkbox" value="Coworking">Coworking</label>
+        </div>
+      </div>
+      <div class="field full"><label>Transporte cercano <span class="hint">(TransMilenio / SITP)</span></label><input id="transporte" placeholder="A 3 cuadras de estación...; rutas SITP sobre la Av..."></div>
+      <div class="field full"><label>Puntos de interés cercanos</label><textarea id="puntos" placeholder="Centro comercial, colegios, parque, supermercados, clínicas..."></textarea></div>
+    </div>
+  </section>
+
+  <!-- F. CONFIGURACIÓN DEL AGENTE -->
+  <section>
+    <div class="sec-head"><span class="sec-num">F</span><h2>Comportamiento del agente</h2></div>
+    <p class="sec-sub">Cómo se presenta, cómo agenda y cuándo te avisa.</p>
+    <div class="grid">
+      <div class="field"><label>Nombre del agente</label><input id="agente_nombre" placeholder="Sofía"></div>
+      <div class="field"><label>A quién representa</label><input id="representa" placeholder="el propietario / Inmobiliaria X"></div>
+      <div class="field">
+        <label>Tono</label>
+        <select id="tono"><option value="Cercano y cálido">Cercano y cálido</option><option value="Profesional y formal">Profesional y formal</option><option value="Directo y breve">Directo y breve</option></select>
+      </div>
+      <div class="field"><label>Tu nombre <span class="hint">(para confirmar la visita)</span></label><input id="tu_nombre" placeholder="Gustavo"></div>
+      <div class="field full"><label>Canal de aviso para ti <span class="hint">(dónde te llega el lead)</span></label><input id="escalamiento" placeholder="Telegram @usuario / WhatsApp +57..."></div>
+
+      <div class="field">
+        <label>Día de visita disponible <span class="req">obligatorio</span></label>
+        <select id="dia_visita">
+          <option value="">—</option>
+          <option>Lunes</option><option>Martes</option><option>Miércoles</option><option>Jueves</option><option>Viernes</option><option value="Sábado" selected>Sábado</option><option>Domingo</option>
+        </select>
+      </div>
+      <div class="field"><label>Franja horaria de ese día</label><input id="franja" placeholder="9:00 a.m. – 12:00 m."></div>
+
+      <div class="full">
+        <p class="note"><b>Lógica de agenda:</b> el agente propone el día disponible. Si al lead le sirve → confirma la visita. Si no → pregunta qué día/hora le queda mejor y la marca <b>«pendiente de confirmación»</b>, avisándote por tu canal. Puedes ajustar esta lógica abajo.</p>
+      </div>
+      <div class="field full"><label>Ajustes a la lógica de agenda <span class="hint">(opcional)</span></label><textarea id="agenda_extra" placeholder="Ej: nunca agendar festivos; máximo 3 visitas el mismo día; confirmar siempre por la mañana..."></textarea></div>
+    </div>
+  </section>
+
+  <!-- G. CALIFICACIÓN DE LEADS -->
+  <section>
+    <div class="sec-head"><span class="sec-num">G</span><h2>Calificación del lead</h2></div>
+    <p class="sec-sub">Qué debe averiguar el agente antes de dar dirección o agendar.</p>
+    <div class="grid">
+      <div class="field full">
+        <label>Datos que el agente debe pedir</label>
+        <div class="checks" id="calificacion">
+          <label class="chk"><input type="checkbox" value="Presupuesto" checked>Presupuesto</label>
+          <label class="chk"><input type="checkbox" value="Fecha de mudanza" checked>Fecha de mudanza</label>
+          <label class="chk"><input type="checkbox" value="¿Tiene codeudor o seguro?" checked>¿Codeudor/seguro?</label>
+          <label class="chk"><input type="checkbox" value="Número de personas">N° de personas</label>
+          <label class="chk"><input type="checkbox" value="¿Tiene mascotas?">¿Mascotas?</label>
+          <label class="chk"><input type="checkbox" value="Motivo de la búsqueda">Motivo</label>
+        </div>
+      </div>
+      <div class="full">
+        <label class="chk" style="display:inline-flex"><input type="checkbox" id="exige_calificar" checked>Exigir calificación antes de dar la dirección exacta o agendar</label>
+      </div>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="generar()">Generar configuración →</button>
+    <div class="warn" id="warn"></div>
+  </div>
+
+  <!-- OUTPUT -->
+  <div id="output">
+    <div class="out-card">
+      <div class="out-top">
+        <span class="out-title">
+          <span class="dotrow"><i style="background:#e06b5a"></i><i style="background:#e8c060"></i><i style="background:#7fbf6a"></i></span>
+          agente-config.json
+        </span>
+        <button class="copy-btn" id="copyBtn" onclick="copiar()">Copiar JSON</button>
+      </div>
+      <pre id="jsonOut"></pre>
+    </div>
+    <p class="out-foot">Listo. <strong>Copia esto y pégalo en el chat</strong> — armo el esquema de Supabase y el system prompt del agente con estos datos.</p>
+  </div>
+
+</div>
+
+<script>
+  let lastJSON = "";
+
+  function toggleNeg(){
+    document.getElementById('negWrap').classList.toggle('show', document.getElementById('negociable').value === 'Sí');
+  }
+
+  const val = id => document.getElementById(id).value.trim();
+  const num = id => { const v = val(id); return v === '' ? null : Number(v); };
+  const checks = id => [...document.querySelectorAll('#'+id+' input:checked')].map(c=>c.value);
+
+  function generar(){
+    // --- validación de obligatorios ---
+    const required = [
+      ['codigo','Código interno'],['barrio','Barrio'],['recorrido_3d','Link recorrido 3D'],
+      ['area','Área'],['alcobas','Alcobas'],['banos','Baños'],
+      ['canon','Canon'],['estrato','Estrato'],['dia_visita','Día de visita']
+    ];
+    document.querySelectorAll('.invalid').forEach(e=>e.classList.remove('invalid'));
+    const missing = required.filter(([id])=>!val(id));
+    const warn = document.getElementById('warn');
+    if(missing.length){
+      missing.forEach(([id])=>document.getElementById(id).classList.add('invalid'));
+      warn.innerHTML = '<b>Faltan campos obligatorios:</b> ' + missing.map(m=>m[1]).join(', ') + '.';
+      warn.classList.add('show');
+      document.getElementById(id_first(missing)).scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    warn.classList.remove('show');
+
+    const data = {
+      meta: { operacion: "arriendo", codigo: val('codigo') },
+      inmueble: {
+        barrio: val('barrio'),
+        localidad: val('localidad') || null,
+        direccion_exacta: val('direccion') || null,
+        recorrido_3d: val('recorrido_3d'),
+        ubicacion_aproximada: val('ubicacion') || null,
+        area_m2: num('area'),
+        alcobas: num('alcobas'),
+        banos: num('banos'),
+        parqueadero: val('parqueadero'),
+        deposito: val('deposito'),
+        amoblado: val('amoblado'),
+        piso: num('piso'),
+        total_pisos: num('total_pisos'),
+        estado: val('estado'),
+        anio: num('anio'),
+        acabados: val('acabados') || null
+      },
+      costos: {
+        canon_mensual: num('canon'),
+        administracion: num('administracion'),
+        admin_incluye: val('admin_incluye') || null,
+        estrato: num('estrato'),
+        negociable: val('negociable') === 'Sí',
+        canon_minimo: val('negociable') === 'Sí' ? num('canon_min') : null
+      },
+      condiciones_arriendo: {
+        garantia: checks('garantia'),
+        mascotas: val('mascotas'),
+        duracion_minima: val('duracion') || null,
+        incremento_anual: val('incremento') || null,
+        disponible_desde: val('disponible') || null
+      },
+      edificio_entorno: {
+        amenidades: checks('amenidades'),
+        transporte: val('transporte') || null,
+        puntos_interes: val('puntos') || null
+      },
+      agente: {
+        nombre: val('agente_nombre') || null,
+        representa: val('representa') || null,
+        tono: val('tono'),
+        responsable: val('tu_nombre') || null,
+        canal_aviso: val('escalamiento') || null,
+        agenda: {
+          dia_disponible: val('dia_visita'),
+          franja: val('franja') || null,
+          logica: "Propone el día disponible. Si sirve, confirma. Si no, pregunta cuándo y deja 'pendiente de confirmación' avisando al responsable.",
+          ajustes: val('agenda_extra') || null
+        }
+      },
+      calificacion: {
+        datos_a_pedir: checks('calificacion'),
+        exigir_antes_de_direccion: document.getElementById('exige_calificar').checked
+      }
+    };
+
+    lastJSON = JSON.stringify(data, null, 2);
+    document.getElementById('jsonOut').innerHTML = highlight(lastJSON);
+    document.getElementById('output').style.display = 'block';
+    document.getElementById('output').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function id_first(missing){ return missing[0][0]; }
+
+  function highlight(json){
+    return json
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, m=>{
+        let cls='json-num';
+        if(/^"/.test(m)) cls = /:$/.test(m) ? 'json-key' : 'json-str';
+        else if(/true|false/.test(m)) cls='json-bool';
+        else if(/null/.test(m)) cls='json-null';
+        return '<span class="'+cls+'">'+m+'</span>';
+      });
+  }
+
+  function copiar(){
+    navigator.clipboard.writeText(lastJSON).then(()=>{
+      const b = document.getElementById('copyBtn');
+      b.textContent = '✓ Copiado';
+      b.classList.add('done');
+      setTimeout(()=>{ b.textContent='Copiar JSON'; b.classList.remove('done'); }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
