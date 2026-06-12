@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#04101e"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>GiroVuelo — vuela con la física del giroscopio</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#04101e;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#eaf6ff;
+    touch-action:none;-webkit-user-select:none;user-select:none;}
+  #c{position:fixed;inset:0;display:block;}
+
+  /* ---------- pantalla de inicio ---------- */
+  #overlay{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:14px;padding:18px;text-align:center;
+    background:radial-gradient(ellipse at 50% 30%,rgba(20,60,100,.92),rgba(4,12,24,.97));}
+  #overlay h1{margin:0;font-size:clamp(34px,7vw,64px);letter-spacing:.12em;font-weight:800;
+    background:linear-gradient(90deg,#56e0ff,#aef7c1);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  #overlay .sub{margin:0;opacity:.85;font-size:clamp(13px,2.6vw,17px);max-width:560px;}
+  #howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;max-width:760px;width:100%;}
+  #howto div{background:rgba(255,255,255,.06);border:1px solid rgba(120,220,255,.18);
+    border-radius:12px;padding:9px 12px;font-size:clamp(12px,2.4vw,14px);text-align:left;line-height:1.35;}
+  #fisica{font-size:clamp(11px,2.2vw,13px);opacity:.65;max-width:640px;font-style:italic;}
+  #btnStart{margin-top:4px;font-size:clamp(18px,4vw,24px);font-weight:700;letter-spacing:.08em;
+    padding:14px 44px;border-radius:999px;border:none;color:#04222e;cursor:pointer;
+    background:linear-gradient(90deg,#56e0ff,#7df0a8);box-shadow:0 0 28px rgba(86,224,255,.45);}
+  #btnStart:active{transform:scale(.96);}
+  #sensWarn{display:none;color:#ffd06b;font-size:13px;max-width:560px;}
+
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;z-index:10;pointer-events:none;display:none;}
+  .panel{position:absolute;background:rgba(4,18,34,.45);border:1px solid rgba(120,220,255,.25);
+    border-radius:10px;padding:6px 10px;backdrop-filter:blur(3px);font-variant-numeric:tabular-nums;}
+  #pEnergy{top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:44%;min-width:220px;}
+  #pEnergy label,#pRotor label{font-size:10px;letter-spacing:.15em;opacity:.75;display:block;margin-bottom:3px;}
+  .bar{height:10px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden;}
+  .bar i{display:block;height:100%;width:100%;border-radius:6px;transition:width .15s linear;}
+  #eFill{background:linear-gradient(90deg,#ff5d5d,#ffd05d 35%,#7df0a8 70%);}
+  #rFill{background:linear-gradient(90deg,#3aa7ff,#56e0ff);}
+  #pScore{top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));font-size:13px;}
+  #pScore b{font-size:18px;color:#aef7c1;}
+  #pNav{bottom:max(12px,env(safe-area-inset-bottom));left:max(10px,env(safe-area-inset-left));font-size:12px;line-height:1.5;}
+  #pNav b{font-size:17px;color:#56e0ff;}
+  #pRotor{bottom:max(12px,env(safe-area-inset-bottom));right:max(10px,env(safe-area-inset-right));width:150px;}
+  #calBtn{position:absolute;bottom:max(12px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+    pointer-events:auto;background:rgba(4,18,34,.55);border:1px solid rgba(120,220,255,.4);color:#bfeaff;
+    border-radius:999px;padding:7px 18px;font-size:12px;letter-spacing:.12em;}
+  .zoneHint{position:absolute;top:50%;transform:translateY(-50%);font-size:12px;letter-spacing:.1em;
+    opacity:.55;transition:opacity 1s;background:rgba(4,18,34,.4);padding:8px 10px;border-radius:10px;}
+  #hintL{left:max(10px,env(safe-area-inset-left));}
+  #hintR{right:max(10px,env(safe-area-inset-right));text-align:right;}
+  #kbHint{position:absolute;top:calc(max(10px,env(safe-area-inset-top)) + 44px);left:50%;transform:translateX(-50%);
+    font-size:11px;opacity:.7;background:rgba(4,18,34,.5);padding:5px 12px;border-radius:8px;display:none;white-space:nowrap;}
+  #flash{position:fixed;inset:0;z-index:15;pointer-events:none;background:#ff3030;opacity:0;transition:opacity .5s;}
+  #msg{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);font-size:clamp(18px,4vw,28px);
+    font-weight:700;color:#aef7c1;text-shadow:0 0 14px rgba(125,240,168,.7);opacity:0;transition:opacity .4s;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="overlay">
+  <h1>GIROVUELO</h1>
+  <p class="sub">Tu celular es el motor-giroscopio. Agárralo con las dos manos en horizontal, como el manubrio de una moto acuática voladora.</p>
+  <div id="howto">
+    <div>🤲 <b>Agarre:</b> dos manos, pantalla hacia ti, en horizontal.</div>
+    <div>↕️ <b>Subir / bajar:</b> jala el borde superior hacia ti para subir, empújalo para picar.</div>
+    <div>↔️ <b>Girar:</b> ladea el cel como manubrio. ⚠️ Sin RPM en el rotor <b>no hay giro</b> (precesión giroscópica).</div>
+    <div>👍 <b>Pulgar derecho (mantener):</b> potencia — acelera el rotor y gasta energía.</div>
+    <div>👈 <b>Pulgar izquierdo (mantener):</b> freno — frena el rotor y <b>recupera</b> algo de energía.</div>
+    <div>💠 Recoge <b>orbes cian</b> (+energía) y atraviesa <b>anillos dorados</b> (+puntos). Si caes al mar, flotar recarga poco a poco.</div>
+  </div>
+  <p id="fisica">Física: el rotor tiene momento angular L = I·ω. Al inclinar el cel con velocidad angular Ω aplicas un torque τ = Ω × L y el aparato precesa — exactamente como la rueda de bici que hace girar la silla.</p>
+  <button id="btnStart">TOCA PARA VOLAR</button>
+  <p id="sensWarn"></p>
+</div>
+
+<div id="hud">
+  <div class="panel" id="pEnergy"><label>⚡ ENERGÍA</label><div class="bar"><i id="eFill"></i></div></div>
+  <div class="panel" id="pScore">PUNTOS <b id="scoreV">0</b><br><span style="opacity:.6">RÉCORD <span id="bestV">0</span></span></div>
+  <div class="panel" id="pNav"><b id="speedV">0</b> km/h<br>ALT <b id="altV">0</b> m</div>
+  <div class="panel" id="pRotor"><label>🌀 ROTOR <span id="rpmV">0</span>%</label><div class="bar"><i id="rFill"></i></div></div>
+  <button id="calBtn">◎ RECALIBRAR</button>
+  <div class="zoneHint" id="hintL">◐ FRENO<br><small>mantener</small></div>
+  <div class="zoneHint" id="hintR">POTENCIA ◑<br><small>mantener</small></div>
+  <div id="kbHint">Modo teclado: ←→ ladear · ↑↓ subir/bajar · ESPACIO potencia · B freno · R recalibrar</div>
+  <div id="msg"></div>
+</div>
+<div id="flash"></div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+/* ================= parámetros de juego (ajusta a gusto) ================= */
+const P = {
+  rpmMax: 100,        // % rotor
+  spinUp: 38,         // %/s al acelerar
+  rotorDecay: 0.09,   // fracción de RPM que se pierde por segundo (volante de inercia)
+  brakeRate: 55,      // %/s al frenar el rotor
+  regenEff: 0.22,     // energía recuperada por % de RPM frenado
+  thrustMax: 30,      // m/s^2 de empuje a rotor pleno
+  dragK: 0.36,        // arrastre lineal -> vel. máx ≈ thrustMax/dragK
+  brakeDrag: 1.1,     // arrastre extra al frenar
+  gravity: 9.8,
+  stallSpeed: 12,     // por debajo de esto el aparato se hunde
+  sinkMax: 15,        // m/s de caída en pérdida total
+  turnRate: 1.55,     // rad/s de precesión a banqueo pleno y rotor pleno
+  maxBank: THREE.MathUtils.degToRad(55),
+  maxPitch: THREE.MathUtils.degToRad(42),
+  energyMax: 100,
+  costBase: 1.0,      // energía/s con potencia
+  costRpm: 6.0,       // energía/s adicional a rotor pleno
+  orbEnergy: 32,
+  seaCharge: 5,       // energía/s al flotar en el agua (recarga de rescate)
+  world: 1500,        // medio-mundo: pasar el borde te teletransporta al lado opuesto
+};
+
+/* ================= estado ================= */
+const S = {
+  playing:false, sensorMode:false, haveDO:false,
+  pos:new THREE.Vector3(0,90,0), yaw:0, flightPitch:0, bank:0,
+  speed:22, rpm:35, energy:P.energyMax, score:0,
+  best:+(localStorage.getItem('girovuelo_best')||0),
+  prevY:90, floating:false, calib:{bank:0,faceUp:0},
+  kb:{bank:0,pitch:0},
+};
+const input = { throttle:false, brake:false };
+const keys = {};
+
+/* ================= sensores: orientación -> cuaternión ================= */
+const doData = {alpha:0,beta:0,gamma:0};
+window.addEventListener('deviceorientation', e=>{
+  if(e.beta===null || e.gamma===null) return;
+  doData.alpha=e.alpha||0; doData.beta=e.beta; doData.gamma=e.gamma;
+  S.haveDO = true;
+});
+const deviceQuat = new THREE.Quaternion();
+const _eul=new THREE.Euler(), _qA=new THREE.Quaternion(),
+      _qScreen=new THREE.Quaternion(), _zAxis=new THREE.Vector3(0,0,1),
+      _qWorld=new THREE.Quaternion(-Math.SQRT1_2,0,0,Math.SQRT1_2);
+function screenAngle(){
+  if(screen.orientation && typeof screen.orientation.angle==='number') return screen.orientation.angle;
+  return window.orientation||0;
+}
+function computeDeviceQuat(){
+  const d=THREE.MathUtils.degToRad;
+  _eul.set(d(doData.beta), d(doData.alpha), -d(doData.gamma), 'YXZ');
+  deviceQuat.setFromEuler(_eul);
+  deviceQuat.multiply(_qWorld);                                  // cámara mira por detrás de la pantalla
+  deviceQuat.multiply(_qScreen.setFromAxisAngle(_zAxis,-d(screenAngle())));
+}
+const vRight=new THREE.Vector3(), vNormal=new THREE.Vector3();
+function readTilt(){
+  // bank: cuánto se hunde el lado derecho del cel (eje largo en horizontal)
+  // faceUp: cuánto mira la pantalla hacia el cielo
+  computeDeviceQuat();
+  vRight.set(1,0,0).applyQuaternion(deviceQuat);
+  vNormal.set(0,0,1).applyQuaternion(deviceQuat);
+  const clamp=THREE.MathUtils.clamp;
+  return {
+    bank:  -Math.asin(clamp(vRight.y,-1,1)),
+    faceUp: Math.asin(clamp(vNormal.y,-1,1)),
+  };
+}
+function calibrate(){
+  if(S.haveDO){ const t=readTilt(); S.calib.bank=t.bank; S.calib.faceUp=t.faceUp; }
+  S.kb.bank=0; S.kb.pitch=0;
+  showMsg('◎ calibrado');
+}
+
+/* ================= escena ================= */
+const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x8fd3f0);
+scene.fog = new THREE.Fog(0x9fd8ef, 250, 1350);
+const camera = new THREE.PerspectiveCamera(72, 1, .1, 4000);
+camera.rotation.order='YXZ';
+scene.add(camera);
+
+scene.add(new THREE.HemisphereLight(0xcfeeff, 0x2a4858, 1.05));
+const sun = new THREE.DirectionalLight(0xfff2d8, 1.3);
+sun.position.set(300,420,120); scene.add(sun);
+
+// océano con rejilla (sensación de velocidad)
+{
+  const cv=document.createElement('canvas'); cv.width=cv.height=128;
+  const g=cv.getContext('2d');
+  g.fillStyle='#1d6e8f'; g.fillRect(0,0,128,128);
+  g.strokeStyle='rgba(255,255,255,.14)'; g.lineWidth=2;
+  g.strokeRect(0,0,128,128);
+  const tex=new THREE.CanvasTexture(cv);
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+  tex.repeat.set(P.world/22, P.world/22);
+  const sea=new THREE.Mesh(new THREE.PlaneGeometry(P.world*2.6,P.world*2.6),
+    new THREE.MeshLambertMaterial({map:tex}));
+  sea.rotation.x=-Math.PI/2; scene.add(sea);
+}
+
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const spread=()=>rnd(-P.world*.92,P.world*.92);
+
+// islas (con colisión)
+const islands=[];
+for(let i=0;i<26;i++){
+  const r=rnd(30,95), h=rnd(45,170);
+  const m=new THREE.Mesh(new THREE.ConeGeometry(r,h,7),
+    new THREE.MeshLambertMaterial({color:new THREE.Color().setHSL(rnd(.22,.36),.4,.3)}));
+  m.position.set(spread(), h/2-6, spread());
+  scene.add(m);
+  islands.push({x:m.position.x,z:m.position.z,r,h:h-6});
+}
+// nubes
+for(let i=0;i<22;i++){
+  const grp=new THREE.Group();
+  const n=3+(Math.random()*3|0);
+  for(let j=0;j<n;j++){
+    const s=new THREE.Mesh(new THREE.SphereGeometry(rnd(14,30),10,8),
+      new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:.88}));
+    s.position.set(rnd(-30,30),rnd(-6,6),rnd(-18,18)); s.scale.y=.45;
+    grp.add(s);
+  }
+  grp.position.set(spread(), rnd(140,420), spread());
+  scene.add(grp);
+}
+// orbes de energía
+const orbs=[];
+{
+  const geo=new THREE.IcosahedronGeometry(4.4,1);
+  for(let i=0;i<14;i++){
+    const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x4df0ff}));
+    const halo=new THREE.Mesh(new THREE.IcosahedronGeometry(6.2,1),
+      new THREE.MeshBasicMaterial({color:0x4df0ff,transparent:true,opacity:.18}));
+    m.add(halo);
+    m.position.set(spread(),rnd(35,300),spread());
+    scene.add(m); orbs.push(m);
+  }
+}
+// anillos de puntos
+const rings=[];
+{
+  const geo=new THREE.TorusGeometry(10,1.2,8,28);
+  for(let i=0;i<9;i++){
+    const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xffc83c}));
+    m.position.set(spread(),rnd(50,280),spread());
+    m.rotation.y=Math.random()*Math.PI;
+    scene.add(m); rings.push({mesh:m,cool:0});
+  }
+}
+
+// manubrio + rotor visible (pegado a la cámara)
+let rotorDisc;
+{
+  const rig=new THREE.Group();
+  const dark=new THREE.MeshLambertMaterial({color:0x2b3540});
+  const grip=new THREE.MeshLambertMaterial({color:0x10161c});
+  const bar=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,1.7,10),dark);
+  bar.rotation.z=Math.PI/2; rig.add(bar);
+  for(const sx of [-0.78,0.78]){
+    const gm=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.34,10),grip);
+    gm.rotation.z=Math.PI/2; gm.position.x=sx; rig.add(gm);
+  }
+  const pod=new THREE.Mesh(new THREE.CylinderGeometry(.17,.22,.55,12),
+    new THREE.MeshLambertMaterial({color:0x3a4e60}));
+  pod.rotation.x=Math.PI/2; pod.position.z=-.28; rig.add(pod);
+  rotorDisc=new THREE.Group();
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.34,.035,8,28),
+    new THREE.MeshLambertMaterial({color:0x56e0ff}));
+  rotorDisc.add(rim);
+  for(let i=0;i<3;i++){
+    const spoke=new THREE.Mesh(new THREE.BoxGeometry(.66,.045,.03),dark);
+    spoke.rotation.z=i*Math.PI/3; rotorDisc.add(spoke);
+  }
+  rotorDisc.position.z=-.62; rig.add(rotorDisc);
+  rig.position.set(0,-.85,-1.7); rig.rotation.x=.3;
+  camera.add(rig);
+}
+
+function resize(){
+  renderer.setSize(innerWidth,innerHeight);
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize',resize); resize();
+
+/* ================= audio ================= */
+let AC=null,humOsc,humGain,windGain,windFilter;
+function initAudio(){
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    humOsc=AC.createOscillator(); humOsc.type='sawtooth'; humOsc.frequency.value=40;
+    const hf=AC.createBiquadFilter(); hf.type='lowpass'; hf.frequency.value=420;
+    humGain=AC.createGain(); humGain.gain.value=0;
+    humOsc.connect(hf).connect(humGain).connect(AC.destination); humOsc.start();
+    const len=AC.sampleRate*2, buf=AC.createBuffer(1,len,AC.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+    const src=AC.createBufferSource(); src.buffer=buf; src.loop=true;
+    windFilter=AC.createBiquadFilter(); windFilter.type='bandpass'; windFilter.frequency.value=500; windFilter.Q.value=.6;
+    windGain=AC.createGain(); windGain.gain.value=0;
+    src.connect(windFilter).connect(windGain).connect(AC.destination); src.start();
+  }catch(e){ AC=null; }
+}
+function blip(freq,dur=.12,vol=.25){
+  if(!AC) return;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type='sine'; o.frequency.value=freq;
+  g.gain.setValueAtTime(vol,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+dur);
+  o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+dur);
+}
+function updateAudio(){
+  if(!AC) return;
+  const rf=S.rpm/P.rpmMax, sp=Math.min(S.speed/80,1);
+  humOsc.frequency.value=36+rf*190+(input.throttle?14:0);
+  humGain.gain.value=rf*.10+(input.throttle?.03:0);
+  windGain.gain.value=sp*sp*.22;
+  windFilter.frequency.value=380+S.speed*14;
+}
+
+/* ================= entradas táctiles y teclado ================= */
+const pointers=new Map();
+function refreshTouch(){
+  let th=false,br=false;
+  for(const x of pointers.values()){ if(x>innerWidth/2) th=true; else br=true; }
+  input.throttle=th||!!keys.Space;
+  input.brake=br||!!keys.KeyB;
+}
+addEventListener('pointerdown',e=>{
+  if(!S.playing) return;
+  if(e.target.closest('#calBtn')) return;
+  pointers.set(e.pointerId,e.clientX); refreshTouch();
+});
+addEventListener('pointerup',e=>{ pointers.delete(e.pointerId); refreshTouch(); });
+addEventListener('pointercancel',e=>{ pointers.delete(e.pointerId); refreshTouch(); });
+addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='KeyR'&&S.playing) calibrate();
+  if(e.code==='Enter'&&!S.playing) start();
+  refreshTouch();
+});
+addEventListener('keyup',e=>{ keys[e.code]=false; refreshTouch(); });
+document.getElementById('calBtn').addEventListener('pointerdown',e=>{ e.stopPropagation(); calibrate(); });
+
+/* ================= HUD ================= */
+const $=id=>document.getElementById(id);
+const hudEls={e:$('eFill'),r:$('rFill'),rpm:$('rpmV'),sp:$('speedV'),alt:$('altV'),sc:$('scoreV'),be:$('bestV')};
+hudEls.be.textContent=S.best;
+let hudT=0;
+function updateHUD(dt){
+  hudT-=dt; if(hudT>0) return; hudT=.12;
+  hudEls.e.style.width=(S.energy/P.energyMax*100).toFixed(1)+'%';
+  hudEls.r.style.width=S.rpm.toFixed(1)+'%';
+  hudEls.rpm.textContent=S.rpm|0;
+  hudEls.sp.textContent=(S.speed*3.6)|0;
+  hudEls.alt.textContent=S.pos.y|0;
+  hudEls.sc.textContent=S.score;
+  hudEls.be.textContent=S.best;
+}
+let msgT=null;
+function showMsg(t){
+  const m=$('msg'); m.textContent=t; m.style.opacity=1;
+  clearTimeout(msgT); msgT=setTimeout(()=>m.style.opacity=0,1200);
+}
+function flash(){
+  const f=$('flash'); f.style.transition='none'; f.style.opacity=.45;
+  requestAnimationFrame(()=>{ f.style.transition='opacity .5s'; f.style.opacity=0; });
+}
+function addScore(n){
+  S.score+=n;
+  if(S.score>S.best){ S.best=S.score; localStorage.setItem('girovuelo_best',S.best); }
+}
+
+/* ================= física de vuelo ================= */
+const fwd=new THREE.Vector3(), eulTmp=new THREE.Euler(0,0,0,'YXZ');
+const clamp=THREE.MathUtils.clamp;
+
+function physics(dt){
+  /* --- 1. controles --- */
+  let bankIn, pitchIn;
+  if(S.sensorMode && S.haveDO){
+    const t=readTilt();
+    bankIn = clamp(t.bank - S.calib.bank, -P.maxBank, P.maxBank);
+    pitchIn = clamp((S.calib.faceUp - t.faceUp)*1.3, -P.maxPitch, P.maxPitch);
+  }else{
+    const rampB=2.2*dt, rampP=1.8*dt;
+    if(keys.ArrowLeft)  S.kb.bank=clamp(S.kb.bank-rampB,-P.maxBank,P.maxBank);
+    else if(keys.ArrowRight) S.kb.bank=clamp(S.kb.bank+rampB,-P.maxBank,P.maxBank);
+    else S.kb.bank*= (1-3*dt);
+    if(keys.ArrowUp)   S.kb.pitch=clamp(S.kb.pitch+rampP,-P.maxPitch,P.maxPitch);
+    else if(keys.ArrowDown) S.kb.pitch=clamp(S.kb.pitch-rampP,-P.maxPitch,P.maxPitch);
+    else S.kb.pitch*=(1-2.2*dt);
+    bankIn=S.kb.bank; pitchIn=S.kb.pitch;
+  }
+
+  /* --- 2. rotor (volante de inercia) y energía --- */
+  if(input.throttle && S.energy>0){
+    S.rpm=Math.min(S.rpm+P.spinUp*dt,P.rpmMax);
+    S.energy=Math.max(0,S.energy-(P.costBase+P.costRpm*(S.rpm/P.rpmMax))*dt);
+  }
+  if(input.brake && S.rpm>0){
+    const dr=Math.min(S.rpm,P.brakeRate*dt);
+    S.rpm-=dr;
+    S.energy=Math.min(P.energyMax,S.energy+dr*P.regenEff); // freno regenerativo
+  }
+  S.rpm=Math.max(0,S.rpm-S.rpm*P.rotorDecay*dt);
+  const rf=S.rpm/P.rpmMax;
+
+  /* --- 3. actitud: precesión giroscópica ---
+     τ = Ω × L : sin momento angular en el rotor no hay torque de giro,
+     igual que la rueda de bici parada no mueve la silla. */
+  const authority=.25+.75*rf;
+  S.bank += (bankIn-S.bank)*(1-Math.exp(-5*dt));
+  S.flightPitch += (pitchIn-S.flightPitch)*(1-Math.exp(-3.5*dt))*authority;
+  S.yaw += -P.turnRate*Math.sin(S.bank)*rf*dt;
+
+  /* --- 4. velocidad --- */
+  const thrust=(input.throttle&&S.energy>0)?P.thrustMax*rf:0;
+  S.speed += (thrust - P.dragK*S.speed - P.gravity*Math.sin(S.flightPitch)*.6)*dt;
+  if(input.brake) S.speed-=P.brakeDrag*S.speed*dt;
+  S.speed=Math.max(0,S.speed);
+
+  /* --- 5. posición --- */
+  S.prevY=S.pos.y;
+  fwd.set(0,0,-1).applyEuler(eulTmp.set(S.flightPitch,S.yaw,0));
+  S.pos.addScaledVector(fwd,S.speed*dt);
+  const lift=Math.min(S.speed/P.stallSpeed,1);
+  S.pos.y-=P.sinkMax*(1-lift)*dt;                  // pérdida: lento = te hundes
+  if(S.pos.y>850){ S.pos.y=850; S.flightPitch=Math.min(S.flightPitch,0); }
+
+  // mundo toroidal
+  if(S.pos.x> P.world) S.pos.x-=2*P.world; else if(S.pos.x<-P.world) S.pos.x+=2*P.world;
+  if(S.pos.z> P.world) S.pos.z-=2*P.world; else if(S.pos.z<-P.world) S.pos.z+=2*P.world;
+
+  /* --- 6. agua --- */
+  if(S.pos.y<2.5){
+    const vy=(S.pos.y-S.prevY)/dt;
+    const fromAbove=S.prevY>3.0; // evita re-disparar el splash mientras flotas
+    S.pos.y=2.5;
+    if(fromAbove && vy<-13){ // amarizaje brusco
+      S.speed*=.45; S.energy=Math.max(0,S.energy-8);
+      S.flightPitch=Math.max(S.flightPitch,.2);
+      flash(); blip(90,.3,.4); showMsg('💥 ¡splash!');
+    }else{
+      S.speed*=(1-.35*dt); // acuaplaneo: arrastre del agua
+      S.energy=Math.min(P.energyMax,S.energy+P.seaCharge*dt); // el mar recarga
+      if(!S.floating){ S.floating=true; showMsg('🌊 recargando en el agua…'); }
+    }
+  }else S.floating=false;
+  /* --- 7. islas --- */
+  for(const isl of islands){
+    const dx=S.pos.x-isl.x, dz=S.pos.z-isl.z, d=Math.hypot(dx,dz);
+    if(d<isl.r){
+      const hAt=isl.h*(1-d/isl.r);
+      if(S.pos.y<hAt){
+        S.pos.y=hAt+8; S.speed*=.35; S.energy=Math.max(0,S.energy-8);
+        S.flightPitch=.25;
+        flash(); blip(70,.35,.45); showMsg('💥 ¡contra la isla!');
+      }
+    }
+  }
+  /* --- 8. recolectables --- */
+  for(const o of orbs){
+    if(S.pos.distanceToSquared(o.position)<11*11){
+      S.energy=Math.min(P.energyMax,S.energy+P.orbEnergy);
+      addScore(10); blip(880,.15,.3); showMsg('⚡ +energía');
+      o.position.set(spread(),rnd(35,300),spread());
+    }
+  }
+  for(const r of rings){
+    r.cool=Math.max(0,r.cool-dt);
+    if(r.cool<=0 && S.pos.distanceToSquared(r.mesh.position)<12*12){
+      addScore(100); r.cool=2;
+      blip(1320,.2,.32); showMsg('💠 ¡anillo! +100');
+    }
+  }
+
+  /* --- 9. cámara --- */
+  camera.position.copy(S.pos);
+  camera.rotation.set(S.flightPitch,S.yaw,-S.bank);
+}
+
+/* ================= bucle ================= */
+const clock=new THREE.Clock();
+let animT=0;
+function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(clock.getDelta(),.05);
+  animT+=dt;
+  for(let i=0;i<orbs.length;i++){
+    orbs[i].scale.setScalar(1+.16*Math.sin(animT*3+i*1.7));
+    orbs[i].rotation.y+=dt;
+  }
+  for(let i=0;i<rings.length;i++)
+    rings[i].mesh.position.y+=Math.sin(animT*1.2+i)*dt*1.5;
+  rotorDisc.rotation.z+=(S.rpm/P.rpmMax)*42*dt;
+  if(S.playing){ physics(dt); updateHUD(dt); updateAudio(); }
+  else camera.rotation.y+=dt*.04; // paneo suave en el menú
+  renderer.render(scene,camera);
+}
+loop();
+
+/* ================= arranque y permisos ================= */
+async function requestSensors(){
+  try{
+    if(typeof DeviceOrientationEvent!=='undefined' &&
+       typeof DeviceOrientationEvent.requestPermission==='function'){
+      return (await DeviceOrientationEvent.requestPermission())==='granted';
+    }
+  }catch(e){}
+  return true; // Android / escritorio: no requiere permiso explícito
+}
+async function start(){
+  const ok=await requestSensors();
+  initAudio();
+  try{ await document.documentElement.requestFullscreen(); }catch(e){}
+  try{ await screen.orientation.lock('landscape'); }catch(e){}
+  try{ await navigator.wakeLock.request('screen'); }catch(e){}
+  document.getElementById('overlay').style.display='none';
+  document.getElementById('hud').style.display='block';
+  S.playing=true;
+  camera.rotation.set(0,S.yaw,0);
+  // esperar primeras lecturas del sensor para calibrar
+  setTimeout(()=>{
+    S.sensorMode=ok&&S.haveDO;
+    if(S.sensorMode){ calibrate(); }
+    else{
+      document.getElementById('kbHint').style.display='block';
+      showMsg('⌨ modo teclado');
+    }
+  },700);
+  setTimeout(()=>{ $('hintL').style.opacity=0; $('hintR').style.opacity=0; },7000);
+}
+document.getElementById('btnStart').addEventListener('click',start);
+
+// aviso si el contexto no es seguro (los sensores exigen HTTPS)
+if(!window.isSecureContext){
+  const w=document.getElementById('sensWarn');
+  w.style.display='block';
+  w.textContent='⚠️ Esta página no está en HTTPS: el giroscopio no funcionará. Ábrela desde una URL https:// (mira el README).';
+}
+</script>
+</body>
+</html>
