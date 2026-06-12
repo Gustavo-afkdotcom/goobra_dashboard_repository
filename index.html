@@ -1,659 +1,546 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>GO Obra — Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="theme-color" content="#04101e"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>GiroVuelo — vuela con la física del giroscopio</title>
 <style>
-:root{
-  --bg:#0a0a0a;--bg2:#141414;--bg3:#1e1e1e;--bg4:#2a2a2a;
-  --border:#2a2a2a;--border2:#363636;
-  --text:#f0ede8;--text2:#888;--text3:#555;
-  --amber:#e8a020;--amber-dim:rgba(232,160,32,.12);--amber-border:rgba(232,160,32,.25);
-  --red:#c0392b;--red-dim:rgba(192,57,43,.12);--red-border:rgba(192,57,43,.25);
-  --green:#1a7a4a;--green-dim:rgba(26,122,74,.12);--green-border:rgba(26,122,74,.25);
-  --blue:#1a5a8a;--blue-dim:rgba(26,90,138,.15);
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh;}
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#04101e;
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#eaf6ff;
+    touch-action:none;-webkit-user-select:none;user-select:none;}
+  #c{position:fixed;inset:0;display:block;}
 
-/* HEADER */
-.hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 1.5rem;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
-.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:var(--amber);letter-spacing:3px;}
-.logo span{color:var(--text);}
-.hdr-r{display:flex;align-items:center;gap:.75rem;}
-.proj-sel{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:5px 10px;border-radius:5px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;}
-.live{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);}
-.live-dot{width:6px;height:6px;border-radius:50%;background:#2ecc71;animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.btn-sm{background:none;border:1px solid var(--border2);color:var(--text2);padding:4px 9px;border-radius:4px;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;}
-.btn-sm:hover{border-color:var(--amber);color:var(--amber);}
+  /* ---------- pantalla de inicio ---------- */
+  #overlay{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:14px;padding:18px;text-align:center;
+    background:radial-gradient(ellipse at 50% 30%,rgba(20,60,100,.92),rgba(4,12,24,.97));}
+  #overlay h1{margin:0;font-size:clamp(34px,7vw,64px);letter-spacing:.12em;font-weight:800;
+    background:linear-gradient(90deg,#56e0ff,#aef7c1);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  #overlay .sub{margin:0;opacity:.85;font-size:clamp(13px,2.6vw,17px);max-width:560px;}
+  #howto{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;max-width:760px;width:100%;}
+  #howto div{background:rgba(255,255,255,.06);border:1px solid rgba(120,220,255,.18);
+    border-radius:12px;padding:9px 12px;font-size:clamp(12px,2.4vw,14px);text-align:left;line-height:1.35;}
+  #fisica{font-size:clamp(11px,2.2vw,13px);opacity:.65;max-width:640px;font-style:italic;}
+  #btnStart{margin-top:4px;font-size:clamp(18px,4vw,24px);font-weight:700;letter-spacing:.08em;
+    padding:14px 44px;border-radius:999px;border:none;color:#04222e;cursor:pointer;
+    background:linear-gradient(90deg,#56e0ff,#7df0a8);box-shadow:0 0 28px rgba(86,224,255,.45);}
+  #btnStart:active{transform:scale(.96);}
+  #sensWarn{display:none;color:#ffd06b;font-size:13px;max-width:560px;}
 
-/* TABS */
-.tabs{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;gap:0;position:sticky;top:52px;z-index:199;overflow-x:auto;}
-.tab{padding:12px 16px;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:all .15s;}
-.tab:hover{color:var(--text);}
-.tab.on{color:var(--amber);border-bottom-color:var(--amber);}
-
-/* LAYOUT */
-.main{padding:1.25rem 1.5rem;max-width:1440px;margin:0 auto;}
-.tp{display:none;}
-.tp.on{display:block;}
-
-/* STAT CARDS */
-.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:1.25rem;}
-.sc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;position:relative;overflow:hidden;}
-.sc::before{content:'';position:absolute;top:0;left:0;width:2px;height:100%;background:var(--amber);}
-.sc.r::before{background:var(--red);}
-.sc.g::before{background:var(--green);}
-.sc.b::before{background:#4a9edd;}
-.sl{font-size:10px;font-weight:500;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);margin-bottom:.4rem;}
-.sv{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;line-height:1;color:var(--text);}
-.ss{font-size:11px;color:var(--text3);margin-top:3px;}
-
-/* GRID */
-.pg2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-.pg1{display:grid;grid-template-columns:1fr;gap:1rem;}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
-.ch{padding:11px 16px;border-bottom:1px solid var(--border);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);display:flex;justify-content:space-between;align-items:center;}
-.cb{padding:1rem;}
-
-/* BARS */
-.bt{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;}
-.bf{height:100%;border-radius:3px;transition:width .6s ease;}
-
-/* ETAPA ROW */
-.er{display:grid;grid-template-columns:90px 1fr 54px 70px;align-items:center;gap:.75rem;padding:7px 0;border-bottom:1px solid var(--border);}
-.er:last-child{border-bottom:none;}
-.en{font-size:12px;font-weight:500;color:var(--text);}
-.ef{font-size:10px;color:var(--text3);}
-.ep{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;text-align:right;}
-.bdg{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;text-align:center;}
-.bdg-c{background:var(--green-dim);color:#2ecc71;border:1px solid var(--green-border);}
-.bdg-e{background:var(--amber-dim);color:var(--amber);border:1px solid var(--amber-border);}
-.bdg-p{background:var(--bg4);color:var(--text3);border:1px solid var(--border2);}
-
-/* FEED */
-.fi{display:flex;gap:.75rem;padding:9px 0;border-bottom:1px solid var(--border);}
-.fi:last-child{border-bottom:none;}
-.fd{width:7px;height:7px;border-radius:50%;background:var(--amber);flex-shrink:0;margin-top:4px;}
-.fd.d{background:var(--red);}
-.fb{flex:1;}
-.ft{display:flex;justify-content:space-between;margin-bottom:2px;}
-.fm{font-size:13px;font-weight:500;color:var(--text);}
-.fti{font-size:11px;color:var(--text3);}
-.fme{font-size:11px;color:var(--text2);}
-.fc{display:inline-block;background:var(--amber-dim);color:var(--amber);font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;margin-top:3px;border:1px solid var(--amber-border);}
-.bd{background:var(--red-dim);color:var(--red);font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px;margin-left:5px;border:1px solid var(--red-border);}
-
-/* ALERTAS */
-.al{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:7px;margin-bottom:8px;}
-.al:last-child{margin-bottom:0;}
-.al.r{background:var(--red-dim);border:1px solid var(--red-border);}
-.al.a{background:var(--amber-dim);border:1px solid var(--amber-border);}
-.al.g{background:var(--green-dim);border:1px solid var(--green-border);}
-.ai{font-size:14px;flex-shrink:0;margin-top:1px;}
-.at{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;margin-bottom:2px;}
-.al.r .at{color:var(--red);}
-.al.a .at{color:var(--amber);}
-.al.g .at{color:#2ecc71;}
-.ad{font-size:12px;color:var(--text2);line-height:1.5;}
-
-/* MISIONES */
-.mr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
-.mr:last-child{border-bottom:none;}
-.mi{flex:1;}
-.mn{font-size:13px;font-weight:500;color:var(--text);margin-bottom:1px;}
-.mm{font-size:11px;color:var(--text2);}
-.mp{width:110px;}
-.mpc{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;min-width:38px;text-align:right;}
-
-/* EQUIPO */
-.wr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
-.wr:last-child{border-bottom:none;}
-.wav{width:30px;height:30px;border-radius:50%;background:var(--amber-dim);display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:11px;font-weight:800;color:var(--amber);flex-shrink:0;border:1px solid var(--amber-border);}
-.wi{flex:1;}
-.wn{font-size:13px;font-weight:500;color:var(--text);margin-bottom:1px;}
-.wm{font-size:11px;color:var(--text2);}
-.wb{flex:2;}
-.wsc{font-family:'Syne',sans-serif;font-size:13px;font-weight:800;min-width:28px;text-align:right;}
-.wrk{font-size:10px;font-weight:700;color:var(--text3);min-width:18px;}
-
-/* ── GANTT ── */
-.gantt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.gantt{min-width:900px;}
-.gantt-head{display:grid;background:var(--bg3);border-bottom:1px solid var(--border);position:sticky;top:0;}
-.gantt-month{text-align:center;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--amber);padding:6px 0;border-right:1px solid var(--border);}
-.gantt-weeks{display:flex;}
-.gantt-week{flex:1;text-align:center;font-size:10px;color:var(--text3);padding:4px 0;border-right:1px solid var(--border);}
-.gantt-week.cur{color:var(--amber);font-weight:700;}
-.gantt-body{}
-.gantt-row{display:flex;align-items:center;border-bottom:1px solid var(--border);min-height:36px;}
-.gantt-row:hover{background:rgba(255,255,255,.02);}
-.gantt-label{width:200px;flex-shrink:0;padding:6px 12px;border-right:1px solid var(--border);}
-.gantt-lname{font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.gantt-lsub{font-size:10px;color:var(--text3);}
-.gantt-cells{flex:1;display:flex;position:relative;height:36px;}
-.gantt-cell{flex:1;border-right:1px solid var(--border);height:100%;position:relative;}
-.gantt-cell.cur-week{background:rgba(232,160,32,.04);}
-.gantt-bar{position:absolute;top:50%;transform:translateY(-50%);height:18px;border-radius:3px;display:flex;align-items:center;padding:0 6px;font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;z-index:2;cursor:pointer;}
-.gantt-bar:hover{filter:brightness(1.2);}
-.gantt-etapa-head{background:var(--bg3);padding:6px 12px;border-bottom:1px solid var(--border);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text2);display:flex;align-items:center;gap:6px;}
-.gantt-etapa-head span{cursor:pointer;font-size:12px;}
-.gantt-today{position:absolute;top:0;bottom:0;width:1px;background:rgba(232,160,32,.5);z-index:10;pointer-events:none;}
-
-/* TABLE */
-table{width:100%;border-collapse:collapse;font-size:12px;}
-th{text-align:left;padding:8px 8px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text3);border-bottom:1px solid var(--border);}
-td{padding:9px 8px;border-bottom:1px solid var(--border);color:var(--text);}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:rgba(255,255,255,.02);}
-
-/* FILTER */
-.fsel{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:4px 8px;border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;}
-
-/* EMPTY/LOAD */
-.empty{text-align:center;padding:2.5rem;color:var(--text2);font-size:13px;}
-.spin{width:22px;height:22px;border:2px solid var(--border2);border-top-color:var(--amber);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto .75rem;}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-@media(max-width:900px){
-  .sg{grid-template-columns:repeat(2,1fr);}
-  .pg2{grid-template-columns:1fr;}
-  .main{padding:1rem;}
-}
+  /* ---------- HUD ---------- */
+  #hud{position:fixed;inset:0;z-index:10;pointer-events:none;display:none;}
+  .panel{position:absolute;background:rgba(4,18,34,.45);border:1px solid rgba(120,220,255,.25);
+    border-radius:10px;padding:6px 10px;backdrop-filter:blur(3px);font-variant-numeric:tabular-nums;}
+  #pEnergy{top:max(10px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:44%;min-width:220px;}
+  #pEnergy label,#pRotor label{font-size:10px;letter-spacing:.15em;opacity:.75;display:block;margin-bottom:3px;}
+  .bar{height:10px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden;}
+  .bar i{display:block;height:100%;width:100%;border-radius:6px;transition:width .15s linear;}
+  #eFill{background:linear-gradient(90deg,#ff5d5d,#ffd05d 35%,#7df0a8 70%);}
+  #rFill{background:linear-gradient(90deg,#3aa7ff,#56e0ff);}
+  #pScore{top:max(10px,env(safe-area-inset-top));left:max(10px,env(safe-area-inset-left));font-size:13px;}
+  #pScore b{font-size:18px;color:#aef7c1;}
+  #pNav{bottom:max(12px,env(safe-area-inset-bottom));left:max(10px,env(safe-area-inset-left));font-size:12px;line-height:1.5;}
+  #pNav b{font-size:17px;color:#56e0ff;}
+  #pRotor{bottom:max(12px,env(safe-area-inset-bottom));right:max(10px,env(safe-area-inset-right));width:150px;}
+  #calBtn{position:absolute;bottom:max(12px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+    pointer-events:auto;background:rgba(4,18,34,.55);border:1px solid rgba(120,220,255,.4);color:#bfeaff;
+    border-radius:999px;padding:7px 18px;font-size:12px;letter-spacing:.12em;}
+  .zoneHint{position:absolute;top:50%;transform:translateY(-50%);font-size:12px;letter-spacing:.1em;
+    opacity:.55;transition:opacity 1s;background:rgba(4,18,34,.4);padding:8px 10px;border-radius:10px;}
+  #hintL{left:max(10px,env(safe-area-inset-left));}
+  #hintR{right:max(10px,env(safe-area-inset-right));text-align:right;}
+  #kbHint{position:absolute;top:calc(max(10px,env(safe-area-inset-top)) + 44px);left:50%;transform:translateX(-50%);
+    font-size:11px;opacity:.7;background:rgba(4,18,34,.5);padding:5px 12px;border-radius:8px;display:none;white-space:nowrap;}
+  #flash{position:fixed;inset:0;z-index:15;pointer-events:none;background:#ff3030;opacity:0;transition:opacity .5s;}
+  #msg{position:absolute;top:30%;left:50%;transform:translate(-50%,-50%);font-size:clamp(18px,4vw,28px);
+    font-weight:700;color:#aef7c1;text-shadow:0 0 14px rgba(125,240,168,.7);opacity:0;transition:opacity .4s;}
 </style>
 </head>
 <body>
+<canvas id="c"></canvas>
 
-<header class="hdr">
-  <div class="logo">GO<span> OBRA</span></div>
-  <div class="hdr-r">
-    <select class="proj-sel" id="psel" onchange="loadAll()"><option>Cargando...</option></select>
-    <button class="btn-sm" onclick="loadAll()">↻ Actualizar</button>
-    <div class="live"><div class="live-dot"></div>En vivo</div>
+<div id="overlay">
+  <h1>GIROVUELO</h1>
+  <p class="sub">Tu celular es el motor-giroscopio. Agárralo con las dos manos en horizontal, como el manubrio de una moto acuática voladora.</p>
+  <div id="howto">
+    <div>🤲 <b>Agarre:</b> dos manos, pantalla hacia ti, en horizontal.</div>
+    <div>↕️ <b>Subir / bajar:</b> jala el borde superior hacia ti para subir, empújalo para picar.</div>
+    <div>↔️ <b>Girar:</b> ladea el cel como manubrio. ⚠️ Sin RPM en el rotor <b>no hay giro</b> (precesión giroscópica).</div>
+    <div>👍 <b>Pulgar derecho (mantener):</b> potencia — acelera el rotor y gasta energía.</div>
+    <div>👈 <b>Pulgar izquierdo (mantener):</b> freno — frena el rotor y <b>recupera</b> algo de energía.</div>
+    <div>💠 Recoge <b>orbes cian</b> (+energía) y atraviesa <b>anillos dorados</b> (+puntos). Si caes al mar, flotar recarga poco a poco.</div>
   </div>
-</header>
-
-<nav class="tabs">
-  <div class="tab on"  onclick="sw('dashboard',this)">📊 Dashboard</div>
-  <div class="tab"     onclick="sw('alertas',this)">🔔 Alertas</div>
-  <div class="tab"     onclick="sw('misiones',this)">✅ Misiones</div>
-  <div class="tab"     onclick="sw('plan',this)">📅 Plan de obra</div>
-  <div class="tab"     onclick="sw('materiales',this)">📦 Materiales</div>
-  <div class="tab"     onclick="sw('equipo',this)">👷 Equipo</div>
-</nav>
-
-<div class="main">
-
-<!-- DASHBOARD -->
-<div class="tp on" id="tp-dashboard">
-  <div class="sg">
-    <div class="sc"><div class="sl">Avances hoy</div><div class="sv" id="s-hoy">—</div><div class="ss" id="s-hoy-s">cargando</div></div>
-    <div class="sc b"><div class="sl">Workers activos</div><div class="sv" id="s-wrk">—</div><div class="ss">reportaron hoy</div></div>
-    <div class="sc r"><div class="sl">Desviaciones</div><div class="sv" id="s-desv">—</div><div class="ss">requieren atención</div></div>
-    <div class="sc g"><div class="sl">Confianza</div><div class="sv" id="s-conf">—</div><div class="ss">promedio reportes</div></div>
-  </div>
-  <div class="pg2">
-    <div class="card"><div class="ch">Progreso por etapa</div><div class="cb" id="etapas-l"><div class="empty"><div class="spin"></div>Cargando...</div></div></div>
-    <div class="card"><div class="ch">Últimos avances</div><div class="cb" id="feed-l"><div class="empty"><div class="spin"></div>Cargando...</div></div></div>
-  </div>
+  <p id="fisica">Física: el rotor tiene momento angular L = I·ω. Al inclinar el cel con velocidad angular Ω aplicas un torque τ = Ω × L y el aparato precesa — exactamente como la rueda de bici que hace girar la silla.</p>
+  <button id="btnStart">TOCA PARA VOLAR</button>
+  <p id="sensWarn"></p>
 </div>
 
-<!-- ALERTAS -->
-<div class="tp" id="tp-alertas">
-  <div class="pg1">
-    <div class="card"><div class="ch">Alertas activas <span id="al-cnt" style="color:var(--amber)"></span></div><div class="cb" id="alertas-l"><div class="empty"><div class="spin"></div>Cargando...</div></div></div>
-  </div>
+<div id="hud">
+  <div class="panel" id="pEnergy"><label>⚡ ENERGÍA</label><div class="bar"><i id="eFill"></i></div></div>
+  <div class="panel" id="pScore">PUNTOS <b id="scoreV">0</b><br><span style="opacity:.6">RÉCORD <span id="bestV">0</span></span></div>
+  <div class="panel" id="pNav"><b id="speedV">0</b> km/h<br>ALT <b id="altV">0</b> m</div>
+  <div class="panel" id="pRotor"><label>🌀 ROTOR <span id="rpmV">0</span>%</label><div class="bar"><i id="rFill"></i></div></div>
+  <button id="calBtn">◎ RECALIBRAR</button>
+  <div class="zoneHint" id="hintL">◐ FRENO<br><small>mantener</small></div>
+  <div class="zoneHint" id="hintR">POTENCIA ◑<br><small>mantener</small></div>
+  <div id="kbHint">Modo teclado: ←→ ladear · ↑↓ subir/bajar · ESPACIO potencia · B freno · R recalibrar</div>
+  <div id="msg"></div>
 </div>
+<div id="flash"></div>
 
-<!-- MISIONES -->
-<div class="tp" id="tp-misiones">
-  <div class="sg">
-    <div class="sc g"><div class="sl">Completadas</div><div class="sv" id="m-c">—</div></div>
-    <div class="sc"><div class="sl">En curso</div><div class="sv" id="m-e">—</div></div>
-    <div class="sc"><div class="sl">Pendientes</div><div class="sv" id="m-p">—</div></div>
-    <div class="sc b"><div class="sl">Avance global</div><div class="sv" id="m-g">—</div></div>
-  </div>
-  <div class="pg1">
-    <div class="card">
-      <div class="ch">Misiones <select class="fsel" id="f-etapa" onchange="renderMis()"><option value="">Todas</option></select></div>
-      <div class="cb" id="mis-l"><div class="empty"><div class="spin"></div>Cargando...</div></div>
-    </div>
-  </div>
-</div>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
 
-<!-- PLAN DE OBRA (GANTT) -->
-<div class="tp" id="tp-plan">
-  <div class="card">
-    <div class="ch">
-      Cronograma
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1a7a4a"></span>Completada</span>
-        <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#e8a020"></span>En curso</span>
-        <span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3)"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#2a2a2a;border:1px solid #363636"></span>Pendiente</span>
-      </div>
-    </div>
-    <div class="gantt-wrap"><div id="gantt-container"><div class="empty"><div class="spin"></div>Cargando...</div></div></div>
-  </div>
-</div>
-
-<!-- MATERIALES -->
-<div class="tp" id="tp-materiales">
-  <div class="pg1">
-    <div class="card">
-      <div class="ch">Cantidades ejecutadas vs meta</div>
-      <div class="cb" id="mat-l"><div class="empty"><div class="spin"></div>Cargando...</div></div>
-    </div>
-  </div>
-</div>
-
-<!-- EQUIPO -->
-<div class="tp" id="tp-equipo">
-  <div class="sg">
-    <div class="sc"><div class="sl">Workers totales</div><div class="sv" id="e-tot">—</div></div>
-    <div class="sc g"><div class="sl">Activos hoy</div><div class="sv" id="e-act">—</div></div>
-    <div class="sc b"><div class="sl">Avances semana</div><div class="sv" id="e-sem">—</div></div>
-    <div class="sc"><div class="sl">Top worker</div><div class="sv" id="e-top" style="font-size:17px;">—</div></div>
-  </div>
-  <div class="pg1">
-    <div class="card"><div class="ch">Ranking por avances registrados</div><div class="cb" id="eq-l"><div class="empty"><div class="spin"></div>Cargando...</div></div></div>
-  </div>
-</div>
-
-</div><!-- /main -->
-
-<script>
-const SB='https://muyezsssnzlxavchabum.supabase.co';
-const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11eWV6c3NzbnpseGF2Y2hhYnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0Nzg2MzYsImV4cCI6MjA5MDA1NDYzNn0.HqhNfCEohqzV2DDecUDpGzeb1JsfDCI13lI7ecJm4Eo';
-const {createClient}=supabase;
-const db=createClient(SB,SK);
-
-const EN={'prel':'Preliminares','mvt':'Mov. tierras','cim':'Cimentación','estr':'Estructura','mamp':'Mampostería','redes':'Redes','acab':'Acabados','urb':'Urbanismo','entr':'Entrega'};
-const EO=['prel','mvt','cim','estr','mamp','redes','acab','urb','entr'];
-const GCOLS=['#1a7a4a','#2980b9','#8e44ad','#e8a020','#c0392b','#16a085','#d35400','#27ae60','#2c3e50'];
-
-let PID=null, WMAPS={}, MDATA=[], currentTab='dashboard';
-
-function sw(name,btn){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('on'));
-  btn.classList.add('on');
-  document.getElementById('tp-'+name).classList.add('on');
-  currentTab=name;
-  if(name==='plan') renderGantt();
-}
-
-async function loadProjects(){
-  const {data}=await db.from('proyectos').select('id,nombre').eq('estado','activo');
-  const sel=document.getElementById('psel');
-  if(!data?.length){sel.innerHTML='<option>Sin proyectos</option>';return;}
-  sel.innerHTML=data.map(p=>`<option value="${p.id}">${p.nombre}</option>`).join('');
-  PID=data[0].id; sel.value=PID;
-  loadAll();
-}
-
-async function loadAll(){
-  PID=document.getElementById('psel').value;
-  if(!PID) return;
-  await Promise.all([loadWorkers(),loadDash(),loadMisiones(),loadAlertas(),loadMateriales(),loadEquipo()]);
-  if(currentTab==='plan') renderGantt();
-}
-
-async function loadWorkers(){
-  const {data}=await db.from('workers').select('id,nombre,rol').eq('proyecto_id',PID);
-  WMAPS={};
-  data?.forEach(w=>{WMAPS[w.id]=w;});
-}
-
-// ── DASHBOARD ──
-async function loadDash(){
-  const hoy=new Date(); hoy.setHours(0,0,0,0);
-  const {data:av}=await db.from('avances').select('id,trabajador_id,desviacion_detectada,confianza').eq('proyecto_id',PID).gte('timestamp_mensaje',hoy.toISOString());
-  const tot=av?.length||0;
-  const wrks=new Set(av?.map(a=>a.trabajador_id)).size;
-  const desv=av?.filter(a=>a.desviacion_detectada).length||0;
-  const confs=av?.map(a=>a.confianza)||[];
-  const pct=confs.length?Math.round(confs.filter(c=>c==='alta').length/confs.length*100):0;
-  document.getElementById('s-hoy').textContent=tot;
-  document.getElementById('s-hoy-s').textContent='desde las 00:00';
-  document.getElementById('s-wrk').textContent=wrks;
-  document.getElementById('s-desv').textContent=desv;
-  document.getElementById('s-conf').textContent=pct+'%';
-
-  const {data:mis}=await db.from('proyecto_misiones').select('etapa_id,cantidad_meta,cantidad_ejecutada,estado').eq('proyecto_id',PID);
-  const em={};
-  mis?.forEach(m=>{
-    if(!em[m.etapa_id])em[m.etapa_id]={meta:0,exec:0};
-    em[m.etapa_id].meta+=parseFloat(m.cantidad_meta||0);
-    em[m.etapa_id].exec+=parseFloat(m.cantidad_ejecutada||0);
-  });
-  const eh=EO.filter(e=>em[e]).map(e=>{
-    const p=em[e].meta>0?Math.min(Math.round(em[e].exec/em[e].meta*100),100):0;
-    const col=p===100?'var(--green)':p>0?'var(--amber)':'var(--bg4)';
-    return`<div class="er"><div><div class="en">${EN[e]||e}</div></div><div class="bt"><div class="bf" style="width:${p}%;background:${col}"></div></div><div class="ep" style="color:${col}">${p}%</div><div class="bdg ${p===100?'bdg-c':p>0?'bdg-e':'bdg-p'}">${p===100?'✓':p>0?'↗':'—'}</div></div>`;
-  }).join('')||'<div class="empty">Sin datos</div>';
-  document.getElementById('etapas-l').innerHTML=eh;
-
-  const {data:feed}=await db.from('avances').select('etapa_id,mision_id,nivel,cantidad_primaria_valor,cantidad_primaria_unidad,desviacion_detectada,timestamp_mensaje,trabajador_id').eq('proyecto_id',PID).order('timestamp_mensaje',{ascending:false}).limit(12);
-  if(!feed?.length){document.getElementById('feed-l').innerHTML='<div class="empty">Sin avances aún.</div>';return;}
-  document.getElementById('feed-l').innerHTML=feed.map(a=>{
-    const ts=new Date(a.timestamp_mensaje);
-    const diff=Math.round((Date.now()-ts)/60000);
-    const t=diff<60?`hace ${diff}m`:diff<1440?`hace ${Math.round(diff/60)}h`:ts.toLocaleDateString('es-CO',{day:'numeric',month:'short'});
-    const nom=WMAPS[a.trabajador_id]?.nombre||'Worker';
-    const mis=(a.mision_id||a.etapa_id||'').replace(/_/g,' ');
-    const cant=a.cantidad_primaria_valor?`${a.cantidad_primaria_valor} ${a.cantidad_primaria_unidad||''}`:'';
-    return`<div class="fi"><div class="fd ${a.desviacion_detectada?'d':''}"></div><div class="fb"><div class="ft"><span class="fm">${mis}${a.nivel?' · '+a.nivel:''}${a.desviacion_detectada?'<span class="bd">⚠</span>':''}</span><span class="fti">${t}</span></div><div class="fme">${nom}</div>${cant?`<span class="fc">${cant}</span>`:''}</div></div>`;
-  }).join('');
-}
-
-// ── ALERTAS ──
-async function loadAlertas(){
-  const {data:mis}=await db.from('proyecto_misiones').select('etapa_id,mision_id,nivel,cantidad_meta,cantidad_ejecutada,pct_avance,estado,fecha_fin_plan').eq('proyecto_id',PID);
-  const als=[];
-  const hoy=new Date();
-  mis?.forEach(m=>{
-    const pct=parseFloat(m.pct_avance||0);
-    const fin=m.fecha_fin_plan?new Date(m.fecha_fin_plan):null;
-    const dr=fin?Math.round((fin-hoy)/86400000):null;
-    const nm=`${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' ('+m.nivel+')':''}`;
-    if(fin&&dr<0&&m.estado!=='completada') als.push({t:'r',i:'▲',ti:`Vencida: ${nm}`,d:`Fecha límite ${fin.toLocaleDateString('es-CO')}. Avance: ${pct.toFixed(0)}%`});
-    else if(fin&&dr>=0&&dr<=3&&m.estado!=='completada') als.push({t:'a',i:'◆',ti:`Por vencer: ${nm}`,d:`Vence en ${dr} día(s). Avance: ${pct.toFixed(0)}%`});
-    else if(m.estado==='en_curso'&&pct<10) als.push({t:'a',i:'◆',ti:`Avance bajo: ${nm}`,d:`Solo ${pct.toFixed(1)}% ejecutado.`});
-  });
-  const {data:dv}=await db.from('avances').select('mision_id,desviacion_motivo,timestamp_mensaje,trabajador_id').eq('proyecto_id',PID).eq('desviacion_detectada',true).order('timestamp_mensaje',{ascending:false}).limit(5);
-  dv?.forEach(d=>{
-    const nom=WMAPS[d.trabajador_id]?.nombre||'Worker';
-    als.push({t:'r',i:'⚠',ti:`Desviación: ${(d.mision_id||'').replace(/_/g,' ')}`,d:`Reportada por ${nom}: ${d.desviacion_motivo||'sin detalle'}`});
-  });
-  const {data:cp}=await db.from('proyecto_misiones').select('etapa_id,mision_id').eq('proyecto_id',PID).eq('estado','completada').limit(2);
-  cp?.forEach(m=>als.push({t:'g',i:'✓',ti:`Completada: ${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}`,d:'Misión finalizada al 100%.'}));
-  document.getElementById('al-cnt').textContent=als.length?`· ${als.length}`:'';
-  document.getElementById('alertas-l').innerHTML=als.length?als.map(a=>`<div class="al ${a.t}"><span class="ai">${a.i}</span><div><div class="at">${a.ti}</div><div class="ad">${a.d}</div></div></div>`).join(''):'<div class="empty">Sin alertas activas. Todo en orden.</div>';
-}
-
-// ── MISIONES ──
-async function loadMisiones(){
-  const {data}=await db.from('proyecto_misiones').select('*').eq('proyecto_id',PID).order('etapa_id');
-  MDATA=data||[];
-  const c=MDATA.filter(m=>m.estado==='completada').length;
-  const e=MDATA.filter(m=>m.estado==='en_curso').length;
-  const p=MDATA.filter(m=>m.estado==='pendiente').length;
-  const g=MDATA.length?Math.round(MDATA.reduce((s,m)=>s+parseFloat(m.pct_avance||0),0)/MDATA.length):0;
-  document.getElementById('m-c').textContent=c;
-  document.getElementById('m-e').textContent=e;
-  document.getElementById('m-p').textContent=p;
-  document.getElementById('m-g').textContent=g+'%';
-  const etps=[...new Set(MDATA.map(m=>m.etapa_id))];
-  document.getElementById('f-etapa').innerHTML='<option value="">Todas</option>'+etps.map(e=>`<option value="${e}">${EN[e]||e}</option>`).join('');
-  renderMis();
-}
-
-function renderMis(){
-  const f=document.getElementById('f-etapa').value;
-  const lista=f?MDATA.filter(m=>m.etapa_id===f):MDATA.filter(m=>m.estado!=='pendiente');
-  if(!lista.length){document.getElementById('mis-l').innerHTML='<div class="empty">Sin misiones.</div>';return;}
-  document.getElementById('mis-l').innerHTML=lista.map(m=>{
-    const pct=parseFloat(m.pct_avance||0);
-    const col=pct===100?'var(--green)':pct>0?'var(--amber)':'var(--bg4)';
-    return`<div class="mr"><div class="mi"><div class="mn">${EN[m.etapa_id]||m.etapa_id} — ${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}</div><div class="mm">Meta: ${m.cantidad_meta} ${m.unidad_primaria||''} · Ejecutado: ${m.cantidad_ejecutada||0}</div></div><div class="mp"><div class="bt"><div class="bf" style="width:${pct}%;background:${col}"></div></div></div><div class="mpc" style="color:${col}">${pct.toFixed(0)}%</div><div class="bdg ${m.estado==='completada'?'bdg-c':m.estado==='en_curso'?'bdg-e':'bdg-p'}">${m.estado==='completada'?'✓':m.estado==='en_curso'?'↗':'—'}</div></div>`;
-  }).join('');
-}
-
-// ── GANTT ──
-function renderGantt(){
-  if(!MDATA.length){document.getElementById('gantt-container').innerHTML='<div class="empty">Sin datos de misiones.</div>';return;}
-
-  // Calcular rango de fechas
-  const dates=MDATA.flatMap(m=>[m.fecha_inicio_plan,m.fecha_fin_plan].filter(Boolean).map(d=>new Date(d)));
-  if(!dates.length){document.getElementById('gantt-container').innerHTML='<div class="empty">Sin fechas planificadas.</div>';return;}
-
-  const minD=new Date(Math.min(...dates)); minD.setDate(1);
-  const maxD=new Date(Math.max(...dates)); maxD.setMonth(maxD.getMonth()+1); maxD.setDate(1);
-  const today=new Date();
-
-  // Generar semanas
-  const weeks=[];
-  let cur=new Date(minD);
-  while(cur<maxD){
-    weeks.push(new Date(cur));
-    cur.setDate(cur.getDate()+7);
-  }
-
-  // Total días
-  const totalDays=(maxD-minD)/86400000;
-
-  function pct(date){return Math.max(0,Math.min(100,(date-minD)/86400000/totalDays*100));}
-
-  // Agrupar por mes para el header
-  const months={};
-  weeks.forEach((w,i)=>{
-    const k=w.toLocaleDateString('es-CO',{month:'short',year:'2-digit'});
-    if(!months[k])months[k]={start:i,count:0};
-    months[k].count++;
-  });
-
-  // Detectar semana actual
-  const todayPct=pct(today);
-
-  // Header meses
-  const monthCols=Object.entries(months).map(([name,{count}])=>
-    `<div class="gantt-month" style="grid-column:span ${count}">${name.toUpperCase()}</div>`
-  ).join('');
-
-  const weekCols=weeks.map((w,i)=>{
-    const isCur=today>=w&&today<new Date(w.getTime()+7*86400000);
-    return`<div class="gantt-week ${isCur?'cur':''}">` + w.getDate() + `</div>`;
-  }).join('');
-
-  // Total cols = 200px label + weeks*flex
-  const colTemplate=`200px repeat(${weeks.length},1fr)`;
-
-  // Agrupar misiones por etapa
-  const byEtapa={};
-  EO.forEach(e=>{byEtapa[e]=[];});
-  MDATA.forEach(m=>{if(byEtapa[m.etapa_id])byEtapa[m.etapa_id].push(m);});
-
-  let rows='';
-  EO.forEach((eid,ei)=>{
-    const ms=byEtapa[eid];
-    if(!ms.length) return;
-    rows+=`<div class="gantt-etapa-head" style="grid-column:span ${weeks.length+1}">${EN[eid]||eid} <span style="color:var(--text3);font-weight:400;font-size:9px;text-transform:none;">(${ms.length} misiones)</span></div>`;
-    ms.forEach(m=>{
-      if(!m.fecha_inicio_plan||!m.fecha_fin_plan) return;
-      const ini=new Date(m.fecha_inicio_plan);
-      const fin=new Date(m.fecha_fin_plan);
-      const left=pct(ini);
-      const right=pct(fin);
-      const width=Math.max(right-left,0.5);
-      const col=m.estado==='completada'?'#1a7a4a':m.estado==='en_curso'?'#e8a020':'#2a2a2a';
-      const textCol=m.estado==='completada'?'#a8e6c0':m.estado==='en_curso'?'#0a0a0a':'#555';
-      const border=m.estado==='pendiente'?'border:1px solid #363636;':'';
-      const label=`${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}`;
-
-      // Celdas semana
-      const cellsHtml=weeks.map((w,wi)=>{
-        const isCur=today>=w&&today<new Date(w.getTime()+7*86400000);
-        return`<div class="gantt-cell ${isCur?'cur-week':''}"></div>`;
-      }).join('');
-
-      rows+=`<div class="gantt-row">
-        <div class="gantt-label"><div class="gantt-lname" title="${label}">${label}</div><div class="gantt-lsub">${m.cantidad_meta} ${m.unidad_primaria||''} · ${parseFloat(m.pct_avance||0).toFixed(0)}%</div></div>
-        <div class="gantt-cells">
-          ${cellsHtml}
-          <div class="gantt-bar" style="left:${left}%;width:${width}%;background:${col};color:${textCol};${border}" title="${label}: ${ini.toLocaleDateString('es-CO')} → ${fin.toLocaleDateString('es-CO')}">${parseFloat(m.pct_avance||0).toFixed(0)}%</div>
-          ${todayPct>0&&todayPct<100?`<div class="gantt-today" style="left:${todayPct}%"></div>`:''}
-        </div>
-      </div>`;
-    });
-  });
-
-  document.getElementById('gantt-container').innerHTML=`
-    <div class="gantt">
-      <div class="gantt-head" style="display:grid;grid-template-columns:${colTemplate};">
-        <div style="border-right:1px solid var(--border);padding:6px 12px;font-size:10px;color:var(--text3);">Misión</div>
-        ${monthCols}
-      </div>
-      <div class="gantt-head" style="display:grid;grid-template-columns:${colTemplate};">
-        <div style="border-right:1px solid var(--border);padding:4px 12px;font-size:10px;color:var(--amber);">HOY ${today.toLocaleDateString('es-CO',{day:'numeric',month:'short'})}</div>
-        ${weekCols}
-      </div>
-      <div class="gantt-body">${rows}</div>
-    </div>`;
-
-  // Scroll to today
-  const wrap=document.querySelector('.gantt-wrap');
-  if(wrap&&todayPct>0){
-    setTimeout(()=>{wrap.scrollLeft=(wrap.scrollWidth*todayPct/100)-wrap.clientWidth/2;},100);
-  }
-}
-
-// ── MATERIALES ──
-async function loadMateriales(){
-  const {data}=await db.from('proyecto_misiones').select('etapa_id,mision_id,nivel,cantidad_meta,unidad_primaria,cantidad_ejecutada,cantidad_meta_sec,unidad_secundaria,cantidad_ejecutada_sec,estado').eq('proyecto_id',PID).neq('estado','pendiente').order('etapa_id');
-  if(!data?.length){document.getElementById('mat-l').innerHTML='<div class="empty">Sin datos.</div>';return;}
-  document.getElementById('mat-l').innerHTML=`<table>
-    <thead><tr><th>Misión</th><th>Etapa</th><th style="text-align:right">Meta</th><th style="text-align:right">Ejecutado</th><th style="text-align:right">%</th><th>Estado</th></tr></thead>
-    <tbody>${data.map(m=>{
-      const pct=m.cantidad_meta>0?Math.min(Math.round(m.cantidad_ejecutada/m.cantidad_meta*100),100):0;
-      const col=pct===100?'var(--green)':pct>50?'var(--amber)':pct>0?'#d35400':'var(--text3)';
-      return`<tr><td>${(m.mision_id||'').replace(/_/g,' ')}${m.nivel?' · '+m.nivel:''}</td><td style="color:var(--text2)">${EN[m.etapa_id]||m.etapa_id}</td><td style="text-align:right;color:var(--text2)">${m.cantidad_meta} ${m.unidad_primaria||''}</td><td style="text-align:right;font-weight:600;color:${col}">${m.cantidad_ejecutada||0} ${m.unidad_primaria||''}</td><td style="text-align:right;font-family:'Syne',sans-serif;font-weight:800;color:${col}">${pct}%</td><td><span class="bdg ${m.estado==='completada'?'bdg-c':m.estado==='en_curso'?'bdg-e':'bdg-p'}">${m.estado}</span></td></tr>`;
-    }).join('')}</tbody></table>`;
-}
-
-// ── EQUIPO ──
-async function loadEquipo(){
-  const {data:ws}=await db.from('workers').select('id,nombre,rol').eq('proyecto_id',PID);
-  const {data:av}=await db.from('avances').select('trabajador_id,timestamp_mensaje').eq('proyecto_id',PID);
-  const hoy=new Date(); hoy.setHours(0,0,0,0);
-  const sem=new Date(); sem.setDate(sem.getDate()-7);
-  const cnt={}, hoySet=new Set(); let semC=0;
-  av?.forEach(a=>{cnt[a.trabajador_id]=(cnt[a.trabajador_id]||0)+1; const ts=new Date(a.timestamp_mensaje); if(ts>=hoy)hoySet.add(a.trabajador_id); if(ts>=sem)semC++;});
-  const rank=(ws||[]).map(w=>({...w,n:cnt[w.id]||0})).sort((a,b)=>b.n-a.n);
-  document.getElementById('e-tot').textContent=ws?.length||0;
-  document.getElementById('e-act').textContent=hoySet.size;
-  document.getElementById('e-sem').textContent=semC;
-  document.getElementById('e-top').textContent=rank[0]?.nombre?.split(' ')[0]||'—';
-  if(!rank.length){document.getElementById('eq-l').innerHTML='<div class="empty">Sin workers.</div>';return;}
-  const mx=rank[0]?.n||1;
-  document.getElementById('eq-l').innerHTML=rank.map((w,i)=>{
-    const col=i===0?'var(--green)':i===1?'#4a9edd':i===rank.length-1&&rank.length>2?'var(--red)':'var(--text2)';
-    const ini=w.nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
-    return`<div class="wr"><div class="wrk">#${i+1}</div><div class="wav">${ini}</div><div class="wi"><div class="wn">${w.nombre}</div><div class="wm">${w.rol||'worker'} · ${w.n} avances</div></div><div class="wb"><div class="bt"><div class="bf" style="width:${Math.round(w.n/mx*100)}%;background:${col}"></div></div></div><div class="wsc" style="color:${col}">${w.n}</div></div>`;
-  }).join('');
-}
-
-setInterval(loadAll,30000);
-loadProjects();
-
-// ── MATERIALES — click por misión ──
-const MAT_DETALLE = {
-  'Cemento': {misiones:[
-    {n:'Levante muros interiores', cant:'0.18 bultos/m²', sem:'~32 bultos para 180m²'},
-    {n:'Pañete interior', cant:'0.20 bultos/m²', sem:'~28 bultos para 140m²'},
-    {n:'Contrapiso', cant:'0.12 bultos/m²', sem:'~18 bultos para 150m²'},
-  ]},
-  'Acero corrugado': {misiones:[
-    {n:'Columnas armado', cant:'18 kg/columna', sem:'~270 kg para 15 columnas'},
-    {n:'Placa entrepiso', cant:'3.5 kg/m²', sem:'~1.008 kg para 288m²'},
-    {n:'Vigas', cant:'12 kg/viga', sem:'~180 kg para 15 vigas'},
-  ]},
-  'Ladrillo bloque #4': {misiones:[
-    {n:'Levante muros interiores', cant:'32 un/m²', sem:'~5.760 un para 180m²'},
-  ]},
-  'Arena de peña': {misiones:[
-    {n:'Levante muros', cant:'0.025 m³/m²', sem:'~4.5 m³'},
-    {n:'Pañete interior', cant:'0.025 m³/m²', sem:'~3.5 m³'},
-  ]},
-  'Gravilla 3/4"': {misiones:[
-    {n:'Concreto en sitio', cant:'0.6 m³/m³', sem:'~8 m³'},
-  ]},
-  'Tubería PVC 4"': {misiones:[
-    {n:'Hidrosanitarias', cant:'1 tubo/6ml', sem:'~8 tubos para 48ml'},
-  ]},
+/* ================= parámetros de juego (ajusta a gusto) ================= */
+const P = {
+  rpmMax: 100,        // % rotor
+  spinUp: 38,         // %/s al acelerar
+  rotorDecay: 0.09,   // fracción de RPM que se pierde por segundo (volante de inercia)
+  brakeRate: 55,      // %/s al frenar el rotor
+  regenEff: 0.22,     // energía recuperada por % de RPM frenado
+  thrustMax: 30,      // m/s^2 de empuje a rotor pleno
+  dragK: 0.36,        // arrastre lineal -> vel. máx ≈ thrustMax/dragK
+  brakeDrag: 1.1,     // arrastre extra al frenar
+  gravity: 9.8,
+  stallSpeed: 12,     // por debajo de esto el aparato se hunde
+  sinkMax: 15,        // m/s de caída en pérdida total
+  turnRate: 1.55,     // rad/s de precesión a banqueo pleno y rotor pleno
+  maxBank: THREE.MathUtils.degToRad(55),
+  maxPitch: THREE.MathUtils.degToRad(42),
+  energyMax: 100,
+  costBase: 1.0,      // energía/s con potencia
+  costRpm: 6.0,       // energía/s adicional a rotor pleno
+  orbEnergy: 32,
+  seaCharge: 5,       // energía/s al flotar en el agua (recarga de rescate)
+  world: 1500,        // medio-mundo: pasar el borde te teletransporta al lado opuesto
 };
 
-(function rebuildMats(){
-  const el = document.getElementById('tv-mat-list');
-  if(!el) return;
-  el.innerHTML = '';
-  tvMats.forEach(m => {
-    const det = MAT_DETALLE[m.n];
-    const wrap = document.createElement('div');
-    wrap.style.borderBottom = '1px solid rgba(0,0,0,.05)';
-    const detId = 'md-'+m.n.replace(/[^a-z]/gi,'');
-    wrap.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 18px;cursor:${det?'pointer':'default'};user-select:none"
-           ${det?`onclick="toggleMatDet('${detId}',this)"`:''}">
-        <div>
-          <div style="font-size:13px;font-weight:500;color:var(--g9)">${m.n}${det?` <span id="arr-${detId}" style="font-size:10px;color:var(--g5);margin-left:4px">▾ por misión</span>`:''}
-          </div>
-          <div style="font-size:11px;color:var(--g5)">${m.u}</div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--g9)">${m.r}</div>
-          <div style="font-size:11px;font-weight:600;color:${m.o?'var(--red)':'var(--green)'}">${m.d}</div>
-        </div>
-      </div>
-      ${det?`<div id="${detId}" style="display:none;background:var(--g0);border-top:1px solid rgba(0,0,0,.05);padding:8px 18px 4px">
-        ${det.misiones.map(ms=>`
-          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04);font-size:12px">
-            <div><span style="color:var(--g7);font-weight:500">${ms.n}</span><span style="color:var(--g5);margin-left:6px">${ms.cant}</span></div>
-            <div style="color:var(--ad);font-weight:600;font-size:11px;white-space:nowrap;margin-left:12px">${ms.sem}</div>
-          </div>`).join('')}
-      </div>` : ''}
-    `;
-    el.appendChild(wrap);
-  });
-})();
+/* ================= estado ================= */
+const S = {
+  playing:false, sensorMode:false, haveDO:false,
+  pos:new THREE.Vector3(0,90,0), yaw:0, flightPitch:0, bank:0,
+  speed:22, rpm:35, energy:P.energyMax, score:0,
+  best:+(localStorage.getItem('girovuelo_best')||0),
+  prevY:90, floating:false, calib:{bank:0,faceUp:0},
+  kb:{bank:0,pitch:0},
+};
+const input = { throttle:false, brake:false };
+const keys = {};
 
-function toggleMatDet(id, header){
-  const det = document.getElementById(id);
-  const arr = document.getElementById('arr-'+id);
-  if(!det) return;
-  const open = det.style.display === 'block';
-  det.style.display = open ? 'none' : 'block';
-  if(arr) arr.textContent = open ? '▾ por misión' : '▴ ocultar';
+/* ================= sensores: orientación -> cuaternión ================= */
+const doData = {alpha:0,beta:0,gamma:0};
+window.addEventListener('deviceorientation', e=>{
+  if(e.beta===null || e.gamma===null) return;
+  doData.alpha=e.alpha||0; doData.beta=e.beta; doData.gamma=e.gamma;
+  S.haveDO = true;
+});
+const deviceQuat = new THREE.Quaternion();
+const _eul=new THREE.Euler(), _qA=new THREE.Quaternion(),
+      _qScreen=new THREE.Quaternion(), _zAxis=new THREE.Vector3(0,0,1),
+      _qWorld=new THREE.Quaternion(-Math.SQRT1_2,0,0,Math.SQRT1_2);
+function screenAngle(){
+  if(screen.orientation && typeof screen.orientation.angle==='number') return screen.orientation.angle;
+  return window.orientation||0;
+}
+function computeDeviceQuat(){
+  const d=THREE.MathUtils.degToRad;
+  _eul.set(d(doData.beta), d(doData.alpha), -d(doData.gamma), 'YXZ');
+  deviceQuat.setFromEuler(_eul);
+  deviceQuat.multiply(_qWorld);                                  // cámara mira por detrás de la pantalla
+  deviceQuat.multiply(_qScreen.setFromAxisAngle(_zAxis,-d(screenAngle())));
+}
+const vRight=new THREE.Vector3(), vNormal=new THREE.Vector3();
+function readTilt(){
+  // bank: cuánto se hunde el lado derecho del cel (eje largo en horizontal)
+  // faceUp: cuánto mira la pantalla hacia el cielo
+  computeDeviceQuat();
+  vRight.set(1,0,0).applyQuaternion(deviceQuat);
+  vNormal.set(0,0,1).applyQuaternion(deviceQuat);
+  const clamp=THREE.MathUtils.clamp;
+  return {
+    bank:  -Math.asin(clamp(vRight.y,-1,1)),
+    faceUp: Math.asin(clamp(vNormal.y,-1,1)),
+  };
+}
+function calibrate(){
+  if(S.haveDO){ const t=readTilt(); S.calib.bank=t.bank; S.calib.faceUp=t.faceUp; }
+  S.kb.bank=0; S.kb.pitch=0;
+  showMsg('◎ calibrado');
 }
 
-// ── MISIONES — filtro de estado ──
-(function addMisFilter(){
-  const listDiv = document.getElementById('tv-mision-list');
-  if(!listDiv) return;
-  const filterBar = document.createElement('div');
-  filterBar.style.cssText='display:flex;gap:6px;padding:10px 18px;border-bottom:1px solid rgba(0,0,0,.06);flex-wrap:wrap';
-  filterBar.innerHTML=`
-    <button class="mfb on" onclick="filterMis('all',this)">Todas</button>
-    <button class="mfb" onclick="filterMis('curso',this)">En curso</button>
-    <button class="mfb" onclick="filterMis('pend',this)">Pendientes</button>
-    <button class="mfb" onclick="filterMis('done',this)">Completadas</button>
-  `;
-  listDiv.parentElement.insertBefore(filterBar, listDiv);
-  // Style the buttons
-  const style = document.createElement('style');
-  style.textContent=`.mfb{padding:4px 12px;font-family:'Syne',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--g3);background:transparent;color:var(--g5);border-radius:2px;cursor:pointer;transition:all .15s}.mfb:hover{border-color:var(--g7);color:var(--g7)}.mfb.on{background:var(--black);color:var(--white);border-color:var(--black)}`;
-  document.head.appendChild(style);
-})();
+/* ================= escena ================= */
+const renderer = new THREE.WebGLRenderer({canvas:document.getElementById('c'),antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x8fd3f0);
+scene.fog = new THREE.Fog(0x9fd8ef, 250, 1350);
+const camera = new THREE.PerspectiveCamera(72, 1, .1, 4000);
+camera.rotation.order='YXZ';
+scene.add(camera);
 
-function filterMis(tipo, btn){
-  document.querySelectorAll('.mfb').forEach(b=>b.classList.remove('on'));
-  btn.classList.add('on');
-  const rows = document.querySelectorAll('#tv-mision-list > div');
-  rows.forEach(row=>{
-    const badge = row.querySelector('span[style*="border-radius"]');
-    if(!badge){row.style.display='';return;}
-    const txt = badge.textContent.toLowerCase();
-    const isCurso = txt.includes('curso');
-    const isPend = txt.includes('pendiente')||txt.includes('verificaci');
-    const isDone = txt.includes('verificado');
-    if(tipo==='all') row.style.display='';
-    else if(tipo==='curso') row.style.display = isCurso?'':'none';
-    else if(tipo==='pend') row.style.display = isPend?'':'none';
-    else if(tipo==='done') row.style.display = isDone?'':'none';
-  });
+scene.add(new THREE.HemisphereLight(0xcfeeff, 0x2a4858, 1.05));
+const sun = new THREE.DirectionalLight(0xfff2d8, 1.3);
+sun.position.set(300,420,120); scene.add(sun);
+
+// océano con rejilla (sensación de velocidad)
+{
+  const cv=document.createElement('canvas'); cv.width=cv.height=128;
+  const g=cv.getContext('2d');
+  g.fillStyle='#1d6e8f'; g.fillRect(0,0,128,128);
+  g.strokeStyle='rgba(255,255,255,.14)'; g.lineWidth=2;
+  g.strokeRect(0,0,128,128);
+  const tex=new THREE.CanvasTexture(cv);
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+  tex.repeat.set(P.world/22, P.world/22);
+  const sea=new THREE.Mesh(new THREE.PlaneGeometry(P.world*2.6,P.world*2.6),
+    new THREE.MeshLambertMaterial({map:tex}));
+  sea.rotation.x=-Math.PI/2; scene.add(sea);
+}
+
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const spread=()=>rnd(-P.world*.92,P.world*.92);
+
+// islas (con colisión)
+const islands=[];
+for(let i=0;i<26;i++){
+  const r=rnd(30,95), h=rnd(45,170);
+  const m=new THREE.Mesh(new THREE.ConeGeometry(r,h,7),
+    new THREE.MeshLambertMaterial({color:new THREE.Color().setHSL(rnd(.22,.36),.4,.3)}));
+  m.position.set(spread(), h/2-6, spread());
+  scene.add(m);
+  islands.push({x:m.position.x,z:m.position.z,r,h:h-6});
+}
+// nubes
+for(let i=0;i<22;i++){
+  const grp=new THREE.Group();
+  const n=3+(Math.random()*3|0);
+  for(let j=0;j<n;j++){
+    const s=new THREE.Mesh(new THREE.SphereGeometry(rnd(14,30),10,8),
+      new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:.88}));
+    s.position.set(rnd(-30,30),rnd(-6,6),rnd(-18,18)); s.scale.y=.45;
+    grp.add(s);
+  }
+  grp.position.set(spread(), rnd(140,420), spread());
+  scene.add(grp);
+}
+// orbes de energía
+const orbs=[];
+{
+  const geo=new THREE.IcosahedronGeometry(4.4,1);
+  for(let i=0;i<14;i++){
+    const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x4df0ff}));
+    const halo=new THREE.Mesh(new THREE.IcosahedronGeometry(6.2,1),
+      new THREE.MeshBasicMaterial({color:0x4df0ff,transparent:true,opacity:.18}));
+    m.add(halo);
+    m.position.set(spread(),rnd(35,300),spread());
+    scene.add(m); orbs.push(m);
+  }
+}
+// anillos de puntos
+const rings=[];
+{
+  const geo=new THREE.TorusGeometry(10,1.2,8,28);
+  for(let i=0;i<9;i++){
+    const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0xffc83c}));
+    m.position.set(spread(),rnd(50,280),spread());
+    m.rotation.y=Math.random()*Math.PI;
+    scene.add(m); rings.push({mesh:m,cool:0});
+  }
+}
+
+// manubrio + rotor visible (pegado a la cámara)
+let rotorDisc;
+{
+  const rig=new THREE.Group();
+  const dark=new THREE.MeshLambertMaterial({color:0x2b3540});
+  const grip=new THREE.MeshLambertMaterial({color:0x10161c});
+  const bar=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,1.7,10),dark);
+  bar.rotation.z=Math.PI/2; rig.add(bar);
+  for(const sx of [-0.78,0.78]){
+    const gm=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.34,10),grip);
+    gm.rotation.z=Math.PI/2; gm.position.x=sx; rig.add(gm);
+  }
+  const pod=new THREE.Mesh(new THREE.CylinderGeometry(.17,.22,.55,12),
+    new THREE.MeshLambertMaterial({color:0x3a4e60}));
+  pod.rotation.x=Math.PI/2; pod.position.z=-.28; rig.add(pod);
+  rotorDisc=new THREE.Group();
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(.34,.035,8,28),
+    new THREE.MeshLambertMaterial({color:0x56e0ff}));
+  rotorDisc.add(rim);
+  for(let i=0;i<3;i++){
+    const spoke=new THREE.Mesh(new THREE.BoxGeometry(.66,.045,.03),dark);
+    spoke.rotation.z=i*Math.PI/3; rotorDisc.add(spoke);
+  }
+  rotorDisc.position.z=-.62; rig.add(rotorDisc);
+  rig.position.set(0,-.85,-1.7); rig.rotation.x=.3;
+  camera.add(rig);
+}
+
+function resize(){
+  renderer.setSize(innerWidth,innerHeight);
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize',resize); resize();
+
+/* ================= audio ================= */
+let AC=null,humOsc,humGain,windGain,windFilter;
+function initAudio(){
+  try{
+    AC=new (window.AudioContext||window.webkitAudioContext)();
+    humOsc=AC.createOscillator(); humOsc.type='sawtooth'; humOsc.frequency.value=40;
+    const hf=AC.createBiquadFilter(); hf.type='lowpass'; hf.frequency.value=420;
+    humGain=AC.createGain(); humGain.gain.value=0;
+    humOsc.connect(hf).connect(humGain).connect(AC.destination); humOsc.start();
+    const len=AC.sampleRate*2, buf=AC.createBuffer(1,len,AC.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=Math.random()*2-1;
+    const src=AC.createBufferSource(); src.buffer=buf; src.loop=true;
+    windFilter=AC.createBiquadFilter(); windFilter.type='bandpass'; windFilter.frequency.value=500; windFilter.Q.value=.6;
+    windGain=AC.createGain(); windGain.gain.value=0;
+    src.connect(windFilter).connect(windGain).connect(AC.destination); src.start();
+  }catch(e){ AC=null; }
+}
+function blip(freq,dur=.12,vol=.25){
+  if(!AC) return;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type='sine'; o.frequency.value=freq;
+  g.gain.setValueAtTime(vol,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+dur);
+  o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+dur);
+}
+function updateAudio(){
+  if(!AC) return;
+  const rf=S.rpm/P.rpmMax, sp=Math.min(S.speed/80,1);
+  humOsc.frequency.value=36+rf*190+(input.throttle?14:0);
+  humGain.gain.value=rf*.10+(input.throttle?.03:0);
+  windGain.gain.value=sp*sp*.22;
+  windFilter.frequency.value=380+S.speed*14;
+}
+
+/* ================= entradas táctiles y teclado ================= */
+const pointers=new Map();
+function refreshTouch(){
+  let th=false,br=false;
+  for(const x of pointers.values()){ if(x>innerWidth/2) th=true; else br=true; }
+  input.throttle=th||!!keys.Space;
+  input.brake=br||!!keys.KeyB;
+}
+addEventListener('pointerdown',e=>{
+  if(!S.playing) return;
+  if(e.target.closest('#calBtn')) return;
+  pointers.set(e.pointerId,e.clientX); refreshTouch();
+});
+addEventListener('pointerup',e=>{ pointers.delete(e.pointerId); refreshTouch(); });
+addEventListener('pointercancel',e=>{ pointers.delete(e.pointerId); refreshTouch(); });
+addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='KeyR'&&S.playing) calibrate();
+  if(e.code==='Enter'&&!S.playing) start();
+  refreshTouch();
+});
+addEventListener('keyup',e=>{ keys[e.code]=false; refreshTouch(); });
+document.getElementById('calBtn').addEventListener('pointerdown',e=>{ e.stopPropagation(); calibrate(); });
+
+/* ================= HUD ================= */
+const $=id=>document.getElementById(id);
+const hudEls={e:$('eFill'),r:$('rFill'),rpm:$('rpmV'),sp:$('speedV'),alt:$('altV'),sc:$('scoreV'),be:$('bestV')};
+hudEls.be.textContent=S.best;
+let hudT=0;
+function updateHUD(dt){
+  hudT-=dt; if(hudT>0) return; hudT=.12;
+  hudEls.e.style.width=(S.energy/P.energyMax*100).toFixed(1)+'%';
+  hudEls.r.style.width=S.rpm.toFixed(1)+'%';
+  hudEls.rpm.textContent=S.rpm|0;
+  hudEls.sp.textContent=(S.speed*3.6)|0;
+  hudEls.alt.textContent=S.pos.y|0;
+  hudEls.sc.textContent=S.score;
+  hudEls.be.textContent=S.best;
+}
+let msgT=null;
+function showMsg(t){
+  const m=$('msg'); m.textContent=t; m.style.opacity=1;
+  clearTimeout(msgT); msgT=setTimeout(()=>m.style.opacity=0,1200);
+}
+function flash(){
+  const f=$('flash'); f.style.transition='none'; f.style.opacity=.45;
+  requestAnimationFrame(()=>{ f.style.transition='opacity .5s'; f.style.opacity=0; });
+}
+function addScore(n){
+  S.score+=n;
+  if(S.score>S.best){ S.best=S.score; localStorage.setItem('girovuelo_best',S.best); }
+}
+
+/* ================= física de vuelo ================= */
+const fwd=new THREE.Vector3(), eulTmp=new THREE.Euler(0,0,0,'YXZ');
+const clamp=THREE.MathUtils.clamp;
+
+function physics(dt){
+  /* --- 1. controles --- */
+  let bankIn, pitchIn;
+  if(S.sensorMode && S.haveDO){
+    const t=readTilt();
+    bankIn = clamp(t.bank - S.calib.bank, -P.maxBank, P.maxBank);
+    pitchIn = clamp((S.calib.faceUp - t.faceUp)*1.3, -P.maxPitch, P.maxPitch);
+  }else{
+    const rampB=2.2*dt, rampP=1.8*dt;
+    if(keys.ArrowLeft)  S.kb.bank=clamp(S.kb.bank-rampB,-P.maxBank,P.maxBank);
+    else if(keys.ArrowRight) S.kb.bank=clamp(S.kb.bank+rampB,-P.maxBank,P.maxBank);
+    else S.kb.bank*= (1-3*dt);
+    if(keys.ArrowUp)   S.kb.pitch=clamp(S.kb.pitch+rampP,-P.maxPitch,P.maxPitch);
+    else if(keys.ArrowDown) S.kb.pitch=clamp(S.kb.pitch-rampP,-P.maxPitch,P.maxPitch);
+    else S.kb.pitch*=(1-2.2*dt);
+    bankIn=S.kb.bank; pitchIn=S.kb.pitch;
+  }
+
+  /* --- 2. rotor (volante de inercia) y energía --- */
+  if(input.throttle && S.energy>0){
+    S.rpm=Math.min(S.rpm+P.spinUp*dt,P.rpmMax);
+    S.energy=Math.max(0,S.energy-(P.costBase+P.costRpm*(S.rpm/P.rpmMax))*dt);
+  }
+  if(input.brake && S.rpm>0){
+    const dr=Math.min(S.rpm,P.brakeRate*dt);
+    S.rpm-=dr;
+    S.energy=Math.min(P.energyMax,S.energy+dr*P.regenEff); // freno regenerativo
+  }
+  S.rpm=Math.max(0,S.rpm-S.rpm*P.rotorDecay*dt);
+  const rf=S.rpm/P.rpmMax;
+
+  /* --- 3. actitud: precesión giroscópica ---
+     τ = Ω × L : sin momento angular en el rotor no hay torque de giro,
+     igual que la rueda de bici parada no mueve la silla. */
+  const authority=.25+.75*rf;
+  S.bank += (bankIn-S.bank)*(1-Math.exp(-5*dt));
+  S.flightPitch += (pitchIn-S.flightPitch)*(1-Math.exp(-3.5*dt))*authority;
+  S.yaw += -P.turnRate*Math.sin(S.bank)*rf*dt;
+
+  /* --- 4. velocidad --- */
+  const thrust=(input.throttle&&S.energy>0)?P.thrustMax*rf:0;
+  S.speed += (thrust - P.dragK*S.speed - P.gravity*Math.sin(S.flightPitch)*.6)*dt;
+  if(input.brake) S.speed-=P.brakeDrag*S.speed*dt;
+  S.speed=Math.max(0,S.speed);
+
+  /* --- 5. posición --- */
+  S.prevY=S.pos.y;
+  fwd.set(0,0,-1).applyEuler(eulTmp.set(S.flightPitch,S.yaw,0));
+  S.pos.addScaledVector(fwd,S.speed*dt);
+  const lift=Math.min(S.speed/P.stallSpeed,1);
+  S.pos.y-=P.sinkMax*(1-lift)*dt;                  // pérdida: lento = te hundes
+  if(S.pos.y>850){ S.pos.y=850; S.flightPitch=Math.min(S.flightPitch,0); }
+
+  // mundo toroidal
+  if(S.pos.x> P.world) S.pos.x-=2*P.world; else if(S.pos.x<-P.world) S.pos.x+=2*P.world;
+  if(S.pos.z> P.world) S.pos.z-=2*P.world; else if(S.pos.z<-P.world) S.pos.z+=2*P.world;
+
+  /* --- 6. agua --- */
+  if(S.pos.y<2.5){
+    const vy=(S.pos.y-S.prevY)/dt;
+    const fromAbove=S.prevY>3.0; // evita re-disparar el splash mientras flotas
+    S.pos.y=2.5;
+    if(fromAbove && vy<-13){ // amarizaje brusco
+      S.speed*=.45; S.energy=Math.max(0,S.energy-8);
+      S.flightPitch=Math.max(S.flightPitch,.2);
+      flash(); blip(90,.3,.4); showMsg('💥 ¡splash!');
+    }else{
+      S.speed*=(1-.35*dt); // acuaplaneo: arrastre del agua
+      S.energy=Math.min(P.energyMax,S.energy+P.seaCharge*dt); // el mar recarga
+      if(!S.floating){ S.floating=true; showMsg('🌊 recargando en el agua…'); }
+    }
+  }else S.floating=false;
+  /* --- 7. islas --- */
+  for(const isl of islands){
+    const dx=S.pos.x-isl.x, dz=S.pos.z-isl.z, d=Math.hypot(dx,dz);
+    if(d<isl.r){
+      const hAt=isl.h*(1-d/isl.r);
+      if(S.pos.y<hAt){
+        S.pos.y=hAt+8; S.speed*=.35; S.energy=Math.max(0,S.energy-8);
+        S.flightPitch=.25;
+        flash(); blip(70,.35,.45); showMsg('💥 ¡contra la isla!');
+      }
+    }
+  }
+  /* --- 8. recolectables --- */
+  for(const o of orbs){
+    if(S.pos.distanceToSquared(o.position)<11*11){
+      S.energy=Math.min(P.energyMax,S.energy+P.orbEnergy);
+      addScore(10); blip(880,.15,.3); showMsg('⚡ +energía');
+      o.position.set(spread(),rnd(35,300),spread());
+    }
+  }
+  for(const r of rings){
+    r.cool=Math.max(0,r.cool-dt);
+    if(r.cool<=0 && S.pos.distanceToSquared(r.mesh.position)<12*12){
+      addScore(100); r.cool=2;
+      blip(1320,.2,.32); showMsg('💠 ¡anillo! +100');
+    }
+  }
+
+  /* --- 9. cámara --- */
+  camera.position.copy(S.pos);
+  camera.rotation.set(S.flightPitch,S.yaw,-S.bank);
+}
+
+/* ================= bucle ================= */
+const clock=new THREE.Clock();
+let animT=0;
+function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(clock.getDelta(),.05);
+  animT+=dt;
+  for(let i=0;i<orbs.length;i++){
+    orbs[i].scale.setScalar(1+.16*Math.sin(animT*3+i*1.7));
+    orbs[i].rotation.y+=dt;
+  }
+  for(let i=0;i<rings.length;i++)
+    rings[i].mesh.position.y+=Math.sin(animT*1.2+i)*dt*1.5;
+  rotorDisc.rotation.z+=(S.rpm/P.rpmMax)*42*dt;
+  if(S.playing){ physics(dt); updateHUD(dt); updateAudio(); }
+  else camera.rotation.y+=dt*.04; // paneo suave en el menú
+  renderer.render(scene,camera);
+}
+loop();
+
+/* ================= arranque y permisos ================= */
+async function requestSensors(){
+  try{
+    if(typeof DeviceOrientationEvent!=='undefined' &&
+       typeof DeviceOrientationEvent.requestPermission==='function'){
+      return (await DeviceOrientationEvent.requestPermission())==='granted';
+    }
+  }catch(e){}
+  return true; // Android / escritorio: no requiere permiso explícito
+}
+async function start(){
+  const ok=await requestSensors();
+  initAudio();
+  try{ await document.documentElement.requestFullscreen(); }catch(e){}
+  try{ await screen.orientation.lock('landscape'); }catch(e){}
+  try{ await navigator.wakeLock.request('screen'); }catch(e){}
+  document.getElementById('overlay').style.display='none';
+  document.getElementById('hud').style.display='block';
+  S.playing=true;
+  camera.rotation.set(0,S.yaw,0);
+  // esperar primeras lecturas del sensor para calibrar
+  setTimeout(()=>{
+    S.sensorMode=ok&&S.haveDO;
+    if(S.sensorMode){ calibrate(); }
+    else{
+      document.getElementById('kbHint').style.display='block';
+      showMsg('⌨ modo teclado');
+    }
+  },700);
+  setTimeout(()=>{ $('hintL').style.opacity=0; $('hintR').style.opacity=0; },7000);
+}
+document.getElementById('btnStart').addEventListener('click',start);
+
+// aviso si el contexto no es seguro (los sensores exigen HTTPS)
+if(!window.isSecureContext){
+  const w=document.getElementById('sensWarn');
+  w.style.display='block';
+  w.textContent='⚠️ Esta página no está en HTTPS: el giroscopio no funcionará. Ábrela desde una URL https:// (mira el README).';
 }
 </script>
 </body>
