@@ -1,6 +1,10 @@
-// Tile definitions and deck management for Carcassonne
+// Tile deck management for Carcassonne.
+// The per-tile edge geometry lives in @carcassonne/shared (TILE_EDGES) so the
+// client renderer and this server validator share one source of truth.
 
-export type EdgeType = 'C' | 'R' | 'F';
+import { TILE_EDGES, MONASTERY_TILE_IDS, type EdgeSide } from '@carcassonne/shared';
+
+export type EdgeType = EdgeSide;
 
 export interface TileDef {
   id: string;
@@ -8,54 +12,12 @@ export interface TileDef {
   monastery?: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Distinct tile types — no rotational duplicates.
-// The engine applies rotation at placement time, so CFFF with rotation=90
-// already gives city-East. FCFF, FFCF, FFFC are NOT separate tile types.
-// ---------------------------------------------------------------------------
-const TILE_DEFS: TileDef[] = [
-  // Monasteries
-  { id: 'FFFF', edges: ['F', 'F', 'F', 'F'], monastery: true }, // monastery, all fields
-  { id: 'FFRF', edges: ['F', 'F', 'R', 'F'], monastery: true }, // monastery + road south
-
-  // Full city
-  { id: 'CCCC', edges: ['C', 'C', 'C', 'C'] },
-
-  // Three-sided city (city N/E/S, field W — rotate for any orientation)
-  { id: 'CCCF', edges: ['C', 'C', 'C', 'F'] },
-  // Three-sided city + road on open side
-  { id: 'CCCR', edges: ['C', 'C', 'C', 'R'] },
-
-  // Two-sided city, adjacent corner (city N/E, fields S/W)
-  { id: 'CCFF', edges: ['C', 'C', 'F', 'F'] },
-  // Two-sided city, adjacent corner + road curve on field sides
-  { id: 'CCRR', edges: ['C', 'C', 'R', 'R'] },
-
-  // Two-sided city, opposite faces (city N/S, fields E/W — not connected)
-  { id: 'CFCF', edges: ['C', 'F', 'C', 'F'] },
-
-  // Single city face (city N, fields E/S/W)
-  { id: 'CFFF', edges: ['C', 'F', 'F', 'F'] },
-  // Single city + straight road through (city N, road E/W)
-  { id: 'CRFR', edges: ['C', 'R', 'F', 'R'] },
-  // Single city + T-road (city N, road E/S/W)
-  { id: 'CRRR', edges: ['C', 'R', 'R', 'R'] },
-  // Single city + road curve (city N, road E→S)
-  { id: 'CRRF', edges: ['C', 'R', 'R', 'F'] },
-  // Single city + road curve other direction (city N, road S→W)
-  { id: 'CFRR', edges: ['C', 'F', 'R', 'R'] },
-  // Single city + road dead-end on W
-  { id: 'CFFR', edges: ['C', 'F', 'F', 'R'] },
-  // Single city + road dead-end on S
-  { id: 'CFRF', edges: ['C', 'F', 'R', 'F'] },
-
-  // Pure road tiles
-  { id: 'RFRF', edges: ['R', 'F', 'R', 'F'] }, // straight road N↔S
-  { id: 'FFRR', edges: ['F', 'F', 'R', 'R'] }, // curve road S→W
-  { id: 'FRRR', edges: ['F', 'R', 'R', 'R'] }, // T-junction (field N, roads E/S/W)
-  { id: 'RRRR', edges: ['R', 'R', 'R', 'R'] }, // X-junction
-  { id: 'FFFR', edges: ['F', 'F', 'F', 'R'] }, // dead-end road W
-];
+// Built from the shared geometry table — no rotational duplicates.
+const TILE_DEFS: TileDef[] = Object.entries(TILE_EDGES).map(([id, edges]) => ({
+  id,
+  edges,
+  monastery: MONASTERY_TILE_IDS.includes(id),
+}));
 
 // Map for fast lookup
 const TILE_DEF_MAP = new Map<string, TileDef>(TILE_DEFS.map(t => [t.id, t]));

@@ -3,6 +3,9 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { v4 as uuidv4 } from 'uuid';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import * as db from './db/index.js';
 import type {
   ClientToServerEvents,
@@ -79,7 +82,7 @@ app.post('/api/games', (req, res) => {
   res.json({ gameId, p1Id, p2Id, state });
 
   // Persist to Supabase asynchronously — game works even if this fails
-  db.createGame({ id: gameId, player1Id: p1Id, player2Id: p2Id, aiDifficulty: aiDifficulty ?? null })
+  db.createGame({ id: gameId, player1Id: p1Id, player2Id: p2Id, aiDifficulty })
     .catch(err => console.error('Supabase createGame failed (non-fatal):', err));
 });
 
@@ -312,6 +315,24 @@ async function endGame(room: Room, gameId: string) {
   } catch (err) {
     console.error('Error ending game:', err);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Serve the built client (production / single-URL deployment).
+// In dev this folder doesn't exist and Vite serves the client instead.
+// ---------------------------------------------------------------------------
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const clientDist = path.resolve(__dirname, '../../client/dist');
+
+if (fs.existsSync(clientDist)) {
+  app.use(express.static(clientDist));
+  // SPA fallback for any non-API route
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) { res.status(404).end(); return; }
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+  console.log('Serving built client from', clientDist);
 }
 
 // ---------------------------------------------------------------------------

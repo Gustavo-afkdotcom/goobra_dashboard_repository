@@ -76,3 +76,47 @@ export interface ServerToClientEvents {
   analysis_update: (analysis: MoveAnalysis) => void;
   game_ended: (result: { winnerId: string | null; scores: Record<string, number>; playerNames: Record<string, string> }) => void;
 }
+
+// ---------------------------------------------------------------------------
+// Tile geometry — single source of truth shared by client (rendering) and
+// server (placement validation). Each tile's edges are [N, E, S, W] where:
+//   'C' = city, 'R' = road, 'F' = field.
+// ---------------------------------------------------------------------------
+export type EdgeSide = 'C' | 'R' | 'F';
+export type TileEdges = [EdgeSide, EdgeSide, EdgeSide, EdgeSide];
+
+export const TILE_EDGES: Record<string, TileEdges> = {
+  // Monasteries
+  FFFF: ['F', 'F', 'F', 'F'],
+  FFRF: ['F', 'F', 'R', 'F'],
+  // Cities
+  CCCC: ['C', 'C', 'C', 'C'],
+  CCCF: ['C', 'C', 'C', 'F'],
+  CCCR: ['C', 'C', 'C', 'R'],
+  CCFF: ['C', 'C', 'F', 'F'],
+  CCRR: ['C', 'C', 'R', 'R'],
+  CFCF: ['C', 'F', 'C', 'F'],
+  CFFF: ['C', 'F', 'F', 'F'],
+  CRFR: ['C', 'R', 'F', 'R'],
+  CRRR: ['C', 'R', 'R', 'R'],
+  CRRF: ['C', 'R', 'R', 'F'],
+  CFRR: ['C', 'F', 'R', 'R'],
+  CFFR: ['C', 'F', 'F', 'R'],
+  CFRF: ['C', 'F', 'R', 'F'],
+  // Roads
+  RFRF: ['R', 'F', 'R', 'F'],
+  FFRR: ['F', 'F', 'R', 'R'],
+  FRRR: ['F', 'R', 'R', 'R'],
+  RRRR: ['R', 'R', 'R', 'R'],
+  FFFR: ['F', 'F', 'F', 'R'],
+};
+
+export const MONASTERY_TILE_IDS = ['FFFF', 'FFRF'];
+
+/** Rotate a tile's edges clockwise. 90° CW: [N,E,S,W] -> [W,N,E,S]. */
+export function rotateTileEdges(edges: TileEdges, rotation: number): TileEdges {
+  const steps = ((Math.round(rotation / 90) % 4) + 4) % 4;
+  let e: TileEdges = [...edges] as TileEdges;
+  for (let i = 0; i < steps; i++) e = [e[3], e[0], e[1], e[2]];
+  return e;
+}

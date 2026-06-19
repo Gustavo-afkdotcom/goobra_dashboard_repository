@@ -13,7 +13,7 @@ export interface DbMove {
   meeple_feature_index: number | null;
   meeple_farm_index: number | null;
   score_gained: number;
-  timestamp: number;
+  timestamp: string; // ISO 8601 (Supabase timestamptz)
 }
 
 export async function insertMove(move: DbMove): Promise<void> {

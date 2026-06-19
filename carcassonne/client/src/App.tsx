@@ -45,9 +45,11 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', width: '100%', height: '100%', position: 'relative', flexDirection: 'row' }}>
-      <Board players={players} bottomOffset={isMobile ? 180 : 0} />
+      <div style={{ flex: 1, minWidth: 0, position: 'relative', height: '100%' }}>
+        <Board players={players} bottomOffset={isMobile ? 180 : 0} />
+        {isMobile && (<HUD gameState={gameState} lastAnalysis={store.lastAnalysis} currentPlayerId={playerId} isMobile={true} />)}
+      </div>
       {!isMobile && (<HUD gameState={gameState} lastAnalysis={store.lastAnalysis} currentPlayerId={playerId} isMobile={false} />)}
-      {isMobile && (<HUD gameState={gameState} lastAnalysis={store.lastAnalysis} currentPlayerId={playerId} isMobile={true} />)}
       {error && (
         <div onClick={() => store.clearError()} style={{ position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)', background: '#2a1a1a', color: '#ff7043', border: '1px solid #ff4444', borderRadius: 8, padding: '10px 16px', fontSize: 13, cursor: 'pointer', zIndex: 300 }}>⚠️ {error}</div>
       )}
