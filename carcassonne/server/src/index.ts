@@ -10,6 +10,8 @@ import type {
   Rotation,
   MeepleType,
 } from '@carcassonne/shared';
+import { createDeck, getTileDef } from './tiles.js';
+import { getValidPlacements, edgesMatch } from './engine.js';
 
 const app = express();
 app.use(express.json());
@@ -24,6 +26,8 @@ interface Room {
   p1Id: string;
   p2Id: string;
   aiDifficulty?: number;
+  tileSequence: string[];
+  tileIndex: number;
 }
 
 // Active game rooms keyed by gameId
@@ -42,23 +46,39 @@ app.post('/api/games', async (req, res) => {
   try {
     await db.createGame({ id: gameId, player1Id: p1Id, player2Id: p2Id, aiDifficulty: aiDifficulty ?? null });
 
+    // Build tile deck and place the starting tile at (0,0) with rotation 0
+    const tileSequence = createDeck();
+    let tileIndex = 0;
+
+    const startingTileId = tileSequence[tileIndex++];
+    const board: Record<string, import('@carcassonne/shared').BoardTile> = {
+      '0,0': { tileDefId: startingTileId, x: 0, y: 0, rotation: 0, meeples: [] },
+    };
+
+    // Draw the first tile for the current player to place
+    const firstTileId = tileSequence[tileIndex++];
+    const firstTileDef = getTileDef(firstTileId);
+    const firstValidPlacements = firstTileDef
+      ? getValidPlacements(board, firstTileDef, getTileDef)
+      : [];
+
     const state: SerializedGameState = {
       gameId,
-      board: {},
-      currentTile: null, // TODO: draw first tile from shuffled deck
+      board,
+      currentTile: { tileDefId: firstTileId, validPlacements: firstValidPlacements },
       currentPlayerId: p1Id,
       players: [
         { id: p1Id, name: player1Name ?? 'Player 1', color: '#4fc3f7', score: 0, meeples: 7 },
         { id: p2Id, name: aiDifficulty ? 'IA' : 'Player 2', color: '#ef9a9a', score: 0, meeples: 7, isAI: !!aiDifficulty },
       ],
       phase: 'PLACE_TILE',
-      tilesRemaining: 71,
+      tilesRemaining: tileSequence.length - tileIndex, // tiles still in deck (not yet drawn)
       turn: 1,
       scores: { [p1Id]: 0, [p2Id]: 0 },
       playerNames: { [p1Id]: player1Name ?? 'Player 1', [p2Id]: aiDifficulty ? 'IA' : 'Player 2' },
     };
 
-    rooms.set(gameId, { state, p1Id, p2Id, aiDifficulty });
+    rooms.set(gameId, { state, p1Id, p2Id, aiDifficulty, tileSequence, tileIndex });
     res.json({ gameId, p1Id, p2Id, state });
   } catch (err) {
     console.error('Error creating game:', err);
@@ -144,11 +164,33 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // TODO: Validate placement with tile engine (edge matching rules)
-    const tileDefId = room.state.currentTile?.tileDefId ?? 'UNKNOWN';
+    const currentTile = room.state.currentTile;
+    if (!currentTile) {
+      socket.emit('move_result', { success: false, error: 'No tile to place' });
+      return;
+    }
+
+    // Validate placement with tile engine (edge matching rules)
+    const tileDefId = currentTile.tileDefId;
+    const tileDef = getTileDef(tileDefId);
+    if (!tileDef) {
+      socket.emit('move_result', { success: false, error: 'Unknown tile definition' });
+      return;
+    }
+
+    if (room.state.board[`${x},${y}`]) {
+      socket.emit('move_result', { success: false, error: 'Cell already occupied' });
+      return;
+    }
+
+    if (!edgesMatch(room.state.board, x, y, tileDef, rotation, getTileDef)) {
+      socket.emit('move_result', { success: false, error: 'Tile edges do not match neighbours' });
+      return;
+    }
+
+    // Place the tile
     room.state.board[`${x},${y}`] = { tileDefId, x, y, rotation, meeples: [] };
     room.state.phase = 'PLACE_MEEPLE';
-    room.state.tilesRemaining = Math.max(0, room.state.tilesRemaining - 1);
 
     await db.insertMove({
       id: uuidv4(),
@@ -231,10 +273,26 @@ function advanceTurn(room: Room, gameId: string) {
   state.phase = 'PLACE_TILE';
   state.turn++;
 
-  // TODO: Draw next tile from deck; validate at least one valid placement exists
-  // If none exists, skip to next tile or end game
+  // Draw next tile from deck, skipping tiles with no valid placements
+  state.currentTile = null;
+  while (room.tileIndex < room.tileSequence.length) {
+    const nextTileId = room.tileSequence[room.tileIndex++];
+    const nextTileDef = getTileDef(nextTileId);
+    if (!nextTileDef) continue;
 
-  if (state.tilesRemaining === 0) {
+    const validPlacements = getValidPlacements(state.board, nextTileDef, getTileDef);
+    if (validPlacements.length > 0) {
+      state.currentTile = { tileDefId: nextTileId, validPlacements };
+      break;
+    }
+    // Tile has no valid placements — skip it (per Carcassonne rules)
+    console.log(`Skipping tile ${nextTileId}: no valid placements`);
+  }
+
+  state.tilesRemaining = room.tileSequence.length - room.tileIndex;
+
+  if (state.currentTile === null) {
+    // Deck exhausted (or all remaining tiles unplaceable) — end game
     void endGame(room, gameId);
   }
 }
