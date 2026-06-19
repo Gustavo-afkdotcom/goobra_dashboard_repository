@@ -38,53 +38,49 @@ const rooms = new Map<string, Room>();
 // HTTP routes
 // ---------------------------------------------------------------------------
 
-app.post('/api/games', async (req, res) => {
+app.post('/api/games', (req, res) => {
   const { player1Name, aiDifficulty } = req.body as { player1Name?: string; aiDifficulty?: number };
   const gameId = uuidv4();
   const p1Id = uuidv4();
   const p2Id = aiDifficulty ? 'ai' : uuidv4();
 
-  try {
-    await db.createGame({ id: gameId, player1Id: p1Id, player2Id: p2Id, aiDifficulty: aiDifficulty ?? null });
+  // Build tile deck and place the starting tile at (0,0) with rotation 0
+  const tileSequence = createDeck();
+  let tileIndex = 0;
 
-    // Build tile deck and place the starting tile at (0,0) with rotation 0
-    const tileSequence = createDeck();
-    let tileIndex = 0;
+  const startingTileId = tileSequence[tileIndex++];
+  const board: Record<string, import('@carcassonne/shared').BoardTile> = {
+    '0,0': { tileDefId: startingTileId, x: 0, y: 0, rotation: 0, meeples: [] },
+  };
 
-    const startingTileId = tileSequence[tileIndex++];
-    const board: Record<string, import('@carcassonne/shared').BoardTile> = {
-      '0,0': { tileDefId: startingTileId, x: 0, y: 0, rotation: 0, meeples: [] },
-    };
+  const firstTileId = tileSequence[tileIndex++];
+  const firstTileDef = getTileDef(firstTileId);
+  const firstValidPlacements = firstTileDef
+    ? getValidPlacements(board, firstTileDef, getTileDef)
+    : [];
 
-    // Draw the first tile for the current player to place
-    const firstTileId = tileSequence[tileIndex++];
-    const firstTileDef = getTileDef(firstTileId);
-    const firstValidPlacements = firstTileDef
-      ? getValidPlacements(board, firstTileDef, getTileDef)
-      : [];
+  const state: SerializedGameState = {
+    gameId,
+    board,
+    currentTile: { tileDefId: firstTileId, validPlacements: firstValidPlacements },
+    currentPlayerId: p1Id,
+    players: [
+      { id: p1Id, name: player1Name ?? 'Player 1', color: '#4fc3f7', score: 0, meeples: 7 },
+      { id: p2Id, name: aiDifficulty ? 'IA' : 'Player 2', color: '#ef9a9a', score: 0, meeples: 7, isAI: !!aiDifficulty },
+    ],
+    phase: 'PLACE_TILE',
+    tilesRemaining: tileSequence.length - tileIndex,
+    turn: 1,
+    scores: { [p1Id]: 0, [p2Id]: 0 },
+    playerNames: { [p1Id]: player1Name ?? 'Player 1', [p2Id]: aiDifficulty ? 'IA' : 'Player 2' },
+  };
 
-    const state: SerializedGameState = {
-      gameId,
-      board,
-      currentTile: { tileDefId: firstTileId, validPlacements: firstValidPlacements },
-      currentPlayerId: p1Id,
-      players: [
-        { id: p1Id, name: player1Name ?? 'Player 1', color: '#4fc3f7', score: 0, meeples: 7 },
-        { id: p2Id, name: aiDifficulty ? 'IA' : 'Player 2', color: '#ef9a9a', score: 0, meeples: 7, isAI: !!aiDifficulty },
-      ],
-      phase: 'PLACE_TILE',
-      tilesRemaining: tileSequence.length - tileIndex, // tiles still in deck (not yet drawn)
-      turn: 1,
-      scores: { [p1Id]: 0, [p2Id]: 0 },
-      playerNames: { [p1Id]: player1Name ?? 'Player 1', [p2Id]: aiDifficulty ? 'IA' : 'Player 2' },
-    };
+  rooms.set(gameId, { state, p1Id, p2Id, aiDifficulty, tileSequence, tileIndex });
+  res.json({ gameId, p1Id, p2Id, state });
 
-    rooms.set(gameId, { state, p1Id, p2Id, aiDifficulty, tileSequence, tileIndex });
-    res.json({ gameId, p1Id, p2Id, state });
-  } catch (err) {
-    console.error('Error creating game:', err);
-    res.status(500).json({ error: 'Failed to create game' });
-  }
+  // Persist to Supabase asynchronously — game works even if this fails
+  db.createGame({ id: gameId, player1Id: p1Id, player2Id: p2Id, aiDifficulty: aiDifficulty ?? null })
+    .catch(err => console.error('Supabase createGame failed (non-fatal):', err));
 });
 
 app.get('/api/leaderboard', async (_req, res) => {
