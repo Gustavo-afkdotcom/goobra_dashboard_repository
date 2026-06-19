@@ -1,0 +1,14 @@
+{
+  "name": "carcassonne",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["shared", "server", "client"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client",
+    "start": "npx tsx server/src/index.ts"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}

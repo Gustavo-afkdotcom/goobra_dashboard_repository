@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+.env.local
+server-out.log
+server-err.log
+client-out.log
+server-out.txt
+server-err.txt
+*.log
