@@ -1306,7 +1306,10 @@
 
     // temporizador silencioso de respaldo; si el clip suena, 'playing' lo cancela
     tourTimer = setTimeout(() => { if (tourIdx === i) tourNext(); }, s.dur * 1000);
-    tourPlayer.src = 'audio/voz-' + String(i + 1).padStart(2, '0') + '.mp3';
+    // base robusta: funciona en /demo, /demo/, /demo/index.html o en la raíz local
+    const _base = (location.pathname.endsWith('/') || location.pathname.endsWith('.html'))
+      ? location.href : location.href.split(/[?#]/)[0] + '/';
+    tourPlayer.src = new URL('audio/voz-' + String(i + 1).padStart(2, '0') + '.mp3', _base).href;
     tourPlayer.play().catch(() => {}); // sin clip o bloqueado → sigue el temporizador
   }
   function startTour() {
