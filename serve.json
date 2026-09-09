@@ -1,6 +1,8 @@
 {
   "cleanUrls": false,
   "rewrites": [
+    { "source": "/demo", "destination": "/demo/index.html" },
+    { "source": "/demo/", "destination": "/demo/index.html" },
     { "source": "/gemelo", "destination": "/gemelo.html" },
     { "source": "/onboarding", "destination": "/onboarding.html" },
     { "source": "/modelo3d", "destination": "/modelo3d.html" }
